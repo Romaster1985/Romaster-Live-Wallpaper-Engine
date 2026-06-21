@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- ===================================== -->
+        <!-- VIDEO DE FONDO -->
+        <!-- ===================================== -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📺 Video de Fondo"
+                    android:textStyle="bold"
+                    android:textSize="18sp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonSelectVideo"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Cargar Video"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ===================================== -->
+        <!-- MODO DE AJUSTE -->
+        <!-- ===================================== -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Modo de Ajuste"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/toggleVideoMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:singleSelection="true">
+                
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonFit"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="16sp"
+                        android:paddingHorizontal="0dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        android:text="Fit"/>
+                
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonFill"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="16sp"
+                        android:paddingHorizontal="0dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        android:text="Fill"/>
+                
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonStretch"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="16sp"
+                        android:paddingHorizontal="0dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        android:text="Stretch"/>
+                
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonFree"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="16sp"
+                        android:paddingHorizontal="0dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        android:text="Free"/>
+                
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ===================================== -->
+        <!-- MODO LIBRE -->
+        <!-- ===================================== -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardFreeMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Modo Libre"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+
+                <!-- Aspect Ratio -->
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="Relación de aspecto"
+                    android:textStyle="bold"/>
+
+                <RadioGroup
+                    android:id="@+id/radioAspectRatio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <RadioButton
+                        android:id="@+id/radioAspectOriginal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Original"/>
+
+                    <RadioButton
+                        android:id="@+id/radioAspect16x9"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="16:9"/>
+
+                    <RadioButton
+                        android:id="@+id/radioAspect16x10"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="16:10"/>
+
+                    <RadioButton
+                        android:id="@+id/radioAspect18x9"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="18:9"/>
+                    
+                    <RadioButton
+                        android:id="@+id/radioAspect20x9"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="20:9"/>
+
+                    <RadioButton
+                        android:id="@+id/radioAspect4x3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="4:3"/>
+
+                    <RadioButton
+                        android:id="@+id/radioAspect3x2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="3:2"/>
+
+                </RadioGroup>
+
+                <!-- Zoom -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Zoom"/>
+
+                    <TextView
+                        android:id="@+id/textVideoZoomValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="100"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderVideoZoom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:value="100"
+                    android:valueFrom="10"
+                    android:valueTo="800"/>
+
+                <!-- Posición X -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Posición X"/>
+
+                    <TextView
+                        android:id="@+id/textVideoPosXValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderVideoPosX"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-100"
+                    android:valueTo="100"/>
+
+                <!-- Posición Y -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Posición Y"/>
+
+                    <TextView
+                        android:id="@+id/textVideoPosYValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderVideoPosY"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-100"
+                    android:valueTo="100"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+        
+        <!-- Sonido -->
+        
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp">
+        
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sonido"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+        
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+        
+                    <ImageView
+                        android:id="@+id/imageBgSoundIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:srcCompat="@drawable/baseline_volume_up_24"/>
+        
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sliderBgSoundVolume"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:valueFrom="0"
+                        android:valueTo="100"
+                        android:value="100"/>
+        
+                    <TextView
+                        android:id="@+id/textBgSoundVolumeValue"
+                        android:layout_width="40dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:text="100"/>
+        
+                </LinearLayout>
+        
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal">
+                
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonLoadBgSound"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Cargar sonido"/>
+                
+                    <Space
+                        android:layout_width="8dp"
+                        android:layout_height="wrap_content"/>
+                
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonResetBgSound"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Reset"/>
+                
+                </LinearLayout>
+        
+                <TextView
+                    android:id="@+id/textBgSoundFile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:ellipsize="middle"
+                    android:maxLines="1"
+                    android:text="Ningún sonido seleccionado"/>
+                
+                <TextView
+                    android:id="@+id/textBgSoundDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Duración: --:--.---"
+                    android:textSize="12sp"/>
+        
+            </LinearLayout>
+        
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</ScrollView>
