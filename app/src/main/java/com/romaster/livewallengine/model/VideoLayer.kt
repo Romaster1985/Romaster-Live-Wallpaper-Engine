@@ -1,5 +1,8 @@
 package com.romaster.livewallengine.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class VideoLayer(
 
     var fileName: String = "",

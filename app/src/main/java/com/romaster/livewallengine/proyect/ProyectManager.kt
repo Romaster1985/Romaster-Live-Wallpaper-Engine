@@ -18,7 +18,16 @@ object ProjectManager {
     }
 
     fun resetProject() {
+
         currentProject =
             WallpaperProject()
+    }
+
+    fun setWallpaperVideo(
+        path: String
+    ) {
+
+        currentProject.wallpaperVideo =
+            path
     }
 }

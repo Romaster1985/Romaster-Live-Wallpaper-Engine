@@ -1,25 +1,261 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
-
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
-
     android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    android:layout_height="match_parent"
-
-    android:gravity="center"
-
-    android:orientation="vertical">
-
-    <TextView
-
-        android:layout_width="wrap_content"
-
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Vista previa"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+        
+        <com.romaster.livewallengine.ui.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/preview_frame"/>
 
-        android:text="Romaster LiveWall Engine"
+        <Button
+            android:id="@+id/buttonSelectVideo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Seleccionar Video" />
 
-        android:textSize="24sp"/>
+        <CheckBox
+            android:id="@+id/checkClock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mostrar reloj" />
 
-</LinearLayout>
+        <RadioGroup
+            android:id="@+id/radioTimeFormat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/radioHHMM"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HH:MM" />
+
+            <RadioButton
+                android:id="@+id/radioHHMMSS"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HH:MM:SS" />
+
+            <RadioButton
+                android:id="@+id/radioAMPM"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HH:MM AM/PM" />
+
+        </RadioGroup>
+
+        <CheckBox
+            android:id="@+id/checkDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mostrar fecha" />
+
+        <RadioGroup
+            android:id="@+id/radioDateFormat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/radioDateShort"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dom, 21 Jun" />
+
+            <RadioButton
+                android:id="@+id/radioDateNumeric"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="21/06/2026" />
+
+            <RadioButton
+                android:id="@+id/radioDateLong"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dom, 21 Jun 2026" />
+
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tamaño reloj" />
+        
+        <SeekBar
+            android:id="@+id/seekClockSize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="250" />
+        
+        <TextView
+            android:id="@+id/textClockSizeValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="64" />
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Color reloj" />
+        
+        <Spinner
+            android:id="@+id/spinnerClockColor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        
+        <EditText
+            android:id="@+id/editClockHex"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="#00FFFF" />
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tamaño fecha" />
+        
+        <SeekBar
+            android:id="@+id/seekDateSize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="250" />
+        
+        <TextView
+            android:id="@+id/textDateSizeValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="64" />
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Color fecha" />
+        
+        <Spinner
+            android:id="@+id/spinnerDateColor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        
+        <EditText
+            android:id="@+id/editDateHex"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="#FF8800" />
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Alineación" />
+        
+        <RadioGroup
+            android:id="@+id/radioAlign"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+        
+            <RadioButton
+                android:id="@+id/radioAlignLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Izquierda" />
+        
+            <RadioButton
+                android:id="@+id/radioAlignCenter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Centro" />
+        
+            <RadioButton
+                android:id="@+id/radioAlignRight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Derecha" />
+        
+        </RadioGroup>
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Posición Horizontal" />
+
+        <SeekBar
+            android:id="@+id/seekX"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100" />
+        
+        <TextView
+            android:id="@+id/textXValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="50" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Posición Vertical" />
+
+        <SeekBar
+            android:id="@+id/seekY"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100" />
+        
+        <TextView
+            android:id="@+id/textYValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="50" />
+        
+        <Button
+            android:id="@+id/buttonImportFont"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Importar fuente" />
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Fuente reloj" />
+        
+        <Spinner
+            android:id="@+id/spinnerClockFont"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Fuente fecha" />
+        
+        <Spinner
+            android:id="@+id/spinnerDateFont"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/buttonSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="💾 Guardar" />
+
+    </LinearLayout>
+
+</ScrollView>
