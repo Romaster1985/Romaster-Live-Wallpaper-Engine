@@ -1,25 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
-
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    android:layout_height="match_parent"
+    <LinearLayout
+        android:layout_margin="2dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-    android:gravity="center"
+        <include
+            layout="@layout/layout_preview"/>
 
-    android:orientation="vertical">
+        <include
+            layout="@layout/layout_tabs"/>
 
-    <TextView
+        <FrameLayout
+            android:id="@+id/panelContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-        android:layout_width="wrap_content"
+            <!-- ========================= -->
+            <!-- Video BG -->
+            <!-- ========================= -->
 
-        android:layout_height="wrap_content"
+            <include
+                android:id="@+id/panelVideo"
+                layout="@layout/layout_video"/>
 
-        android:text="Romaster LiveWall Engine"
+            <!-- ========================= -->
+            <!-- Video Overlay -->
+            <!-- ========================= -->
 
-        android:textSize="24sp"/>
+            <include
+                android:id="@+id/panelOverlay"
+                android:visibility="gone"
+                layout="@layout/layout_overlay"/>
 
-</LinearLayout>
+            <!-- ========================= -->
+            <!-- Clock Overlay -->
+            <!-- ========================= -->
+
+            <include
+                android:id="@+id/panelClock"
+                android:visibility="gone"
+                layout="@layout/layout_clock"/>
+            
+            <!-- ========================= -->
+            <!-- Reactive Playback -->
+            <!-- ========================= -->
+
+            <include
+                android:id="@+id/panelPlayback"
+                android:visibility="gone"
+                layout="@layout/layout_playback"/>
+
+            <!-- ========================= -->
+            <!-- Proyecto -->
+            <!-- ========================= -->
+
+            <include
+                android:id="@+id/panelProject"
+                android:visibility="gone"
+                layout="@layout/layout_project"/>
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

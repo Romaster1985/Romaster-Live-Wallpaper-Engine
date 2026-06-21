@@ -1,14 +1,25 @@
 package com.romaster.livewallengine.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class WallpaperProject(
 
-    val version: Int = 1,
+    var version: Int = 1,
 
-    val wallpaperVideo: String? = null,
+    var wallpaperVideo: String? = null,
 
-    val layers: MutableList<VideoLayer> =
+    var overlayVideo: String? = null,
+
+    var layers: MutableList<VideoLayer> =
         mutableListOf(),
 
-    val clock: ClockSettings =
-        ClockSettings()
+    var clock: ClockSettings =
+        ClockSettings(),
+
+    var overlay: OverlaySettings =
+        OverlaySettings(),
+    
+    var playback: PlaybackSettings =
+        PlaybackSettings()
 )

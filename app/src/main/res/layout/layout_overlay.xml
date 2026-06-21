@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- ===================================== -->
+        <!-- VIDEO OVERLAY -->
+        <!-- ===================================== -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📽️ Video Overlay"
+                    android:textStyle="bold"
+                    android:textSize="18sp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonLoadOverlay"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Cargar Overlay"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ===================================== -->
+        <!-- VISIBILIDAD -->
+        <!-- ===================================== -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Visibilidad"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Opacidad"/>
+
+                    <TextView
+                        android:id="@+id/textOverlayAlphaValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="100"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderOverlayAlpha"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:value="100"
+                    android:valueFrom="0"
+                    android:valueTo="100"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+        
+        <!-- ===================================== -->
+        <!-- CONTROLES PARA CHROMA KEY -->
+        <!-- ===================================== -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardChromaKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+        
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chroma Key"
+                    android:textStyle="bold"
+                    android:textSize="18sp"/>
+        
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/checkOverlayChroma"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Activar Chroma Key"/>
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Color"/>
+        
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/buttonChromaColor"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardCornerRadius="12dp"
+                    app:strokeWidth="1dp">
+        
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp">
+        
+                        <View
+                            android:id="@+id/viewChromaColor"
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:background="#00FF00"/>
+        
+                        <TextView
+                            android:id="@+id/textChromaHex"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:text="#00FF00"
+                            android:textStyle="bold"/>
+        
+                    </LinearLayout>
+        
+                </com.google.android.material.card.MaterialCardView>
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:text="Intensidad"/>
+        
+                <TextView
+                    android:id="@+id/textChromaThresholdValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:text="50"/>
+        
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderChromaThreshold"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="0"
+                    android:valueTo="100"
+                    android:value="50"/>
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:text="Suavizado"/>
+        
+                <TextView
+                    android:id="@+id/textChromaSoftnessValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:text="20"/>
+        
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderChromaSoftness"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="0"
+                    android:valueTo="100"
+                    android:value="20"/>
+        
+            </LinearLayout>
+        
+        </com.google.android.material.card.MaterialCardView>
+        
+        <!-- ===================================== -->
+        <!-- VIDEO ASPECT RATIO -->
+        <!-- ===================================== -->
+        
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+        
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📐 Aspect Ratio"
+                    android:textStyle="bold"
+                    android:textSize="18sp"/>
+        
+                <RadioGroup
+                    android:id="@+id/radioGroupOverlayAspect"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp">
+        
+                    <RadioButton
+                        android:id="@+id/radioOverlayAspectOriginal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Original"
+                        android:checked="true"/>
+        
+                    <RadioButton
+                        android:id="@+id/radioOverlayAspectScreen"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Screen"/>
+        
+                </RadioGroup>
+        
+            </LinearLayout>
+        
+        </com.google.android.material.card.MaterialCardView>
+        
+        <!-- ===================================== -->
+        <!-- TRANSFORMACIÓN -->
+        <!-- ===================================== -->
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Transformación"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+
+                <!-- Zoom -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Zoom"/>
+
+                    <TextView
+                        android:id="@+id/textOverlayZoomValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="100"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderOverlayZoom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:value="100"
+                    android:valueFrom="10"
+                    android:valueTo="800"/>
+
+                <!-- Posición X -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Posición X"/>
+
+                    <TextView
+                        android:id="@+id/textOverlayPosXValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderOverlayPosX"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-100"
+                    android:valueTo="100"/>
+
+                <!-- Posición Y -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Posición Y"/>
+
+                    <TextView
+                        android:id="@+id/textOverlayPosYValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderOverlayPosY"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-100"
+                    android:valueTo="100"/>
+
+                <!-- Rotación -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Rotación"/>
+
+                    <TextView
+                        android:id="@+id/textOverlayRotationValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0°"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderOverlayRotation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-180"
+                    android:valueTo="180"/>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+        
+        <!-- Sonido -->
+        
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp">
+        
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sonido"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+        
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+        
+                    <ImageView
+                        android:id="@+id/imageOverlaySoundIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        app:srcCompat="@drawable/baseline_volume_up_24"/>
+        
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/sliderOverlaySoundVolume"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:valueFrom="0"
+                        android:valueTo="100"
+                        android:value="100"/>
+        
+                    <TextView
+                        android:id="@+id/textOverlaySoundVolumeValue"
+                        android:layout_width="40dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:text="100"/>
+        
+                </LinearLayout>
+                
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal">
+                
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonLoadOverlaySound"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Cargar sonido"/>
+                
+                    <Space
+                        android:layout_width="8dp"
+                        android:layout_height="wrap_content"/>
+                
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonResetOverlaySound"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Reset"/>
+                
+                </LinearLayout>
+        
+                <TextView
+                    android:id="@+id/textOverlaySoundFile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:ellipsize="middle"
+                    android:maxLines="1"
+                    android:text="Ningún sonido seleccionado"/>
+                
+                <TextView
+                    android:id="@+id/textOverlaySoundDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Duración: --:--.---"
+                    android:textSize="12sp"/>
+        
+            </LinearLayout>
+        
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
+
+</ScrollView>

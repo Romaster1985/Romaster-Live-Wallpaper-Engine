@@ -1,16 +1,43 @@
 package com.romaster.livewallengine.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ClockSettings(
 
     var enabled: Boolean = true,
 
+    var showDate: Boolean = true,
+
+    var timeFormat: TimeFormat =
+        TimeFormat.HH_MM,
+
+    var dateFormat: DateFormat =
+        DateFormat.DOW_DD_MON,
+
     var fontFile: String? = null,
 
-    var size: Float = 64f,
+    var clockSize: Float = 64f,
 
-    var color: String = "#FFFFFF",
+    var dateSize: Float = 32f,
 
-    var x: Float = 100f,
+    var clockColor: String = "#FFFFFF",
 
-    var y: Float = 100f
+    var dateColor: String = "#FFFFFF",
+    
+    var clockColorPreset: String = "Blanco",
+
+    var dateColorPreset: String = "Blanco",
+
+    var alignment: TextAlignment = TextAlignment.CENTER,
+
+    var x: Float = 0.5f,
+
+    var y: Float = 0.5f,
+
+    var dateSpacing: Float = 20f,
+    
+    var clockFont: String? = null,
+
+    var dateFont: String? = null
 )

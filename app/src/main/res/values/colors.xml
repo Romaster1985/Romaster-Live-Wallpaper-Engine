@@ -1,19 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
 <resources>
 
-    <color name="black">
-        #000000
-    </color>
-
-    <color name="white">
-        #FFFFFF
-    </color>
-
-    <color name="primary">
-        #00A2FF
-    </color>
-
-    <color name="primary_dark">
-        #006FCC
-    </color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="primary">#00A2FF</color>
+    <color name="primary_dark">#006FCC</color>
+    
+    <color name="md_theme_primary">#00A2FF</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_surface">#181818</color>
+    <color name="md_theme_surfaceVariant">#242424</color>
+    <color name="md_theme_background">#121212</color>
+    <color name="md_theme_outline">#505050</color>
 
 </resources>
