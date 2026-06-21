@@ -1,0 +1,23 @@
+<resources>
+
+    <string name="app_name">
+        Romaster LiveWall Engine
+    </string>
+
+    <string name="wallpaper_description">
+        Live Wallpaper con video, capas y reloj personalizable.
+    </string>
+
+    <string name="save">
+        Guardar
+    </string>
+
+    <string name="import_project">
+        Importar Proyecto
+    </string>
+
+    <string name="export_project">
+        Exportar Proyecto
+    </string>
+
+</resources>

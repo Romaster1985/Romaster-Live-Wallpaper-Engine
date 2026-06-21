@@ -1,0 +1,9 @@
+<resources>
+
+    <style
+        name="Theme.RomasterLiveWall"
+        parent="Theme.Material3.DayNight.NoActionBar">
+
+    </style>
+
+</resources>

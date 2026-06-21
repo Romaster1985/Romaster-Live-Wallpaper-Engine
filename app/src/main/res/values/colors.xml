@@ -1,0 +1,19 @@
+<resources>
+
+    <color name="black">
+        #000000
+    </color>
+
+    <color name="white">
+        #FFFFFF
+    </color>
+
+    <color name="primary">
+        #00A2FF
+    </color>
+
+    <color name="primary_dark">
+        #006FCC
+    </color>
+
+</resources>
