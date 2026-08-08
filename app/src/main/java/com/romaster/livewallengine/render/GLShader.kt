@@ -12,6 +12,8 @@ class GLShader {
     private var texCoordHandle = 0
 
     private var samplerHandle = 0
+    
+    private var alphaHandle = 0
 
     private val vertexShaderCode =
         """
@@ -42,13 +44,19 @@ class GLShader {
 
         uniform sampler2D uTexture;
 
-        void main() {
+        uniform float uAlpha;
 
-            gl_FragColor =
+        void main() {
+        
+            vec4 color =
                 texture2D(
                     uTexture,
                     vTexCoord
                 );
+        
+            color.a *= uAlpha;
+        
+            gl_FragColor = color;
         }
         """.trimIndent()
 
@@ -100,6 +108,12 @@ class GLShader {
                 program,
                 "uTexture"
             )
+        
+        alphaHandle =
+            GLES20.glGetUniformLocation(
+                program,
+                "uAlpha"
+            )
 
         GLES20.glDeleteShader(
             vertexShader
@@ -139,7 +153,8 @@ class GLShader {
 
     fun draw(
         vertexBuffer: FloatBuffer,
-        textureId: Int
+        textureId: Int,
+        alpha: Float
     ) {
 
         vertexBuffer.position(0)
@@ -184,6 +199,11 @@ class GLShader {
         GLES20.glUniform1i(
             samplerHandle,
             0
+        )
+        
+        GLES20.glUniform1f(
+            alphaHandle,
+            alpha
         )
 
         GLES20.glDrawArrays(

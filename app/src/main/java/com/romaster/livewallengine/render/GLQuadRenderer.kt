@@ -49,7 +49,8 @@ class GLQuadRenderer {
     }
 
     fun draw(
-        texture: GLTexture
+        texture: GLTexture,
+        alpha: Float
     ) {
         
         GLES20.glEnable(
@@ -65,7 +66,8 @@ class GLQuadRenderer {
 
         shader.draw(
             vertexBuffer,
-            texture.getTextureId()
+            texture.getTextureId(),
+            alpha
         )
         
         GLES20.glDisable(

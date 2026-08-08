@@ -7,6 +7,8 @@ import android.view.Surface
 import android.view.SurfaceHolder
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.SystemClock
+import android.app.KeyguardManager
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import com.romaster.livewallengine.model.VideoFitMode
@@ -75,6 +77,14 @@ class GLRenderer(
             else
                 height
     
+    private val fadeDurationMs = 2000L
+
+    private var fadeStartTime = 0L
+    
+    private var fadeAlpha = 0f
+    
+    private var alphaHandle = 0
+    
     private var videoVertexBuffer: java.nio.FloatBuffer? = null
     private var videoVertices = FloatArray(24)
     
@@ -139,13 +149,19 @@ class GLRenderer(
     
     uniform samplerExternalOES uTexture;
     
+    uniform float uAlpha;
+    
     void main() {
     
-        gl_FragColor =
+        vec4 color =
             texture2D(
                 uTexture,
                 vTexCoord
             );
+        
+        color.a *= uAlpha;
+        
+        gl_FragColor = color;
     }
     """.trimIndent()
     
@@ -189,6 +205,35 @@ class GLRenderer(
         
         overlayRenderer = GLOverlayRenderer()
         overlayRenderer!!.initialize(context)
+        
+        val keyguard =
+            context.getSystemService(
+                Context.KEYGUARD_SERVICE
+            ) as KeyguardManager
+        
+        val locked =
+            keyguard.isKeyguardLocked
+        
+        val clock =
+            ProjectManager
+                .getProject()
+                .clock
+        
+        if (locked) {
+        
+            overlayRenderer!!.setLockScreenVisible(
+                visible =
+                    clock.enabledOnLockScreen,
+                fadeIn = false
+            )
+        
+        } else {
+        
+            overlayRenderer!!.setLockScreenVisible(
+                visible = true,
+                fadeIn = false
+            )
+        }
         
         videoOverlayRenderer = GLVideoOverlayRenderer(context)
         videoOverlayRenderer!!.initialize()
@@ -286,6 +331,12 @@ class GLRenderer(
                 program,
                 "uTransform"
             )
+        
+        alphaHandle =
+            GLES20.glGetUniformLocation(
+                program,
+                "uAlpha"
+            )
 
         vertexBuffer =
             java.nio.ByteBuffer
@@ -312,6 +363,47 @@ class GLRenderer(
             -1f,
             1f
         )
+    }
+    
+    fun startFadeIn() {
+
+        fadeStartTime =
+            SystemClock.elapsedRealtime()
+    
+        fadeAlpha = 0f
+    
+        FileLogger.log(
+            context,
+            "GLRenderer -> Fade-in iniciado"
+        )
+    }
+    
+    private fun updateFade() {
+
+        if (fadeStartTime <= 0L) {
+    
+            fadeAlpha = 1f
+    
+            return
+        }
+    
+        val elapsed =
+            SystemClock.elapsedRealtime() -
+            fadeStartTime
+    
+        fadeAlpha =
+            (
+                elapsed.toFloat() /
+                fadeDurationMs.toFloat()
+            ).coerceIn(
+                0f,
+                1f
+            )
+    
+        if (fadeAlpha >= 1f) {
+    
+            fadeStartTime = 0L
+        }
     }
 
     private fun createExternalTexture(): Int {
@@ -458,10 +550,19 @@ class GLRenderer(
             GLES20.GL_COLOR_BUFFER_BIT
         )
     
-        GLES20.glUseProgram(
-            program
+        GLES20.glUseProgram(program)
+
+        updateFade()
+        
+        GLES20.glEnable(
+            GLES20.GL_BLEND
         )
-    
+        
+        GLES20.glBlendFunc(
+            GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE_MINUS_SRC_ALPHA
+        )
+        
         videoVertexBuffer!!.position(0)
 
         GLES20.glVertexAttribPointer(
@@ -528,6 +629,11 @@ class GLRenderer(
             transformMatrix,
             0
         )
+        
+        GLES20.glUniform1f(
+            alphaHandle,
+            fadeAlpha
+        )
     
         GLES20.glDrawArrays(
             GLES20.GL_TRIANGLES,
@@ -541,6 +647,10 @@ class GLRenderer(
     
         GLES20.glDisableVertexAttribArray(
             texCoordHandle
+        )
+        
+        GLES20.glDisable(
+            GLES20.GL_BLEND
         )
     
         // -----------------------------
@@ -791,6 +901,64 @@ class GLRenderer(
         GLVideoOverlayRenderer? {
     
         return videoOverlayRenderer
+    }
+    
+    fun setClockLockScreenState(
+        visible: Boolean,
+        fadeIn: Boolean
+    ) {
+    
+        overlayRenderer?.setLockScreenVisible(
+            visible = visible,
+            fadeIn = fadeIn
+        )
+    }
+    
+    fun clearSurface() {
+
+        if (width <= 0 || height <= 0) {
+            return
+        }
+    
+        try {
+    
+            GLES20.glViewport(
+                0,
+                0,
+                width,
+                height
+            )
+    
+            GLES20.glDisable(
+                GLES20.GL_BLEND
+            )
+    
+            GLES20.glClearColor(
+                0f,
+                0f,
+                0f,
+                1f
+            )
+    
+            GLES20.glClear(
+                GLES20.GL_COLOR_BUFFER_BIT
+            )
+    
+            egl.swapBuffers()
+    
+            FileLogger.log(
+                context,
+                "GLRenderer -> Surface limpiada"
+            )
+    
+        } catch (e: Exception) {
+    
+            FileLogger.logException(
+                context,
+                "GLRenderer.clearSurface()",
+                e
+            )
+        }
     }
 
     fun release() {

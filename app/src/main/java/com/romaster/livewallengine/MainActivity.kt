@@ -1576,6 +1576,11 @@ class MainActivity : AppCompatActivity() {
             ProjectManager
                 .getProject()
                 .clock
+        
+        findViewById<CheckBox>(
+            R.id.checkClockLockScreen
+        ).isChecked =
+            clock.enabledOnLockScreen
 
         findViewById<CheckBox>(
             R.id.checkClock
@@ -1721,6 +1726,16 @@ class MainActivity : AppCompatActivity() {
             R.id.dropDateFont,
             clock.dateFont
         )
+        
+        findViewById<CheckBox>(
+            R.id.checkClockLockScreen
+        ).setOnCheckedChangeListener { _, _ ->
+        
+            if (loadingUI)
+                return@setOnCheckedChangeListener
+        
+            updatePreviewProject()
+        }
         
         findViewById<CheckBox>(
             R.id.checkClock
@@ -2630,6 +2645,11 @@ class MainActivity : AppCompatActivity() {
     private fun readClockSettingsFromUI(): ClockSettings {
 
         val clock = ClockSettings()
+        
+        clock.enabledOnLockScreen =
+            findViewById<CheckBox>(
+                R.id.checkClockLockScreen
+            ).isChecked
     
         clock.enabled =
             findViewById<CheckBox>(

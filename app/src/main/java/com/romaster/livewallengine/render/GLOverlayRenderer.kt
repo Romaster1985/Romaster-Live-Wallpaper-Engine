@@ -2,6 +2,7 @@ package com.romaster.livewallengine.render
 
 import android.content.Context
 import com.romaster.livewallengine.project.ProjectManager
+import android.os.SystemClock
 
 class GLOverlayRenderer {
 
@@ -13,6 +14,12 @@ class GLOverlayRenderer {
 
     private lateinit var quadRenderer:
         GLQuadRenderer
+    
+    private val fadeDurationMs = 1000L
+
+    private var fadeStartTime = 0L
+    
+    private var clockAlpha = 1f
 
     private var lastUpdate = 0L
 
@@ -32,6 +39,8 @@ class GLOverlayRenderer {
             GLQuadRenderer()
 
         quadRenderer.initialize()
+        
+        clockAlpha = 1f
     }
 
     fun draw(
@@ -54,9 +63,15 @@ class GLOverlayRenderer {
             lastUpdate = now
         }
 
-        quadRenderer.draw(
-            texture
-        )
+        updateFade()
+
+        if (clockAlpha > 0f) {
+
+            quadRenderer.draw(
+                texture,
+                clockAlpha
+            )
+        }
     }
 
     private fun updateTexture(
@@ -81,6 +96,62 @@ class GLOverlayRenderer {
         )
 
         bitmap.recycle()
+    }
+    
+    fun setLockScreenVisible(
+        visible: Boolean,
+        fadeIn: Boolean
+    ) {
+    
+        if (visible) {
+    
+            if (fadeIn) {
+    
+                clockAlpha = 0f
+    
+                fadeStartTime =
+                    SystemClock.elapsedRealtime()
+    
+            } else {
+    
+                clockAlpha = 1f
+    
+                fadeStartTime = 0L
+            }
+    
+        } else {
+    
+            clockAlpha = 0f
+    
+            fadeStartTime = 0L
+        }
+    }
+    
+    private fun updateFade() {
+
+        if (fadeStartTime <= 0L) {
+            return
+        }
+    
+        val elapsed =
+            SystemClock.elapsedRealtime() -
+            fadeStartTime
+    
+        clockAlpha =
+            (
+                elapsed.toFloat() /
+                fadeDurationMs.toFloat()
+            ).coerceIn(
+                0f,
+                1f
+            )
+    
+        if (clockAlpha >= 1f) {
+    
+            clockAlpha = 1f
+    
+            fadeStartTime = 0L
+        }
     }
 
     fun release() {

@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ClockSettings(
 
+    var enabledOnLockScreen: Boolean = true,
+    
     var enabled: Boolean = true,
 
     var showDate: Boolean = true,

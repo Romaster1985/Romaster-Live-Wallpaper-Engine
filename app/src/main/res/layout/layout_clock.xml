@@ -16,13 +16,44 @@
         android:orientation="vertical"
         android:padding="16dp">
         
-        <!--
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSelectVideo"
+        <!-- ===================================== -->
+        <!-- VISIBILIDAD EN PANTALLA DE BLOQUEO -->
+        <!-- ===================================== -->
+        
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardLockScreenVisibility"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Seleccionar Video" />
-        -->
+            android:layout_marginBottom="8dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:cardBackgroundColor="?attr/colorSurface">
+        
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pantalla de bloqueo"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:layout_marginBottom="8dp"/>
+        
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/checkClockLockScreen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Habilitar en Pantalla de bloqueo"/>
+        
+            </LinearLayout>
+        
+        </com.google.android.material.card.MaterialCardView>
+        
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardCheckClock"
             android:layout_width="match_parent"
@@ -533,16 +564,7 @@
             </LinearLayout>
         
         </com.google.android.material.card.MaterialCardView>
-        <!--
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSave"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp"
-            android:text="Guardar proyecto"/>
-        -->
+        
     </LinearLayout>
     
 </ScrollView>

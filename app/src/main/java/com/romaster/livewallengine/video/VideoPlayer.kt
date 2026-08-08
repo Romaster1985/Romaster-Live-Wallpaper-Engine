@@ -11,34 +11,85 @@ import com.romaster.livewallengine.storage.StorageManager
 
 class VideoPlayer(
 
-    private val context: Context
+private val context: Context,
+private val playerName: String = "VIDEO"
 
 ) {
 
-    private var mediaPlayer: MediaPlayer? = null
+private var mediaPlayer: MediaPlayer? = null
 
-    private var prepared = false
-    
-    private var onVideoSizeChanged:
+private var prepared = false
+
+private var onVideoSizeChanged:
     ((Int, Int) -> Unit)? = null
 
-    fun initialize(
-        surface: Surface
-    ) {
+// ============================================
+// IDENTIFICACIÓN
+// ============================================
 
-        if (prepared) {
-            return
-        }
+private fun log(
+    message: String
+) {
 
-        val project =
-            StorageManager.loadProject(
-                context
-            )
+    FileLogger.log(
+        context,
+        "VideoPlayer[$playerName] $message"
+    )
+}
 
-        val fileName =
-            project?.wallpaperVideo
+private fun logException(
+    operation: String,
+    exception: Exception
+) {
 
-        mediaPlayer =
+    FileLogger.logException(
+        context,
+        "VideoPlayer[$playerName] $operation",
+        exception
+    )
+}
+
+private fun playerHash(): String {
+
+    return mediaPlayer
+        ?.hashCode()
+        ?.toString()
+        ?: "null"
+}
+
+// ============================================
+// INITIALIZE
+// ============================================
+
+fun initialize(
+    surface: Surface
+) {
+
+    if (prepared) {
+
+        log(
+            "initialize() ignorado: ya preparado " +
+                "hash=${playerHash()}"
+        )
+
+        return
+    }
+
+    log(
+        "initialize() iniciado"
+    )
+
+    val project =
+        StorageManager.loadProject(
+            context
+        )
+
+    val fileName =
+        project?.wallpaperVideo
+
+    mediaPlayer =
+        try {
+
             if (fileName != null) {
 
                 val file =
@@ -49,32 +100,57 @@ class VideoPlayer(
 
                 if (file.exists()) {
 
-                    FileLogger.log(
-                        context,
-                        "VideoPlayer: usando video del usuario -> ${file.absolutePath}"
+                    log(
+                        "usando video del usuario -> " +
+                            file.absolutePath
                     )
 
                     MediaPlayer().apply {
+
+                        log(
+                            "MediaPlayer creado " +
+                                "hash=${hashCode()}"
+                        )
 
                         setDataSource(
                             context,
                             Uri.fromFile(file)
                         )
 
+                        log(
+                            "setDataSource() completado " +
+                                "hash=${hashCode()}"
+                        )
+
                         setSurface(surface)
 
+                        log(
+                            "setSurface() completado " +
+                                "hash=${hashCode()}"
+                        )
+
                         isLooping = true
+
+                        log(
+                            "setLooping(true) " +
+                                "hash=${hashCode()}"
+                        )
 
                         installListeners()
 
                         prepare()
+
+                        log(
+                            "prepare() completado " +
+                                "hash=${hashCode()}"
+                        )
                     }
 
                 } else {
 
-                    FileLogger.log(
-                        context,
-                        "VideoPlayer: no existe el video del usuario, usando test.mp4"
+                    log(
+                        "no existe el video del usuario, " +
+                            "usando test.mp4"
                     )
 
                     MediaPlayer.create(
@@ -82,9 +158,24 @@ class VideoPlayer(
                         R.raw.test
                     )?.apply {
 
+                        log(
+                            "MediaPlayer.create() -> " +
+                                "hash=${hashCode()}"
+                        )
+
                         setSurface(surface)
 
+                        log(
+                            "setSurface() completado " +
+                                "hash=${hashCode()}"
+                        )
+
                         isLooping = true
+
+                        log(
+                            "setLooping(true) " +
+                                "hash=${hashCode()}"
+                        )
 
                         installListeners()
                     }
@@ -92,9 +183,8 @@ class VideoPlayer(
 
             } else {
 
-                FileLogger.log(
-                    context,
-                    "VideoPlayer: usando test.mp4"
+                log(
+                    "usando test.mp4"
                 )
 
                 MediaPlayer.create(
@@ -102,195 +192,508 @@ class VideoPlayer(
                     R.raw.test
                 )?.apply {
 
+                    log(
+                        "MediaPlayer.create() -> " +
+                            "hash=${hashCode()}"
+                    )
+
                     setSurface(surface)
 
+                    log(
+                        "setSurface() completado " +
+                            "hash=${hashCode()}"
+                    )
+
                     isLooping = true
+
+                    log(
+                        "setLooping(true) " +
+                            "hash=${hashCode()}"
+                    )
 
                     installListeners()
                 }
             }
 
-        prepared = true
-    }
-    
-    fun setOnVideoSizeChangedListener(
-        listener: (Int, Int) -> Unit
-    ) {
-        onVideoSizeChanged = listener
-    }
+        } catch (e: Exception) {
 
-    private fun MediaPlayer.installListeners() {
-
-        setOnPreparedListener {
-
-            FileLogger.log(
-                context,
-                "MediaPlayer -> onPrepared()"
+            logException(
+                "initialize()",
+                e
             )
+
+            null
         }
 
-        setOnCompletionListener {
+    prepared =
+        mediaPlayer != null
 
-            FileLogger.log(
-                context,
-                "MediaPlayer -> onCompletion()"
-            )
-        }
+    log(
+        "initialize() finalizado -> " +
+            "prepared=$prepared " +
+            "hash=${playerHash()}"
+    )
+}
 
-        setOnSeekCompleteListener {
+// ============================================
+// VIDEO SIZE LISTENER
+// ============================================
 
-            FileLogger.log(
-                context,
-                "MediaPlayer -> onSeekComplete()"
-            )
-        }
+fun setOnVideoSizeChangedListener(
+    listener: (Int, Int) -> Unit
+) {
 
-        setOnVideoSizeChangedListener { _, width, height ->
+    onVideoSizeChanged = listener
 
-            FileLogger.log(
-                context,
-                "MediaPlayer -> VideoSize ${width}x${height}"
-            )
-        
-            onVideoSizeChanged?.invoke(
-                width,
-                height
-            )
-        }
+    log(
+        "setOnVideoSizeChangedListener()"
+    )
+}
 
-        setOnInfoListener { _, what, extra ->
+// ============================================
+// MEDIA PLAYER LISTENERS
+// ============================================
 
-            FileLogger.log(
-                context,
-                "MediaPlayer -> onInfo what=$what extra=$extra"
-            )
+private fun MediaPlayer.installListeners() {
 
-            false
-        }
+    val instanceHash =
+        hashCode()
 
-        setOnErrorListener { _, what, extra ->
+    setOnPreparedListener {
 
-            FileLogger.log(
-                context,
-                "MediaPlayer -> ERROR what=$what extra=$extra"
-            )
-
-            false
-        }
+        log(
+            "onPrepared() hash=$instanceHash"
+        )
     }
 
-    fun play() {
-        
-        mediaPlayer?.let {
-            
-            FileLogger.log(
-                context,
-                "MediaPlayer hash=${it.hashCode()}"
-            )
+    setOnCompletionListener {
 
-            if (!it.isPlaying) {
-
-                FileLogger.log(
-                    context,
-                    "MediaPlayer.start()"
-                )
-
-                it.start()
-            }
-        }
+        log(
+            "onCompletion() hash=$instanceHash"
+        )
     }
 
-    fun pause() {
+    setOnSeekCompleteListener {
 
-        mediaPlayer?.let {
-
-            if (it.isPlaying) {
-
-                FileLogger.log(
-                    context,
-                    "MediaPlayer.pause()"
-                )
-
-                it.pause()
-            }
-        }
+        log(
+            "onSeekComplete() hash=$instanceHash"
+        )
     }
 
-    fun seekTo(
-        position: Int
-    ) {
+    setOnVideoSizeChangedListener {
+            _,
+            width,
+            height ->
 
-        FileLogger.log(
-            context,
-            "MediaPlayer.seekTo($position)"
+        log(
+            "VideoSize ${width}x${height} " +
+                "hash=$instanceHash"
         )
 
-        mediaPlayer?.seekTo(position)
+        onVideoSizeChanged?.invoke(
+            width,
+            height
+        )
     }
 
-    fun getCurrentPosition(): Int {
+    setOnInfoListener {
+            _,
+            what,
+            extra ->
 
-        return mediaPlayer?.currentPosition ?: 0
-    }
-
-    fun getDuration(): Int {
-
-        return mediaPlayer?.duration ?: 0
-    }
-
-    fun getVideoWidth(): Int {
-
-        return mediaPlayer?.videoWidth ?: 0
-    }
-
-    fun getVideoHeight(): Int {
-
-        return mediaPlayer?.videoHeight ?: 0
-    }
-
-    fun isPlaying(): Boolean {
-
-        return mediaPlayer?.isPlaying ?: false
-    }
-    
-    fun setVolume(volume: Float) {
-
-        mediaPlayer?.let {
-    
-            /*
-            FileLogger.log(
-                context,
-                "setVolume hash=${it.hashCode()} volume=$volume"
-            )
-            */
-    
-            it.setVolume(volume, volume)
-        }
-    }
-
-    fun release() {
-
-        FileLogger.log(
-            context,
-            "MediaPlayer.release()"
+        log(
+            "onInfo what=$what " +
+                "extra=$extra " +
+                "hash=$instanceHash"
         )
 
-        mediaPlayer?.release()
+        false
+    }
+
+    setOnErrorListener {
+            _,
+            what,
+            extra ->
+
+        log(
+            "ERROR what=$what " +
+                "extra=$extra " +
+                "hash=$instanceHash"
+        )
+
+        false
+    }
+}
+
+// ============================================
+// PLAY
+// ============================================
+
+fun play() {
+
+    mediaPlayer?.let { player ->
+
+        val hash =
+            player.hashCode()
+
+        try {
+
+            val playing =
+                player.isPlaying
+
+            log(
+                "play() hash=$hash " +
+                    "isPlaying=$playing " +
+                    "prepared=$prepared"
+            )
+
+            if (!playing) {
+
+                log(
+                    "MediaPlayer.start() " +
+                        "hash=$hash"
+                )
+
+                player.start()
+
+            } else {
+
+                log(
+                    "start() omitido: " +
+                        "MediaPlayer ya reproduciendo " +
+                        "hash=$hash"
+                )
+            }
+
+        } catch (e: IllegalStateException) {
+
+            logException(
+                "play() IllegalStateException " +
+                    "hash=$hash",
+                e
+            )
+
+        } catch (e: Exception) {
+
+            logException(
+                "play() hash=$hash",
+                e
+            )
+        }
+
+    } ?: run {
+
+        log(
+            "play() ignorado: mediaPlayer=null"
+        )
+    }
+}
+
+// ============================================
+// PAUSE
+// ============================================
+
+fun pause() {
+
+    mediaPlayer?.let { player ->
+
+        val hash =
+            player.hashCode()
+
+        try {
+
+            if (player.isPlaying) {
+
+                log(
+                    "MediaPlayer.pause() " +
+                        "hash=$hash"
+                )
+
+                player.pause()
+
+            } else {
+
+                log(
+                    "pause() omitido: " +
+                        "MediaPlayer no estaba reproduciendo " +
+                        "hash=$hash"
+                )
+            }
+
+        } catch (e: IllegalStateException) {
+
+            logException(
+                "pause() IllegalStateException " +
+                    "hash=$hash",
+                e
+            )
+
+        } catch (e: Exception) {
+
+            logException(
+                "pause() hash=$hash",
+                e
+            )
+        }
+    }
+}
+
+// ============================================
+// SEEK
+// ============================================
+
+fun seekTo(
+    position: Int
+) {
+
+    mediaPlayer?.let { player ->
+
+        val hash =
+            player.hashCode()
+
+        try {
+
+            log(
+                "MediaPlayer.seekTo($position) " +
+                    "hash=$hash"
+            )
+
+            player.seekTo(
+                position
+            )
+
+        } catch (e: IllegalStateException) {
+
+            logException(
+                "seekTo($position) " +
+                    "IllegalStateException " +
+                    "hash=$hash",
+                e
+            )
+
+        } catch (e: Exception) {
+
+            logException(
+                "seekTo($position) " +
+                    "hash=$hash",
+                e
+            )
+        }
+
+    } ?: run {
+
+        log(
+            "seekTo($position) ignorado: " +
+                "mediaPlayer=null"
+        )
+    }
+}
+
+// ============================================
+// CURRENT POSITION
+// ============================================
+
+fun getCurrentPosition(): Int {
+
+    return try {
+
+        mediaPlayer?.currentPosition ?: 0
+
+    } catch (e: Exception) {
+
+        logException(
+            "getCurrentPosition()",
+            e
+        )
+
+        0
+    }
+}
+
+// ============================================
+// DURATION
+// ============================================
+
+fun getDuration(): Int {
+
+    return try {
+
+        mediaPlayer?.duration ?: 0
+
+    } catch (e: Exception) {
+
+        logException(
+            "getDuration()",
+            e
+        )
+
+        0
+    }
+}
+
+// ============================================
+// VIDEO WIDTH
+// ============================================
+
+fun getVideoWidth(): Int {
+
+    return try {
+
+        mediaPlayer?.videoWidth ?: 0
+
+    } catch (e: Exception) {
+
+        logException(
+            "getVideoWidth()",
+            e
+        )
+
+        0
+    }
+}
+
+// ============================================
+// VIDEO HEIGHT
+// ============================================
+
+fun getVideoHeight(): Int {
+
+    return try {
+
+        mediaPlayer?.videoHeight ?: 0
+
+    } catch (e: Exception) {
+
+        logException(
+            "getVideoHeight()",
+            e
+        )
+
+        0
+    }
+}
+
+// ============================================
+// IS PLAYING
+// ============================================
+
+fun isPlaying(): Boolean {
+
+    return try {
+
+        mediaPlayer?.isPlaying ?: false
+
+    } catch (e: Exception) {
+
+        logException(
+            "isPlaying()",
+            e
+        )
+
+        false
+    }
+}
+
+// ============================================
+// VOLUME
+// ============================================
+
+fun setVolume(
+    volume: Float
+) {
+
+    mediaPlayer?.let { player ->
+
+        try {
+
+            player.setVolume(
+                volume,
+                volume
+            )
+
+        } catch (e: Exception) {
+
+            logException(
+                "setVolume($volume) " +
+                    "hash=${player.hashCode()}",
+                e
+            )
+        }
+    }
+}
+
+// ============================================
+// RELEASE
+// ============================================
+
+fun release() {
+
+    val player =
+        mediaPlayer
+
+    if (player == null) {
+
+        log(
+            "release() ignorado: " +
+                "mediaPlayer=null"
+        )
+
+        prepared = false
+
+        return
+    }
+
+    val hash =
+        player.hashCode()
+
+    log(
+        "MediaPlayer.release() " +
+            "hash=$hash"
+    )
+
+    try {
+
+        player.release()
+
+    } catch (e: Exception) {
+
+        logException(
+            "release() hash=$hash",
+            e
+        )
+
+    } finally {
 
         mediaPlayer = null
 
         prepared = false
+
+        log(
+            "release() finalizado " +
+                "hash=$hash"
+        )
     }
-    
-    fun reload(
-        surface: Surface
-    ) {
-    
-        release()
-    
-        initialize(surface)
-    
-        play()
-    
-    }
+}
+
+// ============================================
+// RELOAD
+// ============================================
+
+fun reload(
+    surface: Surface
+) {
+
+    log(
+        "reload()"
+    )
+
+    release()
+
+    initialize(
+        surface
+    )
+
+    play()
+}
+
 }

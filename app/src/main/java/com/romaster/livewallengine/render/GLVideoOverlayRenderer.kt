@@ -2,6 +2,7 @@ package com.romaster.livewallengine.render
 
 import android.content.Context
 import android.view.Surface
+import android.os.SystemClock
 import com.romaster.livewallengine.video.OverlayVideoPlayer
 import com.romaster.livewallengine.model.OverlaySettings
 import com.romaster.livewallengine.model.OverlayAspectMode
@@ -21,20 +22,59 @@ class GLVideoOverlayRenderer(
     
     private val overlayPlayer =
     OverlayVideoPlayer(context)
+    
+    private val fadeDurationMs = 3000L
+
+    private var fadeStartTime = 0L
+    
+    private var fadeAlpha = 0f
 
     fun initialize() {
 
         externalTexture.initialize()
-
+    
         quadRenderer.initialize()
-        
+    
         updateTransform()
-        
+    
         overlayPlayer.initialize(
             externalTexture.getSurface()
         )
-        
+    
         overlayPlayer.play()
+    
+        fadeStartTime =
+            SystemClock.elapsedRealtime()
+    
+        fadeAlpha = 0f
+    }
+    
+    private fun updateFade() {
+
+        if (fadeStartTime <= 0L) {
+    
+            fadeAlpha = 1f
+    
+            return
+        }
+    
+        val elapsed =
+            SystemClock.elapsedRealtime() -
+            fadeStartTime
+    
+        fadeAlpha =
+            (
+                elapsed.toFloat() /
+                fadeDurationMs.toFloat()
+            ).coerceIn(
+                0f,
+                1f
+            )
+    
+        if (fadeAlpha >= 1f) {
+    
+            fadeStartTime = 0L
+        }
     }
 
     fun update() {
@@ -46,27 +86,28 @@ class GLVideoOverlayRenderer(
 
         updateTransform()
     
+        updateFade()
+    
         val overlay =
             ProjectManager
                 .getProject()
                 .overlay
     
         quadRenderer.draw(
-
+    
             externalTexture.getTextureId(),
-        
+    
             externalTexture.getTextureMatrix(),
-        
-            overlay.opacity,
-        
+    
+            overlay.opacity * fadeAlpha,
+    
             overlay.chromaEnabled,
-        
+    
             overlay.chromaColor,
-        
+    
             overlay.threshold,
-        
+    
             overlay.softness
-        
         )
     }
 

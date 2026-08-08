@@ -43,11 +43,36 @@ class GLWallpaperService : WallpaperService() {
 
         private var renderThread: Thread? = null
 
-        @Volatile
-        private var running = false
+        /*
+         * CAMBIO:
+         *
+         * Ya no usamos un único "running" global para controlar
+         * todas las generaciones del RenderThread.
+         *
+         * Cada RenderThread tendrá su propio estado de ejecución.
+         *
+         * Esto evita que un thread nuevo pueda quedar afectado
+         * por el estado de un thread anterior.
+         */
 
         @Volatile
         private var visible = false
+
+        /*
+         * CAMBIO:
+         *
+         * Identificador de generación del RenderThread.
+         *
+         * Cada vez que creamos un RenderThread nuevo incrementamos
+         * este valor.
+         *
+         * Un thread antiguo podrá comprobar que ya no es la
+         * generación válida y finalizar sin tocar recursos
+         * pertenecientes al thread nuevo.
+         */
+
+        @Volatile
+        private var renderGeneration = 0L
 
         // ============================================
         // POSICIONES GUARDADAS
@@ -65,7 +90,7 @@ class GLWallpaperService : WallpaperService() {
             CueLoopController()
 
         private var lastRevision = -1
-        
+
         private var lastOverlayLoopEnabled = false
 
         private var lastLockState = false
@@ -88,10 +113,22 @@ class GLWallpaperService : WallpaperService() {
             if (locked != lastLockState) {
 
                 lastLockState = locked
+                
+                val project =
+                    ProjectManager.getProject()
+                
+                val clock =
+                    project.clock
 
                 if (locked) {
 
                     deviceLocked = true
+                    
+                    renderer?.setClockLockScreenState(
+                        visible =
+                            clock.enabledOnLockScreen,
+                        fadeIn = false
+                    )
 
                     renderer
                         ?.getVideoOverlayRenderer()
@@ -138,6 +175,11 @@ class GLWallpaperService : WallpaperService() {
                         this@GLWallpaperService,
                         "UNLOCKED"
                     )
+                    
+                    renderer?.setClockLockScreenState(
+                        visible = true,
+                        fadeIn = !clock.enabledOnLockScreen
+                    )
 
                     renderer
                         ?.getVideoOverlayRenderer()
@@ -162,6 +204,16 @@ class GLWallpaperService : WallpaperService() {
                 this@GLWallpaperService,
                 "onSurfaceCreated()"
             )
+
+            /*
+             * CAMBIO:
+             *
+             * El Surface puede ser creado antes o después de que
+             * Android marque el Engine como visible.
+             *
+             * Por eso solamente iniciamos si realmente estamos
+             * visibles.
+             */
 
             if (visible) {
                 startRendering()
@@ -190,6 +242,11 @@ class GLWallpaperService : WallpaperService() {
                 this@GLWallpaperService,
                 "onSurfaceChanged: ${width}x${height}"
             )
+
+            renderer?.onSurfaceChanged(
+                width,
+                height
+            )
         }
 
         // ============================================
@@ -210,6 +267,13 @@ class GLWallpaperService : WallpaperService() {
             )
 
             if (visible) {
+
+                /*
+                 * CAMBIO:
+                 *
+                 * startRendering() será responsable de comprobar
+                 * si existe otro thread activo.
+                 */
 
                 startRendering()
 
@@ -232,6 +296,13 @@ class GLWallpaperService : WallpaperService() {
                 "onSurfaceDestroyed()"
             )
 
+            /*
+             * CAMBIO:
+             *
+             * Primero detenemos completamente el RenderThread.
+             * Recién después eliminamos la referencia al Surface.
+             */
+
             stopRendering()
 
             this.holder = null
@@ -250,371 +321,323 @@ class GLWallpaperService : WallpaperService() {
                 "onDestroy()"
             )
 
+            /*
+             * CAMBIO:
+             *
+             * Invalidamos inmediatamente cualquier generación
+             * anterior antes de detener el thread.
+             */
+
+            renderGeneration++
+
             stopRendering()
+
+            this.holder = null
+            this.visible = false
 
             super.onDestroy()
         }
-
+        
         // ============================================
         // START RENDERING
         // ============================================
 
         private fun startRendering() {
 
+            /*
+             * CAMBIO:
+             *
+             * Si ya existe un RenderThread vivo, no creamos otro.
+             *
+             * Esto es especialmente importante porque Android puede
+             * enviar varios onVisibilityChanged(true) muy cerca entre sí.
+             */
+
             if (renderThread?.isAlive == true) {
-                return
-            }
-
-            running = true
-
-            renderThread = Thread {
 
                 FileLogger.log(
                     this@GLWallpaperService,
-                    "RenderThread iniciado"
+                    "startRendering(): RenderThread ya activo"
                 )
 
-                try {
+                return
+            }
 
-                    val surfaceHolder =
-                        holder ?: return@Thread
+            /*
+             * CAMBIO:
+             *
+             * Nueva generación.
+             *
+             * El valor queda capturado por este RenderThread y no cambia
+             * para él aunque posteriormente se cree otro.
+             */
 
-                    // ====================================
-                    // CREAR RENDERER
-                    // ====================================
+            renderGeneration++
 
-                    renderer =
-                        GLRenderer(
-                            this@GLWallpaperService,
-                            surfaceHolder
-                        )
+            val myGeneration =
+                renderGeneration
 
-                    renderer!!.initialize()
+            /*
+             * CAMBIO:
+             *
+             * El estado running pertenece conceptualmente a ESTA
+             * generación.
+             *
+             * No usamos un running global.
+             */
 
-                    // ====================================
-                    // VIDEO DE FONDO
-                    // ====================================
+            val threadRunning =
+                java.util.concurrent.atomic.AtomicBoolean(true)
 
-                    videoPlayer =
-                        VideoPlayer(
-                            this@GLWallpaperService
-                        )
+            /*
+             * CAMBIO:
+             *
+             * Validamos todas las condiciones antes de crear recursos
+             * gráficos y reproductores.
+             */
 
-                    videoPlayer!!.initialize(
-                        renderer!!.getVideoSurface()
+            val surfaceHolder =
+                holder
+
+            if (
+                surfaceHolder == null ||
+                !surfaceHolder.surface.isValid ||
+                !visible
+            ) {
+
+                FileLogger.log(
+                    this@GLWallpaperService,
+                    "startRendering(): inicio abortado -> " +
+                        "holder=${surfaceHolder != null}, " +
+                        "surfaceValid=${surfaceHolder?.surface?.isValid == true}, " +
+                        "visible=$visible"
+                )
+
+                return
+            }
+
+            /*
+             * CAMBIO:
+             *
+             * El thread recibe su propia referencia al SurfaceHolder.
+             *
+             * No dependemos de que "holder" siga apuntando al mismo
+             * Surface mientras el thread está arrancando.
+             */
+
+            renderThread =
+                Thread {
+
+                    FileLogger.log(
+                        this@GLWallpaperService,
+                        "RenderThread iniciado " +
+                            "(generation=$myGeneration)"
                     )
 
-                    videoPlayer!!.setOnVideoSizeChangedListener {
+                    try {
 
-                        width,
-                        height ->
-
-                        renderer?.setVideoSize(
-                            width,
-                            height
-                        )
-                    }
-
-                    bgSoundPlayer =
-                        WallpaperSoundPlayer(
-                            this@GLWallpaperService
-                        )
-
-                    overlaySoundPlayer =
-                        WallpaperSoundPlayer(
-                            this@GLWallpaperService
-                        )
-
-                    // ====================================
-                    // RESTAURAR VIDEO BG
-                    // ====================================
-
-                    if (savedPosition > 0) {
-
-                        videoPlayer!!.seekTo(
-                            savedPosition
-                        )
-
-                        FileLogger.log(
-                            this@GLWallpaperService,
-                            "Video restaurado en posición: ${savedPosition}ms"
-                        )
-                    }
-
-                    videoPlayer!!.play()
-
-                    // ====================================
-                    // VIDEO OVERLAY
-                    // ====================================
-
-                    renderer!!
-                        .getVideoOverlayRenderer()
-                        ?.let { overlay ->
-
-                            val project =
-                                ProjectManager.getProject()
-                            
-                            lastOverlayLoopEnabled =
-                                project.overlayLoopEnabled
-
-                            // --------------------------------
-                            // Restaurar posición
-                            // --------------------------------
-
-                            if (
-                                savedOverlayPosition > 0
-                            ) {
-
-                                overlay.seekTo(
-                                    savedOverlayPosition
-                                )
-
-                                FileLogger.log(
-                                    this@GLWallpaperService,
-                                    "Overlay restaurado en posición: ${savedOverlayPosition}ms"
-                                )
-                            }
-
-                            // --------------------------------
-                            // Cargar cues
-                            // --------------------------------
-
-                            overlayCueController.cueLockedMs =
-                                project.cueLockedMs
-
-                            overlayCueController.cueUnlockedMs =
-                                project.cueUnlockedMs
-
-                            // --------------------------------
-                            // Configurar looping
-                            //
-                            // Cues OFF:
-                            // MediaPlayer controla el loop.
-                            //
-                            // Cues ON:
-                            // nuestro sistema controla
-                            // los loops.
-                            // --------------------------------
-
-                            overlay.setLooping(
-                                !project.overlayLoopEnabled
-                            )
-
-                            // --------------------------------
-                            // Completion
-                            // --------------------------------
-
-                            overlay.setOnCompletionListener {
-
-                                val currentProject =
-                                    ProjectManager.getProject()
-
-                                FileLogger.log(
-                                    this@GLWallpaperService,
-                                    "Overlay -> onCompletion()"
-                                )
-
-                                // --------------------------------
-                                // Si los cues están desactivados,
-                                // MediaPlayer tiene looping=true,
-                                // por lo que normalmente nunca
-                                // llegaremos aquí.
-                                // --------------------------------
-
-                                if (
-                                    !currentProject.overlayLoopEnabled
-                                ) {
-
-                                    FileLogger.log(
-                                        this@GLWallpaperService,
-                                        "Overlay -> completion ignorado: cues desactivados"
-                                    )
-
-                                    return@setOnCompletionListener
-                                }
-
-                                // --------------------------------
-                                // Si el dispositivo está bloqueado
-                                // el final natural no controla
-                                // el estado.
-                                //
-                                // El cueLocked se controla desde
-                                // el RenderThread.
-                                // --------------------------------
-
-                                if (
-                                    currentProject.previewLocked
-                                ) {
-
-                                    FileLogger.log(
-                                        this@GLWallpaperService,
-                                        "Overlay -> completion ignorado: dispositivo bloqueado"
-                                    )
-
-                                    return@setOnCompletionListener
-                                }
-
-                                // --------------------------------
-                                // DISPOSITIVO DESBLOQUEADO
-                                // --------------------------------
-
-                                if (
-                                    currentProject.cueUnlockedMode ==
-                                    CueMode.LOOP
-                                ) {
-
-                                    FileLogger.log(
-                                        this@GLWallpaperService,
-                                        "CueUnlocked -> completion -> seekTo(${currentProject.cueUnlockedMs})"
-                                    )
-
-                                    overlay.seekTo(
-                                        currentProject.cueUnlockedMs
-                                    )
-
-                                    overlay.play()
-
-                                } else {
-
-                                    FileLogger.log(
-                                        this@GLWallpaperService,
-                                        "CueUnlocked -> completion -> pause(end)"
-                                    )
-
-                                    overlay.pause()
-                                }
-                            }
-
-                            // --------------------------------
-                            // Iniciar reproducción
-                            // --------------------------------
-
-                            overlay.play()
-                        }
-
-                    // ====================================
-                    // AUDIO
-                    // ====================================
-
-                    initializeAudioConfiguration()
-
-                    var frameCount = 0
-
-                    // ====================================
-                    // RENDER LOOP
-                    // ====================================
-
-                    while (running) {
-
-                        // --------------------------------
-                        // Estado real del dispositivo
-                        // --------------------------------
-
-                        updateCueState()
-
-                        // --------------------------------
-                        // Audio
-                        // --------------------------------
-
-                        applyAudioConfiguration()
-
-                        // --------------------------------
-                        // Detectar cambios de proyecto
-                        // --------------------------------
-
-                        val revision =
-                            ProjectManager.getRevision()
+                        // ====================================
+                        // VALIDACIÓN INICIAL
+                        // ====================================
 
                         if (
-                            revision != lastRevision
+                            !isGenerationActive(
+                                myGeneration,
+                                threadRunning
+                            )
                         ) {
-                        
-                            lastRevision =
-                                revision
-                        
-                            initializeAudioConfiguration()
-                        
-                            renderer
-                                ?.getVideoOverlayRenderer()
-                                ?.let { overlay ->
-                        
-                                    val project =
-                                        ProjectManager.getProject()
-                        
-                                    // ============================================
-                                    // CAMBIO DEL OVERLAY LOOP INTELIGENTE
-                                    // ============================================
-                        
-                                    if (
-                                        project.overlayLoopEnabled !=
-                                        lastOverlayLoopEnabled
-                                    ) {
-                        
-                                        lastOverlayLoopEnabled =
-                                            project.overlayLoopEnabled
-                        
-                                        FileLogger.log(
-                                            this@GLWallpaperService,
-                                            "Overlay Loop Inteligente cambió a ${project.overlayLoopEnabled} -> seekTo(0) + play()"
-                                        )
-                        
-                                        overlay.seekTo(0)
-                        
-                                        overlay.play()
-                                    }
-                        
-                                    // ============================================
-                                    // CONFIGURAR LOOP NATIVO DEL MEDIAPLAYER
-                                    // ============================================
-                        
-                                    overlay.setLooping(
-                                        !project.overlayLoopEnabled
-                                    )
-                                }
+
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "RenderThread $myGeneration abortado antes de inicializar"
+                            )
+
+                            return@Thread
                         }
 
-                        // --------------------------------
-                        // OVERLAY
-                        // --------------------------------
+                        if (
+                            !surfaceHolder.surface.isValid
+                        ) {
 
-                        renderer
-                            ?.getVideoOverlayRenderer()
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "RenderThread $myGeneration: Surface no válida"
+                            )
+
+                            return@Thread
+                        }
+
+                        // ====================================
+                        // CREAR RENDERER
+                        // ====================================
+
+                        renderer =
+                            GLRenderer(
+                                this@GLWallpaperService,
+                                surfaceHolder
+                            )
+
+                        renderer!!.initialize()
+
+                        /*
+                         * CAMBIO:
+                         *
+                         * Después de inicializar OpenGL volvemos a
+                         * comprobar que esta generación sigue siendo válida.
+                         *
+                         * Si Android destruyó el Surface durante
+                         * initialize(), liberamos inmediatamente.
+                         */
+
+                        if (
+                            !isGenerationActive(
+                                myGeneration,
+                                threadRunning
+                            )
+                        ) {
+
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "RenderThread $myGeneration invalidado después de GLRenderer.initialize()"
+                            )
+
+                            return@Thread
+                        }
+
+                        // ====================================
+                        // VIDEO DE FONDO
+                        // ====================================
+
+                        videoPlayer =
+                            VideoPlayer(
+                                this@GLWallpaperService,
+                                "BG"
+                            )
+
+                        videoPlayer!!.initialize(
+                            renderer!!.getVideoSurface()
+                        )
+
+                        videoPlayer!!.setOnVideoSizeChangedListener {
+
+                            width,
+                            height ->
+
+                            /*
+                             * CAMBIO:
+                             *
+                             * Los callbacks del VideoPlayer también
+                             * pueden llegar después de que la generación
+                             * haya sido invalidada.
+                             */
+
+                            if (
+                                myGeneration !=
+                                renderGeneration
+                            ) {
+
+                                return@setOnVideoSizeChangedListener
+                            }
+
+                            renderer?.setVideoSize(
+                                width,
+                                height
+                            )
+                        }
+
+                        // ====================================
+                        // AUDIO PLAYERS
+                        // ====================================
+
+                        bgSoundPlayer =
+                            WallpaperSoundPlayer(
+                                this@GLWallpaperService
+                            )
+
+                        overlaySoundPlayer =
+                            WallpaperSoundPlayer(
+                                this@GLWallpaperService
+                            )
+
+                        /*
+                         * CAMBIO:
+                         *
+                         * Comprobación antes de continuar con la
+                         * reproducción.
+                         */
+
+                        if (
+                            !isGenerationActive(
+                                myGeneration,
+                                threadRunning
+                            )
+                        ) {
+
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "RenderThread $myGeneration invalidado después de crear players"
+                            )
+
+                            return@Thread
+                        }
+
+                        // ====================================
+                        // RESTAURAR VIDEO BG
+                        // ====================================
+
+                        if (
+                            savedPosition > 0
+                        ) {
+
+                            videoPlayer!!.seekTo(
+                                savedPosition
+                            )
+
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "Video restaurado en posición: ${savedPosition}ms"
+                            )
+                        }
+
+                        renderer!!.startFadeIn()
+
+                        videoPlayer!!.play()
+
+                        // ====================================
+                        // VIDEO OVERLAY
+                        // ====================================
+
+                        renderer!!
+                            .getVideoOverlayRenderer()
                             ?.let { overlay ->
-
-                                val position =
-                                    overlay.getCurrentPosition()
-
-                                val duration =
-                                    overlay.getDuration()
-
-                                // --------------------------------
-                                // Guardar duración real
-                                // --------------------------------
-
-                                if (
-                                    duration > 0 &&
-                                    ProjectManager
-                                        .getProject()
-                                        .overlayDurationMs !=
-                                            duration.toLong()
-                                ) {
-
-                                    ProjectManager
-                                        .getProject()
-                                        .overlayDurationMs =
-                                        duration.toLong()
-
-                                    ProjectManager.saveProject(
-                                        ProjectManager.getProject()
-                                    )
-                                }
-
-                                // --------------------------------
-                                // Leer cues
-                                // --------------------------------
 
                                 val project =
                                     ProjectManager.getProject()
+
+                                lastOverlayLoopEnabled =
+                                    project.overlayLoopEnabled
+
+                                // --------------------------------
+                                // Restaurar posición
+                                // --------------------------------
+
+                                if (
+                                    savedOverlayPosition > 0
+                                ) {
+
+                                    overlay.seekTo(
+                                        savedOverlayPosition
+                                    )
+
+                                    FileLogger.log(
+                                        this@GLWallpaperService,
+                                        "Overlay restaurado en posición: ${savedOverlayPosition}ms"
+                                    )
+                                }
+
+                                // --------------------------------
+                                // Cargar cues
+                                // --------------------------------
 
                                 overlayCueController.cueLockedMs =
                                     project.cueLockedMs
@@ -623,202 +646,584 @@ class GLWallpaperService : WallpaperService() {
                                     project.cueUnlockedMs
 
                                 // --------------------------------
-                                // LÓGICA DEL OVERLAY
+                                // Configurar looping
                                 // --------------------------------
 
-                                if (
-                                    project.overlayLoopEnabled &&
-                                    duration > 0
-                                ) {
+                                overlay.setLooping(
+                                    !project.overlayLoopEnabled
+                                )
 
-                                    // ============================
-                                    // BLOQUEADO
-                                    // ============================
+                                // --------------------------------
+                                // Completion
+                                // --------------------------------
+
+                                overlay.setOnCompletionListener {
+
+                                    /*
+                                     * CAMBIO:
+                                     *
+                                     * Un callback viejo nunca debe
+                                     * controlar el overlay de una
+                                     * generación posterior.
+                                     */
+
+                                    if (
+                                        myGeneration !=
+                                        renderGeneration
+                                    ) {
+
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "Overlay completion ignorado: generation=$myGeneration ya no activa"
+                                        )
+
+                                        return@setOnCompletionListener
+                                    }
+
+                                    val currentProject =
+                                        ProjectManager.getProject()
+
+                                    FileLogger.log(
+                                        this@GLWallpaperService,
+                                        "Overlay -> onCompletion()"
+                                    )
+
+                                    // --------------------------------
+                                    // Cues desactivados
+                                    // --------------------------------
+
+                                    if (
+                                        !currentProject.overlayLoopEnabled
+                                    ) {
+
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "Overlay -> completion ignorado: cues desactivados"
+                                        )
+
+                                        return@setOnCompletionListener
+                                    }
+
+                                    // --------------------------------
+                                    // Dispositivo bloqueado
+                                    // --------------------------------
 
                                     if (deviceLocked) {
 
-                                        if (
-                                            position >=
-                                            overlayCueController.cueLockedMs
-                                        ) {
-
-                                            if (
-                                                project.cueLockedMode ==
-                                                CueMode.LOOP
-                                            ) {
-
-                                                FileLogger.log(
-                                                    this@GLWallpaperService,
-                                                    "CueLocked -> seekTo(0)"
-                                                )
-
-                                                overlay.seekTo(0)
-
-                                            } else {
-
-                                                FileLogger.log(
-                                                    this@GLWallpaperService,
-                                                    "CueLocked -> pause()"
-                                                )
-
-                                                overlay.pause()
-                                            }
-                                        }
-
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "Overlay -> completion ignorado: dispositivo bloqueado"
+                                        )
+                                    
+                                        return@setOnCompletionListener
                                     }
 
-                                    // ============================
-                                    // DESBLOQUEADO
-                                    // ============================
+                                    // --------------------------------
+                                    // DISPOSITIVO DESBLOQUEADO
+                                    // --------------------------------
 
-                                    else {
+                                    if (
+                                        currentProject.cueUnlockedMode ==
+                                        CueMode.LOOP
+                                    ) {
 
-                                        // --------------------------------
-                                        // IMPORTANTE:
-                                        //
-                                        // NO comprobamos:
-                                        //
-                                        // position >= duration - 50
-                                        //
-                                        // El final real ahora lo informa
-                                        // MediaPlayer mediante
-                                        // onCompletion().
-                                        // --------------------------------
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "CueUnlocked -> completion -> seekTo(${currentProject.cueUnlockedMs})"
+                                        )
+
+                                        overlay.seekTo(
+                                            currentProject.cueUnlockedMs
+                                        )
+
+                                        overlay.play()
+
+                                    } else {
+
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "CueUnlocked -> completion -> pause(end)"
+                                        )
+
+                                        overlay.pause()
                                     }
+                                }
+
+                                // --------------------------------
+                                // Iniciar reproducción
+                                // --------------------------------
+
+                                if (
+                                    isGenerationActive(
+                                        myGeneration,
+                                        threadRunning
+                                    )
+                                ) {
+
+                                    overlay.play()
                                 }
                             }
 
-                        // --------------------------------
-                        // Dibujar
-                        // --------------------------------
+                        // ====================================
+                        // AUDIO
+                        // ====================================
 
-                        renderer!!.drawFrame()
+                        initializeAudioConfiguration()
 
-                        frameCount++
+                        var frameCount = 0
 
-                        if (
-                            frameCount % 120 == 0
+                        // ====================================
+                        // RENDER LOOP
+                        // ====================================
+
+                        while (
+                            isGenerationActive(
+                                myGeneration,
+                                threadRunning
+                            )
                         ) {
 
-                            FileLogger.log(
-                                this@GLWallpaperService,
-                                "Frames: $frameCount"
-                            )
+                            // --------------------------------
+                            // Estado real del dispositivo
+                            // --------------------------------
+
+                            updateCueState()
+
+                            // --------------------------------
+                            // Audio
+                            // --------------------------------
+
+                            applyAudioConfiguration()
+
+                            // --------------------------------
+                            // Detectar cambios de proyecto
+                            // --------------------------------
+
+                            val revision =
+                                ProjectManager.getRevision()
+
+                            if (
+                                revision != lastRevision
+                            ) {
+
+                                lastRevision =
+                                    revision
+
+                                initializeAudioConfiguration()
+
+                                renderer
+                                    ?.getVideoOverlayRenderer()
+                                    ?.let { overlay ->
+
+                                        val project =
+                                            ProjectManager.getProject()
+
+                                        // ============================================
+                                        // CAMBIO DEL OVERLAY LOOP INTELIGENTE
+                                        // ============================================
+
+                                        if (
+                                            project.overlayLoopEnabled !=
+                                            lastOverlayLoopEnabled
+                                        ) {
+
+                                            lastOverlayLoopEnabled =
+                                                project.overlayLoopEnabled
+
+                                            FileLogger.log(
+                                                this@GLWallpaperService,
+                                                "Overlay Loop Inteligente cambió a ${project.overlayLoopEnabled} -> seekTo(0) + play()"
+                                            )
+
+                                            overlay.seekTo(0)
+
+                                            overlay.play()
+                                        }
+
+                                        // ============================================
+                                        // LOOP NATIVO DEL MEDIAPLAYER
+                                        // ============================================
+
+                                        overlay.setLooping(
+                                            !project.overlayLoopEnabled
+                                        )
+                                    }
+                            }
+
+                            // --------------------------------
+                            // OVERLAY
+                            // --------------------------------
+
+                            renderer
+                                ?.getVideoOverlayRenderer()
+                                ?.let { overlay ->
+
+                                    val position =
+                                        overlay.getCurrentPosition()
+
+                                    val duration =
+                                        overlay.getDuration()
+
+                                    // --------------------------------
+                                    // Guardar duración real
+                                    // --------------------------------
+                                    
+                                    if (
+                                        duration > 0 &&
+                                        ProjectManager
+                                            .getProject()
+                                            .overlayDurationMs !=
+                                            duration.toLong()
+                                    ) {
+
+                                        ProjectManager
+                                            .getProject()
+                                            .overlayDurationMs =
+                                            duration.toLong()
+
+                                        ProjectManager.saveProject(
+                                            ProjectManager.getProject()
+                                        )
+                                    }
+
+                                    // --------------------------------
+                                    // Leer cues
+                                    // --------------------------------
+
+                                    val project =
+                                        ProjectManager.getProject()
+
+                                    overlayCueController.cueLockedMs =
+                                        project.cueLockedMs
+
+                                    overlayCueController.cueUnlockedMs =
+                                        project.cueUnlockedMs
+
+                                    // --------------------------------
+                                    // LÓGICA DEL OVERLAY
+                                    // --------------------------------
+
+                                    if (
+                                        project.overlayLoopEnabled &&
+                                        duration > 0
+                                    ) {
+
+                                        // ============================
+                                        // BLOQUEADO
+                                        // ============================
+
+                                        if (deviceLocked) {
+
+                                            if (
+                                                position >=
+                                                overlayCueController.cueLockedMs
+                                            ) {
+
+                                                if (
+                                                    project.cueLockedMode ==
+                                                    CueMode.LOOP
+                                                ) {
+
+                                                    FileLogger.log(
+                                                        this@GLWallpaperService,
+                                                        "CueLocked -> seekTo(0)"
+                                                    )
+
+                                                    overlay.seekTo(0)
+
+                                                } else {
+
+                                                    FileLogger.log(
+                                                        this@GLWallpaperService,
+                                                        "CueLocked -> pause()"
+                                                    )
+
+                                                    overlay.pause()
+                                                }
+                                            }
+                                        }
+
+                                        // ============================
+                                        // DESBLOQUEADO
+                                        // ============================
+
+                                        else {
+
+                                            /*
+                                             * El final natural sigue
+                                             * siendo responsabilidad de
+                                             * onCompletion().
+                                             */
+                                        }
+                                    }
+                                }
+
+                            // --------------------------------
+                            // Dibujar
+                            // --------------------------------
+
+                            renderer?.drawFrame()
+
+                            frameCount++
+
+                            if (
+                                frameCount % 120 == 0
+                            ) {
+
+                                FileLogger.log(
+                                    this@GLWallpaperService,
+                                    "Frames: $frameCount"
+                                )
+                            }
+
+                            Thread.sleep(16)
                         }
 
-                        Thread.sleep(16)
-                    }
-
-                } catch (e: InterruptedException) {
-
-                    FileLogger.log(
-                        this@GLWallpaperService,
-                        "RenderThread detenido"
-                    )
-
-                } catch (e: Exception) {
-
-                    FileLogger.logException(
-                        this@GLWallpaperService,
-                        "RenderThread",
-                        e
-                    )
-
-                } finally {
-
-                    // ========================================
-                    // GUARDAR POSICIONES
-                    // ========================================
-
-                    videoPlayer?.let {
-
-                        savedPosition =
-                            it.getCurrentPosition()
+                    } catch (e: InterruptedException) {
 
                         FileLogger.log(
                             this@GLWallpaperService,
-                            "Video guardado en posición: ${savedPosition}ms"
+                            "RenderThread detenido " +
+                                "(generation=$myGeneration)"
                         )
-                    }
 
-                    renderer
-                        ?.getVideoOverlayRenderer()
-                        ?.let { overlay ->
+                    } catch (e: Exception) {
 
-                            val project =
-                                ProjectManager.getProject()
+                        FileLogger.logException(
+                            this@GLWallpaperService,
+                            "RenderThread generation=$myGeneration",
+                            e
+                        )
 
-                            savedOverlayPosition =
-                                if (
-                                    deviceLocked &&
-                                    project.cueLockedMode ==
-                                    CueMode.PAUSE
-                                ) {
+                    } finally {
 
-                                    0
+                        // ========================================
+                        // INVALIDAR ESTE THREAD
+                        // ========================================
 
-                                } else {
+                        threadRunning.set(false)
 
-                                    overlay.getCurrentPosition()
-                                }
+                        // ========================================
+                        // GUARDAR POSICIONES
+                        // ========================================
+
+                        videoPlayer?.let {
+
+                            savedPosition =
+                                it.getCurrentPosition()
 
                             FileLogger.log(
                                 this@GLWallpaperService,
-                                "Overlay guardado en posición: ${savedOverlayPosition}ms"
+                                "Video guardado en posición: ${savedPosition}ms"
                             )
                         }
 
-                    // ========================================
-                    // RELEASE
-                    // ========================================
+                        renderer
+                            ?.getVideoOverlayRenderer()
+                            ?.let { overlay ->
 
-                    videoPlayer?.release()
-                    videoPlayer = null
+                                val project =
+                                    ProjectManager.getProject()
 
-                    bgSoundPlayer?.release()
-                    bgSoundPlayer = null
+                                savedOverlayPosition =
+                                    if (
+                                        deviceLocked &&
+                                        project.cueLockedMode ==
+                                        CueMode.PAUSE
+                                    ) {
 
-                    overlaySoundPlayer?.release()
-                    overlaySoundPlayer = null
+                                        0
 
-                    renderer?.release()
-                    renderer = null
+                                    } else {
 
-                    FileLogger.log(
-                        this@GLWallpaperService,
-                        "RenderThread finalizado"
-                    )
+                                        overlay.getCurrentPosition()
+                                    }
+
+                                FileLogger.log(
+                                    this@GLWallpaperService,
+                                    "Overlay guardado en posición: ${savedOverlayPosition}ms"
+                                )
+                            }
+                        
+                        // ========================================
+                        // LIMPIAR SURFACE
+                        // ========================================
+                        
+                        if (
+                            myGeneration != renderGeneration
+                        ) {
+                        
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "RenderThread $myGeneration -> limpiando Surface antes de release"
+                            )
+                        
+                            renderer?.clearSurface()
+                        }
+
+                        // ========================================
+                        // RELEASE
+                        // ========================================
+
+                        videoPlayer?.release()
+                        videoPlayer = null
+
+                        bgSoundPlayer?.release()
+                        bgSoundPlayer = null
+
+                        overlaySoundPlayer?.release()
+                        overlaySoundPlayer = null
+
+                        renderer?.release()
+                        renderer = null
+
+                        FileLogger.log(
+                            this@GLWallpaperService,
+                            "RenderThread finalizado " +
+                                "(generation=$myGeneration)"
+                        )
+                    }
+                    
                 }
-            }
-
+            
             renderThread!!.start()
         }
 
+        // ============================================
+        // FUNCIÓN AUXILIAR - GENERACIÓN ACTIVA
+        // ============================================
+
+        private fun isGenerationActive(
+            generation: Long,
+            threadRunning:
+                java.util.concurrent.atomic.AtomicBoolean
+        ): Boolean {
+
+            return (
+                threadRunning.get() &&
+                generation == renderGeneration &&
+                visible
+            )
+        }
+        
         // ============================================
         // STOP RENDERING
         // ============================================
 
         private fun stopRendering() {
 
-            running = false
+            FileLogger.log(
+                this@GLWallpaperService,
+                "RenderThread deteniendo"
+            )
 
-            renderThread?.interrupt()
+            /*
+             * ============================================
+             * INVALIDAR GENERACIÓN
+             * ============================================
+             *
+             * Incrementamos la generación antes de detener
+             * el thread.
+             *
+             * De esta manera cualquier callback perteneciente
+             * al RenderThread anterior queda automáticamente
+             * invalidado.
+             */
+
+            renderGeneration++
+
+            val thread =
+                renderThread
+
+            /*
+             * Si no existe un thread activo, no hay nada
+             * que detener.
+             */
+
+            if (thread == null) {
+
+                FileLogger.log(
+                    this@GLWallpaperService,
+                    "stopRendering(): no hay RenderThread activo"
+                )
+
+                return
+            }
+
+            /*
+             * El RenderThread comprueba su propia generación
+             * mediante isGenerationActive().
+             *
+             * Además lo interrumpimos para que salga
+             * inmediatamente de Thread.sleep().
+             */
+
+            thread.interrupt()
+
+            /*
+             * Esperamos a que el thread termine completamente.
+             *
+             * Esto es importante:
+             *
+             * onSurfaceDestroyed()
+             * onDestroy()
+             * y onVisibilityChanged(false)
+             *
+             * no deben dejar un RenderThread antiguo vivo
+             * mientras otro intenta comenzar.
+             */
 
             try {
 
-                renderThread?.join(
-                    1000
+                thread.join()
+
+            } catch (
+                e: InterruptedException
+            ) {
+
+                FileLogger.log(
+                    this@GLWallpaperService,
+                    "stopRendering(): join() interrumpido"
                 )
 
-            } catch (_: Exception) {
+                Thread.currentThread().interrupt()
             }
 
-            renderThread = null
+            /*
+             * ============================================
+             * VERIFICACIÓN FINAL
+             * ============================================
+             */
 
-            FileLogger.log(
-                this@GLWallpaperService,
-                "RenderThread detenido"
-            )
+            if (thread.isAlive) {
+
+                FileLogger.log(
+                    this@GLWallpaperService,
+                    "ERROR: RenderThread sigue vivo después de join()"
+                )
+
+            } else {
+
+                FileLogger.log(
+                    this@GLWallpaperService,
+                    "RenderThread terminado correctamente"
+                )
+            }
+
+            /*
+             * Solamente eliminamos la referencia si sigue
+             * apuntando al mismo thread que acabamos de detener.
+             *
+             * Esto evita borrar accidentalmente la referencia
+             * de una generación nueva.
+             */
+
+            if (
+                renderThread === thread
+            ) {
+
+                renderThread = null
+            }
         }
 
         // ============================================
@@ -830,6 +1235,10 @@ class GLWallpaperService : WallpaperService() {
             val project =
                 ProjectManager.getProject()
 
+            // ========================================
+            // AUDIO VIDEO DE FONDO
+            // ========================================
+
             val bgLayer =
                 project.layers.firstOrNull()
 
@@ -839,17 +1248,33 @@ class GLWallpaperService : WallpaperService() {
                     bgLayer.soundPath.isNullOrEmpty()
                 ) {
 
+                    /*
+                     * El propio video reproduce su audio.
+                     */
+
                     videoPlayer?.setVolume(
                         bgLayer.soundVolume
                     )
 
                 } else {
 
+                    /*
+                     * El audio externo tiene su propio
+                     * reproductor.
+                     *
+                     * El volumen del video queda controlado
+                     * por initializeAudioConfiguration().
+                     */
+
                     bgSoundPlayer?.setVolume(
                         bgLayer.soundVolume
                     )
                 }
             }
+
+            // ========================================
+            // AUDIO OVERLAY
+            // ========================================
 
             val overlay =
                 project.overlay
@@ -882,7 +1307,7 @@ class GLWallpaperService : WallpaperService() {
                 ProjectManager.getProject()
 
             // ========================================
-            // VIDEO BG
+            // VIDEO DE FONDO
             // ========================================
 
             val bgLayer =
@@ -894,6 +1319,13 @@ class GLWallpaperService : WallpaperService() {
                     bgLayer.soundPath.isNullOrEmpty()
                 ) {
 
+                    /*
+                     * No existe audio externo.
+                     *
+                     * El MediaPlayer del video conserva
+                     * su volumen configurado.
+                     */
+
                     videoPlayer?.setVolume(
                         bgLayer.soundVolume
                     )
@@ -901,6 +1333,13 @@ class GLWallpaperService : WallpaperService() {
                     bgSoundPlayer?.stop()
 
                 } else {
+
+                    /*
+                     * Existe audio externo.
+                     *
+                     * Silenciamos el audio interno del video
+                     * y utilizamos WallpaperSoundPlayer.
+                     */
 
                     videoPlayer?.setVolume(
                         0f
@@ -928,6 +1367,11 @@ class GLWallpaperService : WallpaperService() {
                 overlay.soundPath.isNullOrEmpty()
             ) {
 
+                /*
+                 * El overlay utiliza el audio contenido
+                 * dentro de su propio MediaPlayer.
+                 */
+
                 renderer
                     ?.getVideoOverlayRenderer()
                     ?.setVolume(
@@ -937,6 +1381,12 @@ class GLWallpaperService : WallpaperService() {
                 overlaySoundPlayer?.stop()
 
             } else {
+
+                /*
+                 * Audio externo para el overlay.
+                 *
+                 * Silenciamos el audio interno del video.
+                 */
 
                 renderer
                     ?.getVideoOverlayRenderer()

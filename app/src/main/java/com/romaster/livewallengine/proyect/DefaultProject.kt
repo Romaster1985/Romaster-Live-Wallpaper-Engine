@@ -83,6 +83,7 @@ object DefaultProject {
 
         clock = ClockSettings(
 
+            enabledOnLockScreen = true,
             enabled = true,
             showDate = true,
 
