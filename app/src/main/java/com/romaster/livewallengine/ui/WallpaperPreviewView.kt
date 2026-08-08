@@ -60,6 +60,8 @@ class WallpaperPreviewView @JvmOverloads constructor(
     
     private var lastRevision = -1
     
+    private var lastOverlayLoopEnabled: Boolean? = null
+    
     private var continue_play = true
     
     init {
@@ -220,6 +222,10 @@ class WallpaperPreviewView @JvmOverloads constructor(
                         //
                         // Cuando el sistema de cues está desactivado,
                         // dejamos que MediaPlayer haga su propio loop.
+                        // Además inicializamos el eatado de nuestro sistema en la primera carga.
+                        lastOverlayLoopEnabled =
+                            project.overlayLoopEnabled
+                        
                         overlay.setLooping(
                             !project.overlayLoopEnabled
                         )
@@ -289,25 +295,64 @@ class WallpaperPreviewView @JvmOverloads constructor(
                     val revision =
                         ProjectManager.getRevision()
                 
-                    if (
-                        revision != lastRevision
-                    ) {
-                
-                        lastRevision =
-                            revision
-                
+                    if (revision != lastRevision) {
+
+                        lastRevision = revision
+                    
                         initializeAudioConfiguration()
-                        
+                    
                         renderer
                             ?.getVideoOverlayRenderer()
                             ?.let { overlay ->
-                        
+                    
                                 val project =
                                     ProjectManager.getProject()
-                        
+                    
+                                val loopEnabled =
+                                    project.overlayLoopEnabled
+                    
+                                // ============================================
+                                // CAMBIO DE ESTADO DEL SMART LOOP
+                                // ============================================
+                    
+                                val loopStateChanged =
+                                    lastOverlayLoopEnabled != null &&
+                                    lastOverlayLoopEnabled != loopEnabled
+                    
+                                // Configurar el modo normal de reproducción
+                                //
+                                // Smart Loop ACTIVADO  -> nuestro CueLoopController
+                                // Smart Loop DESACTIVADO -> loop nativo del player
+                                //
                                 overlay.setLooping(
-                                    !project.overlayLoopEnabled
+                                    !loopEnabled
                                 )
+                    
+                                if (loopStateChanged) {
+                    
+                                    FileLogger.log(
+                                        context,
+                                        "WallpaperPreview -> overlayLoopEnabled cambió: " +
+                                        "${lastOverlayLoopEnabled} -> $loopEnabled"
+                                    )
+                    
+                                    FileLogger.log(
+                                        context,
+                                        "WallpaperPreview -> reiniciando Overlay desde 0"
+                                    )
+                    
+                                    // ========================================
+                                    // MUY IMPORTANTE:
+                                    // cada cambio de modo reinicia el video
+                                    // ========================================
+                    
+                                    overlay.seekTo(0)
+                    
+                                    overlay.play()
+                                }
+                    
+                                lastOverlayLoopEnabled =
+                                    loopEnabled
                             }
                     }
                 
