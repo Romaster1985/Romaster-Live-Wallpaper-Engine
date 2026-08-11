@@ -175,6 +175,64 @@
         </com.google.android.material.card.MaterialCardView>
         
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardDateSpacing"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:cardBackgroundColor="?attr/colorSurface">
+        
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+        
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Espacio entre reloj y fecha"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+        
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Define manualmente la separación vertical entre ambos textos."
+                    android:textSize="14sp" />
+        
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+        
+                    <TextView
+                        android:id="@+id/textDateSpacingValue"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="20 px"
+                        android:textSize="16sp" />
+        
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonDateSpacing"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Editar" />
+        
+                </LinearLayout>
+        
+            </LinearLayout>
+        
+        </com.google.android.material.card.MaterialCardView>
+        
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardClockSize"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.service.wallpaper.WallpaperService
 import android.view.SurfaceHolder
 
+import com.romaster.livewallengine.editor.MainEditorController
 import com.romaster.livewallengine.audio.AudioStorage
 import com.romaster.livewallengine.audio.WallpaperSoundPlayer
 import com.romaster.livewallengine.debug.FileLogger
@@ -14,6 +15,9 @@ import com.romaster.livewallengine.video.CueLoopController
 import com.romaster.livewallengine.video.VideoPlayer
 
 class GLWallpaperService : WallpaperService() {
+
+    private lateinit var editor:
+        MainEditorController
 
     override fun onCreateEngine(): Engine {
 
@@ -26,6 +30,10 @@ class GLWallpaperService : WallpaperService() {
             "GLWallpaperService.onCreateEngine()"
         )
 
+        editor = MainEditorController(this)
+
+        editor.load()
+
         return GLEngine()
     }
 
@@ -34,6 +42,10 @@ class GLWallpaperService : WallpaperService() {
         private var holder: SurfaceHolder? = null
 
         private var renderer: GLRenderer? = null
+
+        private var lastSurfaceWidth: Int = 0
+
+        private var lastSurfaceHeight: Int = 0
 
         private var videoPlayer: VideoPlayer? = null
 
@@ -113,17 +125,17 @@ class GLWallpaperService : WallpaperService() {
             if (locked != lastLockState) {
 
                 lastLockState = locked
-                
+
                 val project =
                     ProjectManager.getProject()
-                
+
                 val clock =
                     project.clock
 
                 if (locked) {
 
                     deviceLocked = true
-                    
+
                     renderer?.setClockLockScreenState(
                         visible =
                             clock.enabledOnLockScreen,
@@ -175,7 +187,7 @@ class GLWallpaperService : WallpaperService() {
                         this@GLWallpaperService,
                         "UNLOCKED"
                     )
-                    
+
                     renderer?.setClockLockScreenState(
                         visible = true,
                         fadeIn = !clock.enabledOnLockScreen
@@ -206,8 +218,6 @@ class GLWallpaperService : WallpaperService() {
             )
 
             /*
-             * CAMBIO:
-             *
              * El Surface puede ser creado antes o después de que
              * Android marque el Engine como visible.
              *
@@ -224,30 +234,17 @@ class GLWallpaperService : WallpaperService() {
         // SURFACE CHANGED
         // ============================================
 
-        override fun onSurfaceChanged(
-            holder: SurfaceHolder,
-            format: Int,
-            width: Int,
-            height: Int
-        ) {
+        override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+            super.onSurfaceChanged(holder, format, width, height)
+            FileLogger.log(this@GLWallpaperService, "onSurfaceChanged: ${width}x${height}")
 
-            super.onSurfaceChanged(
-                holder,
-                format,
-                width,
-                height
-            )
+            // AGREGADO: Registrar los valores recibidos de Android
+            lastSurfaceWidth = width
+            lastSurfaceHeight = height
 
-            FileLogger.log(
-                this@GLWallpaperService,
-                "onSurfaceChanged: ${width}x${height}"
-            )
-
-            renderer?.onSurfaceChanged(
-                width,
-                height
-            )
+            renderer?.onSurfaceChanged(width, height)
         }
+
 
         // ============================================
         // VISIBILITY
@@ -337,7 +334,7 @@ class GLWallpaperService : WallpaperService() {
 
             super.onDestroy()
         }
-        
+
         // ============================================
         // START RENDERING
         // ============================================
@@ -478,6 +475,11 @@ class GLWallpaperService : WallpaperService() {
                             )
 
                         renderer!!.initialize()
+
+                        // AGREGADO: Si ya conocemos dimensiones válidas de la pantalla, se las pasamos de inmediato
+                        if (lastSurfaceWidth > 0 && lastSurfaceHeight > 0) {
+                            renderer!!.onSurfaceChanged(lastSurfaceWidth, lastSurfaceHeight)
+                        }
 
                         /*
                          * CAMBIO:
@@ -714,7 +716,7 @@ class GLWallpaperService : WallpaperService() {
                                             this@GLWallpaperService,
                                             "Overlay -> completion ignorado: dispositivo bloqueado"
                                         )
-                                    
+
                                         return@setOnCompletionListener
                                     }
 
@@ -752,16 +754,16 @@ class GLWallpaperService : WallpaperService() {
                                 // --------------------------------
                                 // Iniciar reproducción
                                 // --------------------------------
-
-                                if (
-                                    isGenerationActive(
-                                        myGeneration,
-                                        threadRunning
-                                    )
-                                ) {
+                                if (isGenerationActive(myGeneration, threadRunning)) {
+                                    // AGREGADO: Antes del primer play en un hilo nuevo, le damos un respiro de 15-30ms
+                                    // al sistema operativo para que termine de enlazar la Surface con el decodificador de hardware.
+                                    try {
+                                        Thread.sleep(30)
+                                    } catch (_: InterruptedException) {}
 
                                     overlay.play()
                                 }
+
                             }
 
                         // ====================================
@@ -867,7 +869,7 @@ class GLWallpaperService : WallpaperService() {
                                     // --------------------------------
                                     // Guardar duración real
                                     // --------------------------------
-                                    
+
                                     if (
                                         duration > 0 &&
                                         ProjectManager
@@ -1044,20 +1046,20 @@ class GLWallpaperService : WallpaperService() {
                                     "Overlay guardado en posición: ${savedOverlayPosition}ms"
                                 )
                             }
-                        
+
                         // ========================================
                         // LIMPIAR SURFACE
                         // ========================================
-                        
+
                         if (
                             myGeneration != renderGeneration
                         ) {
-                        
+
                             FileLogger.log(
                                 this@GLWallpaperService,
                                 "RenderThread $myGeneration -> limpiando Surface antes de release"
                             )
-                        
+
                             renderer?.clearSurface()
                         }
 
@@ -1083,9 +1085,9 @@ class GLWallpaperService : WallpaperService() {
                                 "(generation=$myGeneration)"
                         )
                     }
-                    
+
                 }
-            
+
             renderThread!!.start()
         }
 
@@ -1105,7 +1107,7 @@ class GLWallpaperService : WallpaperService() {
                 visible
             )
         }
-        
+
         // ============================================
         // STOP RENDERING
         // ============================================

@@ -65,37 +65,24 @@ object ProjectExporter {
     }
 
     private fun writePreview(
-
         zip: ZipOutputStream,
-    
         bitmap: Bitmap?
-    
     ) {
     
         if (bitmap == null)
             return
     
-        val stream =
-            ByteArrayOutputStream()
-    
-        bitmap.compress(
-            Bitmap.CompressFormat.PNG,
-            100,
-            stream
-        )
-    
         zip.putNextEntry(
             ZipEntry("preview.png")
         )
     
-        zip.write(
-            stream.toByteArray()
+        bitmap.compress(
+            Bitmap.CompressFormat.PNG,
+            100,
+            zip
         )
     
         zip.closeEntry()
-    
-        bitmap.recycle()
-    
     }
     
     private fun addFile(

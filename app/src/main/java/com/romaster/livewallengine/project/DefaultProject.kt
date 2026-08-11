@@ -26,11 +26,17 @@ object DefaultProject {
         cueUnlockedMs = 1000,
         
         previewLocked = false,
-        
+
         overlayDurationMs = 0L,
         
+        videoFadeDurationMs = 2000L,
+        
+        overlayFadeDurationMs = 3000L,
+        
+        clockFadeDurationMs = 1000L,
+        
         cueLockedMode = CueMode.LOOP,
-
+        
         cueUnlockedMode = CueMode.LOOP,
 
         layers = mutableListOf(

@@ -286,7 +286,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                     }
                 
                 initializeAudioConfiguration()
-    
+
                 var frameCount = 0
 
                 while (running) {

@@ -234,6 +234,172 @@
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
+        
+        <!-- ====================================================== -->
+        <!-- CONFIGURACIÓN DE SOFT START -->
+        <!-- ====================================================== -->
+        
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp">
+        
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+        
+                <!-- Título -->
+        
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Configuración de Soft Start"
+                    android:textSize="18sp"
+                    android:textStyle="bold"/>
+        
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Configurá de forma independiente la duración del fade de entrada de cada elemento."
+                    android:textSize="12sp"/>
+        
+        
+                <!-- ================================================= -->
+                <!-- VIDEO PRINCIPAL -->
+                <!-- ================================================= -->
+        
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+        
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Video principal"
+                            android:textStyle="bold"/>
+        
+                        <TextView
+                            android:id="@+id/textVideoFadeDuration"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="2000 ms"
+                            android:textSize="14sp"/>
+        
+                    </LinearLayout>
+        
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonVideoFadeDuration"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Editar..."/>
+        
+                </LinearLayout>
+        
+        
+                <!-- ================================================= -->
+                <!-- VIDEO OVERLAY -->
+                <!-- ================================================= -->
+        
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+        
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Video Overlay"
+                            android:textStyle="bold"/>
+        
+                        <TextView
+                            android:id="@+id/textOverlayFadeDuration"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="3000 ms"
+                            android:textSize="14sp"/>
+        
+                    </LinearLayout>
+        
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonOverlayFadeDuration"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Editar..."/>
+        
+                </LinearLayout>
+        
+        
+                <!-- ================================================= -->
+                <!-- RELOJ -->
+                <!-- ================================================= -->
+        
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+        
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Reloj"
+                            android:textStyle="bold"/>
+        
+                        <TextView
+                            android:id="@+id/textClockFadeDuration"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="1000 ms"
+                            android:textSize="14sp"/>
+        
+                    </LinearLayout>
+        
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonClockFadeDuration"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Editar..."/>
+        
+                </LinearLayout>
+        
+            </LinearLayout>
+        
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 

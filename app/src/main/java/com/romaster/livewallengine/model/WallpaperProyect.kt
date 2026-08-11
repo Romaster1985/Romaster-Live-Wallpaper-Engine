@@ -32,5 +32,11 @@ data class WallpaperProject(
 
     var previewLocked: Boolean = false,
     
-    var overlayDurationMs: Long = 0L
+    var overlayDurationMs: Long = 0L,
+    
+    var videoFadeDurationMs: Long = 2000L,
+
+    var overlayFadeDurationMs: Long = 3000L,
+    
+    var clockFadeDurationMs: Long = 1000L
 )
