@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.service.wallpaper.WallpaperService
 import android.view.SurfaceHolder
 
+import com.romaster.livewallengine.editor.MainEditorController
 import com.romaster.livewallengine.audio.AudioStorage
 import com.romaster.livewallengine.audio.WallpaperSoundPlayer
 import com.romaster.livewallengine.debug.FileLogger
@@ -14,6 +15,9 @@ import com.romaster.livewallengine.video.CueLoopController
 import com.romaster.livewallengine.video.VideoPlayer
 
 class GLWallpaperService : WallpaperService() {
+    
+    private lateinit var editor:
+        MainEditorController
 
     override fun onCreateEngine(): Engine {
 
@@ -25,6 +29,10 @@ class GLWallpaperService : WallpaperService() {
             this,
             "GLWallpaperService.onCreateEngine()"
         )
+        
+        editor = MainEditorController(this)
+    
+        editor.load()
 
         return GLEngine()
     }
@@ -34,6 +42,10 @@ class GLWallpaperService : WallpaperService() {
         private var holder: SurfaceHolder? = null
 
         private var renderer: GLRenderer? = null
+        
+        private var lastSurfaceWidth: Int = 0
+        
+        private var lastSurfaceHeight: Int = 0
 
         private var videoPlayer: VideoPlayer? = null
 
@@ -224,30 +236,17 @@ class GLWallpaperService : WallpaperService() {
         // SURFACE CHANGED
         // ============================================
 
-        override fun onSurfaceChanged(
-            holder: SurfaceHolder,
-            format: Int,
-            width: Int,
-            height: Int
-        ) {
-
-            super.onSurfaceChanged(
-                holder,
-                format,
-                width,
-                height
-            )
-
-            FileLogger.log(
-                this@GLWallpaperService,
-                "onSurfaceChanged: ${width}x${height}"
-            )
-
-            renderer?.onSurfaceChanged(
-                width,
-                height
-            )
+        override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+            super.onSurfaceChanged(holder, format, width, height)
+            FileLogger.log(this@GLWallpaperService, "onSurfaceChanged: ${width}x${height}")
+        
+            // AGREGADO: Registrar los valores recibidos de Android
+            lastSurfaceWidth = width
+            lastSurfaceHeight = height
+        
+            renderer?.onSurfaceChanged(width, height)
         }
+
 
         // ============================================
         // VISIBILITY
@@ -478,6 +477,11 @@ class GLWallpaperService : WallpaperService() {
                             )
 
                         renderer!!.initialize()
+                        
+                        // AGREGADO: Si ya conocemos dimensiones válidas de la pantalla, se las pasamos de inmediato
+                        if (lastSurfaceWidth > 0 && lastSurfaceHeight > 0) {
+                            renderer!!.onSurfaceChanged(lastSurfaceWidth, lastSurfaceHeight)
+                        }
 
                         /*
                          * CAMBIO:
@@ -752,16 +756,16 @@ class GLWallpaperService : WallpaperService() {
                                 // --------------------------------
                                 // Iniciar reproducción
                                 // --------------------------------
-
-                                if (
-                                    isGenerationActive(
-                                        myGeneration,
-                                        threadRunning
-                                    )
-                                ) {
-
+                                if (isGenerationActive(myGeneration, threadRunning)) {
+                                    // AGREGADO: Antes del primer play en un hilo nuevo, le damos un respiro de 15-30ms 
+                                    // al sistema operativo para que termine de enlazar la Surface con el decodificador de hardware.
+                                    try {
+                                        Thread.sleep(30)
+                                    } catch (_: InterruptedException) {}
+                                    
                                     overlay.play()
                                 }
+
                             }
 
                         // ====================================

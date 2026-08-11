@@ -88,37 +88,54 @@ class ClockRenderer {
                 Color.parseColor(
                     settings.dateColor
                 )
-
+        
+            val clockBottom =
+                if (drawClock) {
+        
+                    val clockMetrics =
+                        paint.fontMetrics
+        
+                    baseY +
+                            clockMetrics.descent
+        
+                } else {
+        
+                    baseY
+                }
+        
             paint.textSize =
                 settings.dateSize
-            
+        
             paint.typeface =
                 settings.dateFont?.let {
-            
+        
                     FontManager.loadTypeface(
                         context,
                         it
                     )
-            
+        
                 } ?: Typeface.DEFAULT
-
+        
             paint.textAlign =
                 convertAlignment(
                     settings.alignment
                 )
-
+        
+            val dateMetrics =
+                paint.fontMetrics
+        
             val dateY =
                 if (drawClock) {
-
-                    baseY +
-                            settings.clockSize +
-                            settings.dateSpacing
-
+        
+                    clockBottom +
+                            settings.dateSpacing -
+                            dateMetrics.ascent
+        
                 } else {
-
+        
                     baseY
                 }
-
+        
             canvas.drawText(
                 buildDate(settings),
                 baseX,

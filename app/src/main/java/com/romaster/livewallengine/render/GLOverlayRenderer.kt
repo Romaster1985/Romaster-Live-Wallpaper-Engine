@@ -15,7 +15,11 @@ class GLOverlayRenderer {
     private lateinit var quadRenderer:
         GLQuadRenderer
     
-    private val fadeDurationMs = 1000L
+    private val fadeDurationMs: Long
+        get() =
+            ProjectManager
+                .getProject()
+                .clockFadeDurationMs
 
     private var fadeStartTime = 0L
     

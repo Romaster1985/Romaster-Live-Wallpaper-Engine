@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.google.android.material.textfield.TextInputLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="24dp"
+    android:layout_marginEnd="24dp"
+    android:layout_marginBottom="8dp"
+    app:boxBackgroundMode="outline"
+    app:hintEnabled="true"
+    android:hint="Espacio en píxeles">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/editDateSpacing"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="numberDecimal"
+        android:singleLine="true"
+        android:selectAllOnFocus="true" />
+
+</com.google.android.material.textfield.TextInputLayout>

@@ -26,18 +26,24 @@ class GLExternalShader {
 
     private var texMatrixHandle = 0
 
+    // AGREGADO: Handle para la matriz de transformación de vértices
+    private var mvpMatrixHandle = 0
+
     private val vertexShaderCode =
         """
         attribute vec2 aPosition;
         attribute vec2 aTexCoord;
 
         uniform mat4 uTexMatrix;
+        uniform mat4 uMVPMatrix; // AGREGADO
 
         varying vec2 vTexCoord;
 
         void main() {
 
+            // MODIFICADO: Multiplicamos por la matriz MVP para corregir el Aspect Ratio y Rotar
             gl_Position =
+                uMVPMatrix *
                 vec4(
                     aPosition,
                     0.0,
@@ -184,6 +190,13 @@ class GLExternalShader {
                 program,
                 "uTexMatrix"
             )
+
+        // AGREGADO: Obtener ubicación del uniform de la matriz MVP
+        mvpMatrixHandle =
+            GLES20.glGetUniformLocation(
+                program,
+                "uMVPMatrix"
+            )
     }
 
     fun use() {
@@ -195,6 +208,7 @@ class GLExternalShader {
 
     fun draw(
         vertexBuffer: FloatBuffer,
+        mvpMatrix: FloatArray, // AGREGADO: Nueva firma que recibe la matriz de transformación
         textureId: Int,
         textureMatrix: FloatArray,
         alpha: Float,
@@ -272,6 +286,15 @@ class GLExternalShader {
 
             textureMatrix,
 
+            0
+        )
+
+        // AGREGADO: Enviar la matriz calculada al Shader
+        GLES20.glUniformMatrix4fv(
+            mvpMatrixHandle,
+            1,
+            false,
+            mvpMatrix,
             0
         )
         

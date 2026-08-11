@@ -2,7 +2,6 @@ package com.romaster.livewallengine
 
 import android.app.Activity
 import android.app.ActivityManager
-import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.os.Build
@@ -18,6 +17,7 @@ import android.widget.TextView
 import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.util.DisplayMetrics
 import android.graphics.Color
 import android.graphics.Bitmap
@@ -31,6 +31,11 @@ import android.opengl.GLES20
 import java.util.Locale
 
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.slider.Slider
@@ -99,6 +104,8 @@ class MainActivity : AppCompatActivity() {
     
     private var dateColorHex =
         "#FFFFFF"
+    
+    private var dateSpacingValue = 20f
     
     var durationMs: Long = 0L
 
@@ -648,6 +655,58 @@ class MainActivity : AppCompatActivity() {
         
             updatePreviewProject()
         }
+        
+        // =====================================================
+        // CONFIGURACIÓN DE SOFT START
+        // =====================================================
+        
+        findViewById<MaterialButton>(
+            R.id.buttonVideoFadeDuration
+        ).setOnClickListener {
+        
+            val project =
+                ProjectManager.getProject()
+        
+            showFadeDurationDialog(
+                title = "Fade Video principal",
+                currentValue =
+                    project.videoFadeDurationMs,
+                target =
+                    FadeTarget.VIDEO
+            )
+        }
+        
+        findViewById<MaterialButton>(
+            R.id.buttonOverlayFadeDuration
+        ).setOnClickListener {
+        
+            val project =
+                ProjectManager.getProject()
+        
+            showFadeDurationDialog(
+                title = "Fade Video Overlay",
+                currentValue =
+                    project.overlayFadeDurationMs,
+                target =
+                    FadeTarget.OVERLAY
+            )
+        }
+        
+        findViewById<MaterialButton>(
+            R.id.buttonClockFadeDuration
+        ).setOnClickListener {
+        
+            val project =
+                ProjectManager.getProject()
+        
+            showFadeDurationDialog(
+                title = "Fade Reloj",
+                currentValue =
+                    project.clockFadeDurationMs,
+                target =
+                    FadeTarget.CLOCK
+            )
+        }
     
     }
     
@@ -793,6 +852,8 @@ class MainActivity : AppCompatActivity() {
             else
                 R.id.buttonCueUnlockedPause
         )
+        
+        updateSoftStartUI()
     
     }
     
@@ -937,6 +998,216 @@ class MainActivity : AppCompatActivity() {
     
     }
     
+    private fun updateSoftStartUI() {
+
+        val project =
+            ProjectManager.getProject()
+    
+        findViewById<TextView>(
+            R.id.textVideoFadeDuration
+        ).text =
+            "${project.videoFadeDurationMs} ms"
+    
+        findViewById<TextView>(
+            R.id.textOverlayFadeDuration
+        ).text =
+            "${project.overlayFadeDurationMs} ms"
+    
+        findViewById<TextView>(
+            R.id.textClockFadeDuration
+        ).text =
+            "${project.clockFadeDurationMs} ms"
+    }
+    
+    private enum class FadeTarget {
+        VIDEO,
+        OVERLAY,
+        CLOCK
+    }
+    
+    private fun showFadeDurationDialog(
+        title: String,
+        currentValue: Long,
+        target: FadeTarget
+    ) {
+    
+        val input =
+            EditText(this).apply {
+    
+                inputType =
+                    android.text.InputType.TYPE_CLASS_NUMBER
+    
+                setText(
+                    currentValue.toString()
+                )
+    
+                selectAll()
+            }
+    
+        val container =
+            LinearLayout(this).apply {
+    
+                orientation =
+                    LinearLayout.VERTICAL
+    
+                setPadding(
+                    48,
+                    0,
+                    48,
+                    0
+                )
+    
+                addView(input)
+            }
+    
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(
+                "Duración del fade en milisegundos."
+            )
+            .setView(container)
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+            .setPositiveButton(
+                "Aceptar"
+            ) { _, _ ->
+    
+                val value =
+                    input.text
+                        .toString()
+                        .toLongOrNull()
+    
+                if (
+                    value == null ||
+                    value < 0L
+                ) {
+    
+                    Toast.makeText(
+                        this,
+                        "Ingresá un valor válido.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+    
+                    return@setPositiveButton
+                }
+    
+                val project =
+                    ProjectManager.getProject()
+    
+                when (target) {
+    
+                    FadeTarget.VIDEO ->
+                        project.videoFadeDurationMs =
+                            value
+    
+                    FadeTarget.OVERLAY ->
+                        project.overlayFadeDurationMs =
+                            value
+    
+                    FadeTarget.CLOCK ->
+                        project.clockFadeDurationMs =
+                            value
+                }
+    
+                ProjectManager.saveProject(
+                    project
+                )
+    
+                updateSoftStartUI()
+            }
+            .show()
+    }
+    
+    private fun showDateSpacingDialog() {
+
+        val dialogView =
+            layoutInflater.inflate(
+                R.layout.dialog_date_spacing,
+                null
+            )
+    
+        val editDateSpacing =
+            dialogView.findViewById<TextInputEditText>(
+                R.id.editDateSpacing
+            )
+    
+        val currentSpacing =
+            if (dateSpacingValue % 1f == 0f) {
+                dateSpacingValue
+                    .toInt()
+                    .toString()
+            } else {
+                dateSpacingValue
+                    .toString()
+            }
+    
+        editDateSpacing.setText(
+            currentSpacing
+        )
+    
+        AlertDialog.Builder(this)
+    
+            .setTitle(
+                "Espacio entre reloj y fecha"
+            )
+    
+            .setView(
+                dialogView
+            )
+    
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+    
+            .setPositiveButton(
+                "Aceptar"
+            ) { _, _ ->
+    
+                val value =
+                    editDateSpacing
+                        .text
+                        ?.toString()
+                        ?.trim()
+                        ?.replace(",", ".")
+                        ?.toFloatOrNull()
+    
+                if (value == null) {
+                    return@setPositiveButton
+                }
+    
+                dateSpacingValue =
+                    value.coerceAtLeast(0f)
+                
+                findViewById<TextView>(
+                    R.id.textDateSpacingValue
+                ).text =
+                    formatDateSpacing(
+                        dateSpacingValue
+                    )
+    
+                updatePreviewProject()
+            }
+    
+            .show()
+    }
+    
+    private fun formatDateSpacing(
+        value: Float
+    ): String {
+    
+        return if (value % 1f == 0f) {
+    
+            "${value.toInt()} px"
+    
+        } else {
+    
+            "$value px"
+        }
+    }
+    
     private fun parseCueTime(
         value: String
     ): Int? {
@@ -1069,6 +1340,17 @@ class MainActivity : AppCompatActivity() {
         ).setOnClickListener {
     
             FontPicker.open(this)
+        }
+    
+        // ---------------------------------
+        // ESPACIO ENTRE RELOJ Y FECHA
+        // ---------------------------------
+    
+        findViewById<MaterialButton>(
+            R.id.buttonDateSpacing
+        ).setOnClickListener {
+    
+            showDateSpacingDialog()
         }
     }
     
@@ -1577,6 +1859,16 @@ class MainActivity : AppCompatActivity() {
                 .getProject()
                 .clock
         
+        dateSpacingValue =
+            clock.dateSpacing
+        
+        findViewById<TextView>(
+            R.id.textDateSpacingValue
+        ).text =
+            formatDateSpacing(
+                dateSpacingValue
+            )
+        
         findViewById<CheckBox>(
             R.id.checkClockLockScreen
         ).isChecked =
@@ -2010,16 +2302,31 @@ class MainActivity : AppCompatActivity() {
             
             FilePicker.REQUEST_EXPORT_PROJECT -> {
 
-                val preview = findViewById<WallpaperPreviewView>(
-                    R.id.previewView
-                )
-                
-                ProjectExporter.export(
-                    this,
-                    uri,
+                val previewBitmap =
                     exportPreviewBitmap
-                )
+            
                 exportPreviewBitmap = null
+            
+                lifecycleScope.launch {
+            
+                    try {
+            
+                        withContext(
+                            Dispatchers.IO
+                        ) {
+            
+                            ProjectExporter.export(
+                                this@MainActivity,
+                                uri,
+                                previewBitmap
+                            )
+                        }
+            
+                    } catch (e: Exception) {
+            
+                        e.printStackTrace()
+                    }
+                }
             }
             
             FilePicker.REQUEST_IMPORT_PROJECT -> {
@@ -2714,6 +3021,9 @@ class MainActivity : AppCompatActivity() {
             findViewById<Slider>(
                 R.id.sliderY
             ).value / 100f
+        
+        clock.dateSpacing =
+            dateSpacingValue
     
         clock.alignment =
             when (
