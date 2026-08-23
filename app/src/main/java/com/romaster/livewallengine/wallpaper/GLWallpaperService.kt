@@ -12,6 +12,8 @@ import com.romaster.livewallengine.model.CueMode
 import com.romaster.livewallengine.project.ProjectManager
 import com.romaster.livewallengine.render.GLRenderer
 import com.romaster.livewallengine.video.CueLoopController
+import com.romaster.livewallengine.video.OverlayPlaybackDirection
+import com.romaster.livewallengine.video.ReverseClipKind
 import com.romaster.livewallengine.video.VideoPlayer
 
 class GLWallpaperService : WallpaperService() {
@@ -94,6 +96,9 @@ class GLWallpaperService : WallpaperService() {
 
         private var savedOverlayPosition: Int = 0
 
+        /** true si el overlay estaba en pausa al ocultarse (modo PAUSE). */
+        private var savedOverlayPaused: Boolean = false
+
         // ============================================
         // CUE CONTROLLER
         // ============================================
@@ -136,48 +141,34 @@ class GLWallpaperService : WallpaperService() {
 
                     deviceLocked = true
 
+                    FileLogger.log(
+                        this@GLWallpaperService,
+                        "LOCKED -> siempre original desde 0"
+                    )
+
+                    // Ocultar overlay YA para no flash del frame anterior
+                    val overlay =
+                        renderer?.getVideoOverlayRenderer()
+                    overlay?.setForceHidden(true)
+
+                    // Al bloquear: SIEMPRE desde 0. Soft Start = duración
+                    // configurable de la card (no un fade fijo de 80 ms).
+                    val softMs =
+                        project.overlayFadeDurationMs.coerceAtLeast(1L)
+                    overlay?.setDirection(
+                        OverlayPlaybackDirection.FORWARD,
+                        startPositionMs = 0,
+                        onReady = {
+                            overlay.setForceHidden(false)
+                            overlay.startOverlayFadeIn(softMs)
+                        }
+                    )
+
                     renderer?.setClockLockScreenState(
                         visible =
                             clock.enabledOnLockScreen,
                         fadeIn = false
                     )
-
-                    renderer
-                        ?.getVideoOverlayRenderer()
-                        ?.let { overlay ->
-
-                            val project =
-                                ProjectManager.getProject()
-
-                            FileLogger.log(
-                                this@GLWallpaperService,
-                                "LOCKED"
-                            )
-
-                            if (
-                                project.cueLockedMode ==
-                                CueMode.LOOP
-                            ) {
-
-                                FileLogger.log(
-                                    this@GLWallpaperService,
-                                    "CueLocked -> seekTo(0)"
-                                )
-
-                                overlay.seekTo(0)
-
-                            } else {
-
-                                FileLogger.log(
-                                    this@GLWallpaperService,
-                                    "CueLocked -> seekTo(0) + play()"
-                                )
-
-                                overlay.seekTo(0)
-
-                                overlay.play()
-                            }
-                        }
 
                 } else {
 
@@ -185,7 +176,10 @@ class GLWallpaperService : WallpaperService() {
 
                     FileLogger.log(
                         this@GLWallpaperService,
-                        "UNLOCKED"
+                        "UNLOCKED reversePlaying=" +
+                            (renderer
+                                ?.getVideoOverlayRenderer()
+                                ?.isPlayingReverseClip() == true)
                     )
 
                     renderer?.setClockLockScreenState(
@@ -193,9 +187,23 @@ class GLWallpaperService : WallpaperService() {
                         fadeIn = !clock.enabledOnLockScreen
                     )
 
-                    renderer
-                        ?.getVideoOverlayRenderer()
-                        ?.play()
+                    val overlay =
+                        renderer?.getVideoOverlayRenderer()
+
+                    if (overlay != null) {
+                        if (overlay.isPlayingReverseClip()) {
+                            // Dejar terminar la reversa; onCompletion
+                            // volverá al original desde 0 y seguirá
+                            // hasta el final con cues de unlocked.
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "UNLOCKED durante reversa -> se deja terminar el clip"
+                            )
+                        } else {
+                            // Directo: no reiniciar; continúa hasta el final
+                            overlay.play()
+                        }
+                    }
                 }
             }
         }
@@ -620,22 +628,11 @@ class GLWallpaperService : WallpaperService() {
                                     project.overlayLoopEnabled
 
                                 // --------------------------------
-                                // Restaurar posición
+                                // Restaurar posición / pausa
                                 // --------------------------------
-
-                                if (
-                                    savedOverlayPosition > 0
-                                ) {
-
-                                    overlay.seekTo(
-                                        savedOverlayPosition
-                                    )
-
-                                    FileLogger.log(
-                                        this@GLWallpaperService,
-                                        "Overlay restaurado en posición: ${savedOverlayPosition}ms"
-                                    )
-                                }
+                                // Si estaba pausado, restoreAt hace
+                                // seek → start (frame) → pause
+                                // para no quedar con Surface negra.
 
                                 // --------------------------------
                                 // Cargar cues
@@ -706,6 +703,36 @@ class GLWallpaperService : WallpaperService() {
                                         return@setOnCompletionListener
                                     }
 
+                                    // Fin del clip invertido → volver al original
+                                    // (tanto en locked como unlocked)
+                                    if (overlay.isPlayingReverseClip()) {
+                                        val kind = overlay.getReverseClipKind()
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "Ping-pong reverse terminó kind=$kind locked=$deviceLocked"
+                                        )
+
+                                        when (kind) {
+                                            ReverseClipKind.UNLOCKED -> {
+                                                // Fin del tramo unlocked: volver al cue unlocked
+                                                overlay.setDirection(
+                                                    OverlayPlaybackDirection.FORWARD,
+                                                    startPositionMs = currentProject.cueUnlockedMs
+                                                )
+                                            }
+                                            else -> {
+                                                // LOCKED (o desconocido): volver al inicio del original.
+                                                // Si ya desbloquearon a mitad de la reversa,
+                                                // sigue 0 → final y luego actúan cues unlocked.
+                                                overlay.setDirection(
+                                                    OverlayPlaybackDirection.FORWARD,
+                                                    startPositionMs = 0
+                                                )
+                                            }
+                                        }
+                                        return@setOnCompletionListener
+                                    }
+
                                     // --------------------------------
                                     // Dispositivo bloqueado
                                     // --------------------------------
@@ -725,6 +752,22 @@ class GLWallpaperService : WallpaperService() {
                                     // --------------------------------
 
                                     if (
+                                        currentProject.cueUnlockedPingPong &&
+                                        !currentProject.cueUnlockedReverseFile.isNullOrBlank()
+                                    ) {
+
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "CueUnlocked -> completion -> play reverse clip"
+                                        )
+
+                                        overlay.setDirection(
+                                            OverlayPlaybackDirection.REVERSE,
+                                            reverseFileName = currentProject.cueUnlockedReverseFile,
+                                            reverseKind = ReverseClipKind.UNLOCKED
+                                        )
+
+                                    } else if (
                                         currentProject.cueUnlockedMode ==
                                         CueMode.LOOP
                                     ) {
@@ -752,16 +795,64 @@ class GLWallpaperService : WallpaperService() {
                                 }
 
                                 // --------------------------------
-                                // Iniciar reproducción
+                                // Iniciar reproducción / restaurar pausa
                                 // --------------------------------
                                 if (isGenerationActive(myGeneration, threadRunning)) {
-                                    // AGREGADO: Antes del primer play en un hilo nuevo, le damos un respiro de 15-30ms
-                                    // al sistema operativo para que termine de enlazar la Surface con el decodificador de hardware.
                                     try {
-                                        Thread.sleep(30)
+                                        Thread.sleep(40)
                                     } catch (_: InterruptedException) {}
 
-                                    overlay.play()
+                                    // ¿Dispositivo bloqueado ahora?
+                                    // En lock SIEMPRE desde 0 + play (los cues
+                                    // pausan al llegar al cue). Nunca restaurar
+                                    // "ya pausado en el cue".
+                                    val keyguard =
+                                        getSystemService(KEYGUARD_SERVICE)
+                                            as KeyguardManager
+                                    val lockedNow =
+                                        keyguard.isKeyguardLocked
+
+                                    val softStart = {
+                                        overlay.startSoftStart()
+                                    }
+
+                                    if (lockedNow) {
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "Overlay LOCKED resume -> desde 0 + Soft Start al frame listo"
+                                        )
+                                        deviceLocked = true
+                                        lastLockState = true
+                                        overlay.restoreAt(
+                                            0,
+                                            paused = false,
+                                            onReady = softStart
+                                        )
+                                    } else if (savedOverlayPaused) {
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "Overlay restoreAt paused pos=$savedOverlayPosition"
+                                        )
+                                        overlay.restoreAt(
+                                            savedOverlayPosition,
+                                            paused = true,
+                                            onReady = softStart
+                                        )
+                                    } else if (savedOverlayPosition > 0) {
+                                        FileLogger.log(
+                                            this@GLWallpaperService,
+                                            "Overlay restoreAt playing pos=$savedOverlayPosition"
+                                        )
+                                        overlay.restoreAt(
+                                            savedOverlayPosition,
+                                            paused = false,
+                                            onReady = softStart
+                                        )
+                                    } else {
+                                        overlay.play()
+                                        // Sin seek: arrancar Soft Start ya
+                                        softStart()
+                                    }
                                 }
 
                             }
@@ -773,6 +864,7 @@ class GLWallpaperService : WallpaperService() {
                         initializeAudioConfiguration()
 
                         var frameCount = 0
+                        var overlayStalledFrames = 0
 
                         // ====================================
                         // RENDER LOOP
@@ -863,25 +955,36 @@ class GLWallpaperService : WallpaperService() {
                                     val position =
                                         overlay.getCurrentPosition()
 
-                                    val duration =
+                                    val playerDuration =
                                         overlay.getDuration()
 
+                                    // Cues usan siempre la duración del original
+                                    val duration =
+                                        ProjectManager
+                                            .getProject()
+                                            .overlayDurationMs
+                                            .toInt()
+                                            .takeIf { it > 0 }
+                                            ?: playerDuration
+
                                     // --------------------------------
-                                    // Guardar duración real
+                                    // Guardar duración SOLO del original
+                                    // (nunca la del clip de reversa)
                                     // --------------------------------
 
                                     if (
-                                        duration > 0 &&
+                                        !overlay.isPlayingReverseClip() &&
+                                        playerDuration > 0 &&
                                         ProjectManager
                                             .getProject()
                                             .overlayDurationMs !=
-                                            duration.toLong()
+                                            playerDuration.toLong()
                                     ) {
 
                                         ProjectManager
                                             .getProject()
                                             .overlayDurationMs =
-                                            duration.toLong()
+                                            playerDuration.toLong()
 
                                         ProjectManager.saveProject(
                                             ProjectManager.getProject()
@@ -917,6 +1020,26 @@ class GLWallpaperService : WallpaperService() {
                                         if (deviceLocked) {
 
                                             if (
+                                                project.cueLockedPingPong &&
+                                                !project.cueLockedReverseFile.isNullOrBlank()
+                                            ) {
+
+                                                if (
+                                                    !overlay.isPlayingReverseClip() &&
+                                                    // Un poco antes del cue evita pasarse del
+                                                    // frame exacto (MediaPlayer reporta posición
+                                                    // con latencia de un par de frames).
+                                                    position >=
+                                                    (overlayCueController.cueLockedMs - 30).coerceAtLeast(0)
+                                                ) {
+                                                    overlay.setDirection(
+                                                        OverlayPlaybackDirection.REVERSE,
+                                                        reverseFileName = project.cueLockedReverseFile,
+                                                        reverseKind = ReverseClipKind.LOCKED
+                                                    )
+                                                }
+
+                                            } else if (
                                                 position >=
                                                 overlayCueController.cueLockedMs
                                             ) {
@@ -951,12 +1074,87 @@ class GLWallpaperService : WallpaperService() {
 
                                         else {
 
+                                            // Ping-pong unlocked: el final del original
+                                            // y del clip invertido se manejan en onCompletion.
                                             /*
-                                             * El final natural sigue
-                                             * siendo responsabilidad de
-                                             * onCompletion().
+                                             * Sin ping-pong, el final natural
+                                             * sigue siendo onCompletion().
                                              */
                                         }
+                                    }
+                                }
+
+                            // --------------------------------
+                            // Watchdog overlay: solo freeze
+                            // accidental (NUNCA tocar PAUSE)
+                            // --------------------------------
+
+                            renderer
+                                ?.getVideoOverlayRenderer()
+                                ?.let { overlay ->
+                                    val proj =
+                                        ProjectManager.getProject()
+                                    val pos =
+                                        overlay.getCurrentPosition()
+                                    val dur =
+                                        proj.overlayDurationMs
+                                            .toInt()
+                                            .coerceAtLeast(
+                                                overlay.getDuration()
+                                            )
+
+                                    val intentionalPause =
+                                        when {
+                                            overlay.isPlaying() ->
+                                                false
+
+                                            deviceLocked &&
+                                                !proj.cueLockedPingPong &&
+                                                proj.cueLockedMode ==
+                                                CueMode.PAUSE &&
+                                                pos >=
+                                                proj.cueLockedMs ->
+                                                true
+
+                                            !deviceLocked &&
+                                                !proj.cueUnlockedPingPong &&
+                                                proj.cueUnlockedMode ==
+                                                CueMode.PAUSE &&
+                                                dur > 0 &&
+                                                pos >=
+                                                (dur - 250)
+                                                    .coerceAtLeast(
+                                                        proj.cueUnlockedMs
+                                                    ) ->
+                                                true
+
+                                            else -> false
+                                        }
+
+                                    if (intentionalPause ||
+                                        overlay.isIntentionallyPaused() ||
+                                        proj.overlayVideo == null ||
+                                        overlay.isPlayingReverseClip()
+                                    ) {
+                                        overlayStalledFrames = 0
+                                    } else if (!overlay.isPlaying()) {
+                                        overlayStalledFrames++
+                                        if (overlayStalledFrames >= 45) {
+                                            FileLogger.log(
+                                                this@GLWallpaperService,
+                                                "Overlay watchdog: recoverPlayback pos=$pos"
+                                            )
+                                            overlay.recoverPlayback(
+                                                pos.coerceAtLeast(0)
+                                            )
+                                            overlayStalledFrames = 0
+                                        } else if (
+                                            overlayStalledFrames == 20
+                                        ) {
+                                            overlay.ensurePlaying(pos)
+                                        }
+                                    } else {
+                                        overlayStalledFrames = 0
                                     }
                                 }
 
@@ -1027,23 +1225,48 @@ class GLWallpaperService : WallpaperService() {
                                 val project =
                                     ProjectManager.getProject()
 
-                                savedOverlayPosition =
-                                    if (
-                                        deviceLocked &&
-                                        project.cueLockedMode ==
-                                        CueMode.PAUSE
-                                    ) {
+                                // Con dispositivo bloqueado: al volver a
+                                // visible siempre se reinicia desde 0.
+                                // No persistir pausa en el cue locked.
+                                if (deviceLocked) {
+                                    savedOverlayPaused = false
+                                    savedOverlayPosition = 0
+                                } else {
+                                    val unlockedPause =
+                                        !project.cueUnlockedPingPong &&
+                                            project.cueUnlockedMode ==
+                                            CueMode.PAUSE &&
+                                            !overlay.isPlaying()
 
-                                        0
+                                    savedOverlayPaused =
+                                        overlay.isIntentionallyPaused() ||
+                                            unlockedPause
 
-                                    } else {
+                                    savedOverlayPosition =
+                                        when {
+                                            savedOverlayPaused && unlockedPause ->
+                                                project.overlayDurationMs
+                                                    .toInt()
+                                                    .coerceAtLeast(
+                                                        overlay.getDuration()
+                                                    )
 
-                                        overlay.getCurrentPosition()
-                                    }
+                                            overlay.isPlayingReverseClip() -> {
+                                                when (overlay.getReverseClipKind()) {
+                                                    ReverseClipKind.UNLOCKED ->
+                                                        project.cueUnlockedMs
+                                                    else -> 0
+                                                }
+                                            }
+
+                                            else ->
+                                                overlay.getCurrentPosition()
+                                        }
+                                }
 
                                 FileLogger.log(
                                     this@GLWallpaperService,
-                                    "Overlay guardado en posición: ${savedOverlayPosition}ms"
+                                    "Overlay guardado pos=${savedOverlayPosition}ms paused=$savedOverlayPaused locked=$deviceLocked"
                                 )
                             }
 

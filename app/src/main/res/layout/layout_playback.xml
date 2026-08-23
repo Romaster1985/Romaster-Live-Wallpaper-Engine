@@ -156,6 +156,20 @@
                     android:valueTo="1"
                     android:value="0.01"/>
 
+                <CheckBox
+                    android:id="@+id/checkCueLockedPingPong"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Ping-pong playback"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Reproduce hasta el cue, vuelve en reversa al inicio y repite (0 ↔ cue)."
+                    android:textSize="12sp"/>
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
@@ -230,6 +244,20 @@
                     android:valueFrom="0"
                     android:valueTo="1"
                     android:value="0.99"/>
+
+                <CheckBox
+                    android:id="@+id/checkCueUnlockedPingPong"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Ping-pong playback"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Reproduce hasta el final, vuelve en reversa al cue unlocked y repite (cue ↔ final)."
+                    android:textSize="12sp"/>
 
             </LinearLayout>
 

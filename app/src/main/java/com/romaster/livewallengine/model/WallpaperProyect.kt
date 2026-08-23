@@ -30,6 +30,18 @@ data class WallpaperProject(
 
     var cueUnlockedMode: CueMode = CueMode.LOOP,
 
+    /** Ping-pong en bloqueo: 0 → cue → reversa → 0 → … */
+    var cueLockedPingPong: Boolean = false,
+
+    /** Ping-pong desbloqueado: cue → final → reversa → cue → … */
+    var cueUnlockedPingPong: Boolean = false,
+
+    /** Nombre de archivo del clip invertido (locked), dentro de pingpong/ */
+    var cueLockedReverseFile: String? = null,
+
+    /** Nombre de archivo del clip invertido (unlocked), dentro de pingpong/ */
+    var cueUnlockedReverseFile: String? = null,
+
     var previewLocked: Boolean = false,
     
     var overlayDurationMs: Long = 0L,

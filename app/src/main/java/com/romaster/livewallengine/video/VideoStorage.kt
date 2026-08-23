@@ -13,6 +13,14 @@ object VideoStorage {
     const val OVERLAY_VIDEO =
         "overlay_video.mp4"
 
+    /** Clip invertido del overlay para cue locked (ping-pong). */
+    const val OVERLAY_REVERSE_LOCKED =
+        "overlay_video_reverse_locked.mp4"
+
+    /** Clip invertido del overlay para cue unlocked (ping-pong). */
+    const val OVERLAY_REVERSE_UNLOCKED =
+        "overlay_video_reverse_unlocked.mp4"
+
     fun importWallpaperVideo(
         context: Context,
         uri: Uri
@@ -72,6 +80,41 @@ object VideoStorage {
             fileName
         )
     }
+
+    fun getReverseLockedFile(context: Context): File =
+        getVideoFile(context, OVERLAY_REVERSE_LOCKED)
+
+    fun getReverseUnlockedFile(context: Context): File =
+        getVideoFile(context, OVERLAY_REVERSE_UNLOCKED)
+
+    fun reverseFileName(locked: Boolean): String =
+        if (locked) OVERLAY_REVERSE_LOCKED else OVERLAY_REVERSE_UNLOCKED
+
+    fun getReverseFile(context: Context, locked: Boolean): File =
+        if (locked) getReverseLockedFile(context) else getReverseUnlockedFile(context)
+
+    /**
+     * Borra solo los clips de reversa del overlay (nombres fijos).
+     * También limpia residuos viejos de la carpeta pingpong/.
+     */
+    fun clearReverseClips(context: Context) {
+        try {
+            getReverseLockedFile(context).delete()
+        } catch (_: Exception) {
+        }
+        try {
+            getReverseUnlockedFile(context).delete()
+        } catch (_: Exception) {
+        }
+        // Residuos de versiones anteriores
+        try {
+            val oldDir = File(context.filesDir, "pingpong")
+            if (oldDir.exists()) {
+                oldDir.deleteRecursively()
+            }
+        } catch (_: Exception) {
+        }
+    }
     
     fun clear(context: Context) {
 
@@ -79,6 +122,11 @@ object VideoStorage {
             context.filesDir,
             "videos"
         ).deleteRecursively()
+
+        try {
+            File(context.filesDir, "pingpong").deleteRecursively()
+        } catch (_: Exception) {
+        }
     
     }
 }

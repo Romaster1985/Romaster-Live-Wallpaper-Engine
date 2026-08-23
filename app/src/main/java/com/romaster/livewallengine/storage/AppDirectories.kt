@@ -54,6 +54,18 @@ object AppDirectories {
     }
 
     /**
+     * Clips invertidos para ping-pong del overlay.
+     */
+    fun pingpong(context: Context): File {
+        return File(
+            context.filesDir,
+            "pingpong"
+        ).apply {
+            mkdirs()
+        }
+    }
+
+    /**
      * Carpeta pública de la app en Documentos
      * (misma base que usa FileLogger).
      */

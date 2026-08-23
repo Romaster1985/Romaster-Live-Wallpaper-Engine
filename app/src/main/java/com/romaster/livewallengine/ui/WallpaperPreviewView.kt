@@ -15,6 +15,8 @@ import com.romaster.livewallengine.audio.WallpaperSoundPlayer
 import com.romaster.livewallengine.audio.AudioStorage
 import com.romaster.livewallengine.audio.AudioPicker
 import com.romaster.livewallengine.model.CueMode
+import com.romaster.livewallengine.video.OverlayPlaybackDirection
+import com.romaster.livewallengine.video.ReverseClipKind
 import android.graphics.Bitmap
 import android.opengl.GLES20
 import java.nio.ByteBuffer
@@ -54,6 +56,8 @@ class WallpaperPreviewView @JvmOverloads constructor(
     private var savedPosition: Int = 0
         
     private var savedOverlayPosition: Int = 0
+
+    private var savedOverlayPaused: Boolean = false
     
     private val overlayCueController =
         CueLoopController()
@@ -61,8 +65,13 @@ class WallpaperPreviewView @JvmOverloads constructor(
     private var lastRevision = -1
     
     private var lastOverlayLoopEnabled: Boolean? = null
-    
-    private var continue_play = true
+
+    /**
+     * Último estado de bloqueo simulado.
+     * null = aún no inicializado (no disparar transición al primer frame).
+     * Misma idea que lastLockState en GLWallpaperService.
+     */
+    private var lastPreviewLocked: Boolean? = null
     
     init {
 
@@ -128,6 +137,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
         }
 
         running = true
+        lastPreviewLocked = null
 
         renderThread = Thread {
 
@@ -196,18 +206,10 @@ class WallpaperPreviewView @JvmOverloads constructor(
 
                 videoPlayer!!.play()
                 
-                // Restaurar posición del Video OL si hay una guardada
+                // Restaurar posición del Video OL
                 renderer!!
                     .getVideoOverlayRenderer()
                     ?.let { overlay ->
-                
-                        if (savedOverlayPosition > 0) {
-                
-                            overlay.seekTo(
-                                savedOverlayPosition
-                            )
-                
-                        }
                 
                         val project =
                             ProjectManager.getProject()
@@ -245,12 +247,52 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                 "WallpaperPreview -> Overlay onCompletion()"
                             )
                 
-                            if (
-                                currentProject.overlayLoopEnabled &&
-                                !currentProject.previewLocked
-                            ) {
-                
-                                if (
+                            if (currentProject.overlayLoopEnabled) {
+
+                                // Primero: fin del clip invertido (locked o unlocked)
+                                if (overlay.isPlayingReverseClip()) {
+
+                                    val kind = overlay.getReverseClipKind()
+                                    FileLogger.log(
+                                        context,
+                                        "Ping-pong reverse terminó (preview) kind=$kind locked=${currentProject.previewLocked}"
+                                    )
+
+                                    when (kind) {
+                                        ReverseClipKind.UNLOCKED -> {
+                                            overlay.setDirection(
+                                                OverlayPlaybackDirection.FORWARD,
+                                                startPositionMs = currentProject.cueUnlockedMs
+                                            )
+                                        }
+                                        else -> {
+                                            // LOCKED: siempre desde 0 (también si desbloquearon a mitad)
+                                            overlay.setDirection(
+                                                OverlayPlaybackDirection.FORWARD,
+                                                startPositionMs = 0
+                                            )
+                                        }
+                                    }
+
+                                } else if (
+                                    !currentProject.previewLocked &&
+                                    currentProject.cueUnlockedPingPong &&
+                                    !currentProject.cueUnlockedReverseFile.isNullOrBlank()
+                                ) {
+
+                                    FileLogger.log(
+                                        context,
+                                        "CueUnlocked -> completion -> play reverse clip"
+                                    )
+
+                                    overlay.setDirection(
+                                        OverlayPlaybackDirection.REVERSE,
+                                        reverseFileName = currentProject.cueUnlockedReverseFile,
+                                        reverseKind = ReverseClipKind.UNLOCKED
+                                    )
+
+                                } else if (
+                                    !currentProject.previewLocked &&
                                     currentProject.cueUnlockedMode ==
                                         CueMode.LOOP
                                 ) {
@@ -266,7 +308,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                 
                                     overlay.play()
                 
-                                } else {
+                                } else if (!currentProject.previewLocked) {
                 
                                     FileLogger.log(
                                         context,
@@ -280,14 +322,54 @@ class WallpaperPreviewView @JvmOverloads constructor(
                             }
                 
                         }
-                
-                        overlay.play()
+
+                        try {
+                            Thread.sleep(40)
+                        } catch (_: InterruptedException) {
+                        }
+
+                        val softStart = {
+                            overlay.startSoftStart()
+                        }
+                        val lockedNow =
+                            ProjectManager.getProject().previewLocked
+                        if (lockedNow) {
+                            FileLogger.log(
+                                context,
+                                "Preview LOCKED resume -> desde 0 + Soft Start"
+                            )
+                            overlay.restoreAt(
+                                0,
+                                paused = false,
+                                onReady = softStart
+                            )
+                        } else if (savedOverlayPaused) {
+                            FileLogger.log(
+                                context,
+                                "Preview overlay restoreAt paused pos=$savedOverlayPosition"
+                            )
+                            overlay.restoreAt(
+                                savedOverlayPosition,
+                                paused = true,
+                                onReady = softStart
+                            )
+                        } else if (savedOverlayPosition > 0) {
+                            overlay.restoreAt(
+                                savedOverlayPosition,
+                                paused = false,
+                                onReady = softStart
+                            )
+                        } else {
+                            overlay.play()
+                            softStart()
+                        }
                 
                     }
                 
                 initializeAudioConfiguration()
 
                 var frameCount = 0
+                var overlayStalledFrames = 0
 
                 while (running) {
 
@@ -364,25 +446,37 @@ class WallpaperPreviewView @JvmOverloads constructor(
                             val position =
                                 overlay.getCurrentPosition()
                 
-                            val duration =
+                            // Duración del MediaPlayer actual (puede ser el clip de reversa).
+                            // Para cues / UI SIEMPRE usamos overlayDurationMs del proyecto
+                            // (duración del original), nunca la del reverse.
+                            val playerDuration =
                                 overlay.getDuration()
+
+                            val duration =
+                                ProjectManager
+                                    .getProject()
+                                    .overlayDurationMs
+                                    .toInt()
+                                    .takeIf { it > 0 }
+                                    ?: playerDuration
                 
                             // -----------------------------------------
-                            // Guardar duración real del Overlay
+                            // Guardar duración SOLO del video original
                             // -----------------------------------------
                 
                             if (
-                                duration > 0 &&
+                                !overlay.isPlayingReverseClip() &&
+                                playerDuration > 0 &&
                                 ProjectManager
                                     .getProject()
                                     .overlayDurationMs !=
-                                        duration.toLong()
+                                        playerDuration.toLong()
                             ) {
                             
                                 ProjectManager
                                     .getProject()
                                     .overlayDurationMs =
-                                    duration.toLong()
+                                    playerDuration.toLong()
                             
                                 ProjectManager.saveProject(
                                     ProjectManager.getProject()
@@ -404,7 +498,52 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                 project.cueUnlockedMs
                 
                             // -----------------------------------------
-                            // Lógica de Loop
+                            // Transición bloqueo simulado (borde)
+                            // Igual que updateCueState() del wallpaper service
+                            // -----------------------------------------
+
+                            val lockedNow = project.previewLocked
+                            val prevLocked = lastPreviewLocked
+
+                            if (prevLocked != null && lockedNow != prevLocked) {
+
+                                if (lockedNow) {
+                                    FileLogger.log(
+                                        context,
+                                        "Preview LOCKED (sim) -> original desde 0"
+                                    )
+                                    // Anti-parpadeo: ocultar hasta frame en 0
+                                    overlay.setForceHidden(true)
+                                    val softMs =
+                                        project.overlayFadeDurationMs
+                                            .coerceAtLeast(1L)
+                                    overlay.setDirection(
+                                        OverlayPlaybackDirection.FORWARD,
+                                        startPositionMs = 0,
+                                        onReady = {
+                                            overlay.setForceHidden(false)
+                                            overlay.startOverlayFadeIn(softMs)
+                                        }
+                                    )
+                                } else {
+                                    FileLogger.log(
+                                        context,
+                                        "Preview UNLOCKED (sim) reverse=" +
+                                            overlay.isPlayingReverseClip()
+                                    )
+                                    if (overlay.isPlayingReverseClip()) {
+                                        // Dejar terminar la reversa; onCompletion
+                                        // decide el seek según ReverseClipKind
+                                    } else {
+                                        overlay.play()
+                                    }
+                                }
+                            }
+
+                            lastPreviewLocked = lockedNow
+
+                            // -----------------------------------------
+                            // Lógica de Loop / Ping-pong (estado estable)
                             // -----------------------------------------
                 
                             if (
@@ -412,55 +551,102 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                 duration > 0
                             ) {
                 
-                                if (
-                                    project.previewLocked
-                                ) {
-                
+                                if (lockedNow) {
+
                                     if (
-                                        (position >= overlayCueController.cueLockedMs)
-                                        && project.previewLocked
+                                        project.cueLockedPingPong &&
+                                        !project.cueLockedReverseFile.isNullOrBlank()
+                                    ) {
+
+                                        if (
+                                            !overlay.isPlayingReverseClip() &&
+                                            position >=
+                                            (overlayCueController.cueLockedMs - 30).coerceAtLeast(0)
+                                        ) {
+                                            overlay.setDirection(
+                                                OverlayPlaybackDirection.REVERSE,
+                                                reverseFileName = project.cueLockedReverseFile,
+                                                reverseKind = ReverseClipKind.LOCKED
+                                            )
+                                        }
+
+                                    } else if (
+                                        position >= overlayCueController.cueLockedMs
                                     ) {
                                     
-                                        if (
-                                            (project.cueLockedMode == CueMode.LOOP)
-                                            && project.previewLocked
-                                        ) {
-                                    
+                                        if (project.cueLockedMode == CueMode.LOOP) {
                                             overlay.seekTo(0)
-                                    
                                         } else {
-                                            
-                                            if (project.previewLocked) {
-                                                overlay.pause()
-                                            }
-                                    
+                                            overlay.pause()
                                         }
-                                    
-                                    }
-                                    
-                                    if ((continue_play == false)
-                                        && project.previewLocked)
-                                    {
-                                        overlay.seekTo(0)
-                                        overlay.play()
-                                        continue_play = true
                                     }
                 
                                 } else {
-                                    
-                                    if ((continue_play == true)
-                                        && !(project.previewLocked))
-                                    {
-                                        overlay.play()
-                                        continue_play = false
-                                    }
-                
+
+                                    // Unlocked: el fin de video / reverse lo maneja onCompletion
+                                    // (igual que el service)
                                 }
                 
                             }
                 
                         }
                 
+                    // Watchdog overlay (no tocar pausas intencionales)
+                    renderer
+                        ?.getVideoOverlayRenderer()
+                        ?.let { overlay ->
+                            val proj = ProjectManager.getProject()
+                            val pos = overlay.getCurrentPosition()
+                            val dur = proj.overlayDurationMs
+                                .toInt()
+                                .coerceAtLeast(overlay.getDuration())
+                            val locked = proj.previewLocked
+
+                            val intentionalPause =
+                                when {
+                                    overlay.isPlaying() -> false
+
+                                    locked &&
+                                        !proj.cueLockedPingPong &&
+                                        proj.cueLockedMode == CueMode.PAUSE &&
+                                        pos >= proj.cueLockedMs -> true
+
+                                    !locked &&
+                                        !proj.cueUnlockedPingPong &&
+                                        proj.cueUnlockedMode == CueMode.PAUSE &&
+                                        dur > 0 &&
+                                        pos >= (dur - 250).coerceAtLeast(
+                                            proj.cueUnlockedMs
+                                        ) -> true
+
+                                    else -> false
+                                }
+
+                            if (intentionalPause ||
+                                overlay.isIntentionallyPaused() ||
+                                proj.overlayVideo == null ||
+                                overlay.isPlayingReverseClip()
+                            ) {
+                                overlayStalledFrames = 0
+                            } else if (!overlay.isPlaying()) {
+                                overlayStalledFrames++
+                                if (overlayStalledFrames >= 45) {
+                                    FileLogger.log(
+                                        context,
+                                        "Preview overlay watchdog: recoverPlayback pos=$pos"
+                                    )
+                                    overlay.recoverPlayback(
+                                        pos.coerceAtLeast(0)
+                                    )
+                                    overlayStalledFrames = 0
+                                } else if (overlayStalledFrames == 20) {
+                                    overlay.ensurePlaying(pos)
+                                }
+                            } else {
+                                overlayStalledFrames = 0
+                            }
+                        }
+
                     renderer!!.drawFrame()
                 
                     pendingCapture?.let {
@@ -516,9 +702,47 @@ class WallpaperPreviewView @JvmOverloads constructor(
                 renderer
                     ?.getVideoOverlayRenderer()
                     ?.let { overlay ->
-                
-                        savedOverlayPosition =
-                            overlay.getCurrentPosition()
+                        val project = ProjectManager.getProject()
+                        if (project.previewLocked) {
+                            // Simulación de lock: al volver, siempre desde 0
+                            savedOverlayPaused = false
+                            savedOverlayPosition = 0
+                        } else {
+                            val unlockedPause =
+                                !project.cueUnlockedPingPong &&
+                                    project.cueUnlockedMode == CueMode.PAUSE &&
+                                    !overlay.isPlaying()
+
+                            savedOverlayPaused =
+                                overlay.isIntentionallyPaused() || unlockedPause
+
+                            savedOverlayPosition =
+                                when {
+                                    // PAUSE al final: fijar SIEMPRE duration
+                                    // (MediaPlayer a veces reporta 0 tras EOF)
+                                    savedOverlayPaused && unlockedPause ->
+                                        project.overlayDurationMs
+                                            .toInt()
+                                            .coerceAtLeast(
+                                                overlay.getDuration()
+                                            )
+
+                                    overlay.isPlayingReverseClip() -> {
+                                        when (overlay.getReverseClipKind()) {
+                                            ReverseClipKind.UNLOCKED ->
+                                                project.cueUnlockedMs
+                                            else -> 0
+                                        }
+                                    }
+
+                                    else ->
+                                        overlay.getCurrentPosition()
+                                }
+                        }
+                        FileLogger.log(
+                            context,
+                            "Preview overlay guardado pos=$savedOverlayPosition paused=$savedOverlayPaused"
+                        )
                     }
 
                 videoPlayer?.release()
@@ -717,9 +941,12 @@ class WallpaperPreviewView @JvmOverloads constructor(
     }
     
     fun reloadPlayers() {
-    
+        // Proyecto nuevo / import: no restaurar pausa ni posición vieja
+        savedPosition = 0
+        savedOverlayPosition = 0
+        savedOverlayPaused = false
+        lastPreviewLocked = null
         stopRendering()
         startRendering()
-        
     }
 }

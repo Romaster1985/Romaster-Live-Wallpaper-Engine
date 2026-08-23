@@ -3,8 +3,10 @@ package com.romaster.livewallengine.storage
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import com.romaster.livewallengine.debug.FileLogger
 import com.romaster.livewallengine.project.ProjectManager
-import java.io.ByteArrayOutputStream
+import com.romaster.livewallengine.video.VideoStorage
+import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -27,17 +29,25 @@ object ProjectExporter {
 
         ZipOutputStream(output).use { zip ->
 
-            writeProjectJson(zip)
-        
-            writePreview(
-                zip,
-                previewBitmap
-            )
-        
-            writeResources(
-                context,
-                zip
-            )
+            // 1) Config y preview primero (nunca deben faltar)
+            try {
+                writeProjectJson(zip)
+            } catch (e: Exception) {
+                FileLogger.log(context, "ProjectExporter project.json ERROR: ${e.message}")
+            }
+
+            try {
+                writePreview(zip, previewBitmap)
+            } catch (e: Exception) {
+                FileLogger.log(context, "ProjectExporter preview.png ERROR: ${e.message}")
+            }
+
+            // 2) Recursos
+            try {
+                writeResources(context, zip)
+            } catch (e: Exception) {
+                FileLogger.log(context, "ProjectExporter resources ERROR: ${e.message}")
+            }
         
         }
     }
@@ -89,27 +99,34 @@ object ProjectExporter {
 
         zip: ZipOutputStream,
     
-        file: java.io.File,
+        file: File,
     
-        zipName: String
+        zipName: String,
     
-    ) {
+        context: Context
     
-        if (!file.exists())
-            return
+    ): Boolean {
     
-        zip.putNextEntry(
-            ZipEntry(zipName)
-        )
-    
-        file.inputStream().use {
-    
-            it.copyTo(zip)
-    
+        if (!file.exists() || !file.isFile || file.length() <= 0L) {
+            return false
         }
-    
-        zip.closeEntry()
-    
+
+        return try {
+            zip.putNextEntry(ZipEntry(zipName))
+            file.inputStream().use { it.copyTo(zip) }
+            zip.closeEntry()
+            FileLogger.log(
+                context,
+                "ProjectExporter OK: $zipName (${file.length()} bytes)"
+            )
+            true
+        } catch (e: Exception) {
+            FileLogger.log(
+                context,
+                "ProjectExporter FAIL: $zipName ${e.message}"
+            )
+            false
+        }
     }
     
     private fun writeResources(
@@ -124,104 +141,78 @@ object ProjectExporter {
             ProjectManager.getProject()
     
         // Video principal
-    
         project.wallpaperVideo?.let {
-    
             addFile(
                 zip,
-                java.io.File(
-                    context.filesDir,
-                    "videos/$it"
-                ),
-                "videos/$it"
+                File(context.filesDir, "videos/$it"),
+                "videos/$it",
+                context
             )
-    
         }
     
         // Video overlay
-    
         project.overlayVideo?.let {
-    
             addFile(
                 zip,
-                java.io.File(
-                    context.filesDir,
-                    "videos/$it"
-                ),
-                "videos/$it"
+                File(context.filesDir, "videos/$it"),
+                "videos/$it",
+                context
             )
-    
         }
+
+        // Clips de reversa (nombres fijos en videos/)
+        addFile(
+            zip,
+            VideoStorage.getReverseLockedFile(context),
+            "videos/${VideoStorage.OVERLAY_REVERSE_LOCKED}",
+            context
+        )
+        addFile(
+            zip,
+            VideoStorage.getReverseUnlockedFile(context),
+            "videos/${VideoStorage.OVERLAY_REVERSE_UNLOCKED}",
+            context
+        )
     
         // MP3 fondo
-    
-        project.layers.firstOrNull()
-            ?.soundPath?.let {
-    
+        project.layers.firstOrNull()?.soundPath?.let {
             addFile(
                 zip,
-                java.io.File(
-                    context.filesDir,
-                    "audio/$it"
-                ),
-                "audio/$it"
+                File(context.filesDir, "audio/$it"),
+                "audio/$it",
+                context
             )
-    
         }
     
         // MP3 overlay
-    
         project.overlay.soundPath?.let {
-    
             addFile(
                 zip,
-                java.io.File(
-                    context.filesDir,
-                    "audio/$it"
-                ),
-                "audio/$it"
+                File(context.filesDir, "audio/$it"),
+                "audio/$it",
+                context
             )
-    
         }
     
         // Fuente reloj
-    
         project.clock.clockFont?.let {
-    
             addFile(
-    
                 zip,
-    
-                java.io.File(
-                    context.filesDir,
-                    "fonts/$it"
-                ),
-    
-                "fonts/$it"
-    
+                File(context.filesDir, "fonts/$it"),
+                "fonts/$it",
+                context
             )
-    
         }
     
         // Fuente fecha
-    
         project.clock.dateFont?.let {
-    
             addFile(
-    
                 zip,
-    
-                java.io.File(
-                    context.filesDir,
-                    "fonts/$it"
-                ),
-    
-                "fonts/$it"
-    
+                File(context.filesDir, "fonts/$it"),
+                "fonts/$it",
+                context
             )
-    
         }
-    
     }
 
 }

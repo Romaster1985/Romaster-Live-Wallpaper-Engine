@@ -85,6 +85,25 @@ class ExternalTexture {
         )
     }
 
+    /**
+     * Tras liberar un MediaPlayer, el Surface asociado al SurfaceTexture
+     * queda "abandoned". Hay que crear uno nuevo antes de enganchar
+     * otro producer (otro MediaPlayer).
+     */
+    fun recreateSurface(): Surface {
+        try {
+            surface?.release()
+        } catch (_: Exception) {
+        }
+        surface = null
+
+        val st = surfaceTexture
+            ?: throw IllegalStateException("SurfaceTexture no inicializado")
+
+        surface = Surface(st)
+        return surface!!
+    }
+
     fun update() {
 
         try {

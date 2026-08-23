@@ -77,6 +77,9 @@ import com.romaster.livewallengine.storage.ProjectExporter
 import com.romaster.livewallengine.storage.ProjectImporter
 import com.romaster.livewallengine.storage.StorageManager
 import com.romaster.livewallengine.debug.FileLogger
+import com.romaster.livewallengine.video.ReverseVideoProcessor
+import android.widget.ProgressBar
+import java.io.File
 import com.romaster.livewallengine.gallery.ProjectGalleryActivity
 
 class MainActivity : AppCompatActivity() {
@@ -481,6 +484,192 @@ class MainActivity : AppCompatActivity() {
                 .toString()
     }
     
+
+    private fun invalidatePingPongIfNeeded(locked: Boolean) {
+        val checkId = if (locked) R.id.checkCueLockedPingPong
+            else R.id.checkCueUnlockedPingPong
+        val box = findViewById<CheckBox>(checkId)
+        if (box.isChecked) {
+            loadingUI = true
+            box.isChecked = false
+            loadingUI = false
+            clearPingPong(locked)
+            Toast.makeText(
+                this,
+                "Ping-pong desactivado: el cue cambió",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun clearPingPong(locked: Boolean) {
+        val project = ProjectManager.getProject()
+        ReverseVideoProcessor.deleteIfExists(this, locked)
+        if (locked) {
+            project.cueLockedReverseFile = null
+            project.cueLockedPingPong = false
+        } else {
+            project.cueUnlockedReverseFile = null
+            project.cueUnlockedPingPong = false
+        }
+        ProjectManager.saveProject(project)
+        StorageManager.saveProject(this, project)
+    }
+
+    private fun startPingPongProcessing(locked: Boolean) {
+        val project = ProjectManager.getProject()
+        val overlayName = project.overlayVideo
+        if (overlayName.isNullOrBlank()) {
+            Toast.makeText(
+                this,
+                "Primero cargá un video overlay",
+                Toast.LENGTH_SHORT
+            ).show()
+            uncheckPingPongSilently(locked)
+            return
+        }
+
+        val source = VideoStorage.getVideoFile(this, overlayName)
+        if (!source.exists()) {
+            Toast.makeText(
+                this,
+                "No se encontró el video overlay",
+                Toast.LENGTH_SHORT
+            ).show()
+            uncheckPingPongSilently(locked)
+            return
+        }
+
+        val duration = project.overlayDurationMs.toInt().coerceAtLeast(0)
+        val fromMs: Int
+        val toMs: Int
+        if (locked) {
+            fromMs = 0
+            toMs = project.cueLockedMs.coerceIn(0, duration)
+        } else {
+            fromMs = project.cueUnlockedMs.coerceIn(0, duration)
+            toMs = duration
+        }
+
+        val interval = toMs - fromMs
+        if (interval < 200) {
+            Toast.makeText(
+                this,
+                "El intervalo es demasiado corto para ping-pong",
+                Toast.LENGTH_SHORT
+            ).show()
+            uncheckPingPongSilently(locked)
+            return
+        }
+
+        if (interval > ReverseVideoProcessor.MAX_INTERVAL_MS) {
+            Toast.makeText(
+                this,
+                "Máximo ${ReverseVideoProcessor.MAX_INTERVAL_MS / 1000} s de intervalo para ping-pong",
+                Toast.LENGTH_LONG
+            ).show()
+            uncheckPingPongSilently(locked)
+            return
+        }
+
+        val progressView = layoutInflater.inflate(
+            android.R.layout.simple_list_item_1,
+            null
+        )
+        // Diálogo custom simple
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(48, 32, 48, 16)
+        }
+        val label = TextView(this).apply {
+            text = "Procesando reversa…"
+            textSize = 16f
+        }
+        val bar = ProgressBar(
+            this,
+            null,
+            android.R.attr.progressBarStyleHorizontal
+        ).apply {
+            max = 100
+            isIndeterminate = false
+            progress = 0
+        }
+        val detail = TextView(this).apply {
+            text = "0 %"
+            textSize = 13f
+            setPadding(0, 16, 0, 0)
+        }
+        container.addView(label)
+        container.addView(bar)
+        container.addView(detail)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(container)
+            .setCancelable(false)
+            .create()
+        dialog.show()
+
+        // Nombres fijos en videos/ (se sobrescriben si ya existían)
+        val outName = VideoStorage.reverseFileName(locked)
+
+        lifecycleScope.launch {
+            try {
+                val outFile = withContext(Dispatchers.IO) {
+                    ReverseVideoProcessor.process(
+                        context = this@MainActivity,
+                        sourceFile = source,
+                        fromMs = fromMs,
+                        toMs = toMs,
+                        locked = locked
+                    ) { p ->
+                        runOnUiThread {
+                            val pct = (p * 100f).toInt().coerceIn(0, 100)
+                            bar.progress = pct
+                            detail.text = "$pct %"
+                        }
+                    }
+                }
+
+                val proj = ProjectManager.getProject()
+                if (locked) {
+                    proj.cueLockedReverseFile = outFile.name // overlay_video_reverse_locked.mp4
+                    proj.cueLockedPingPong = true
+                } else {
+                    proj.cueUnlockedReverseFile = outFile.name // overlay_video_reverse_unlocked.mp4
+                    proj.cueUnlockedPingPong = true
+                }
+                ProjectManager.saveProject(proj)
+                StorageManager.saveProject(this@MainActivity, proj)
+
+                dialog.dismiss()
+                Toast.makeText(
+                    this@MainActivity,
+                    "Ping-pong listo",
+                    Toast.LENGTH_SHORT
+                ).show()
+                updatePreviewProject()
+            } catch (e: Exception) {
+                dialog.dismiss()
+                uncheckPingPongSilently(locked)
+                clearPingPong(locked)
+                Toast.makeText(
+                    this@MainActivity,
+                    "Error al procesar: ${e.message ?: e.javaClass.simpleName}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun uncheckPingPongSilently(locked: Boolean) {
+        val checkId = if (locked) R.id.checkCueLockedPingPong
+            else R.id.checkCueUnlockedPingPong
+        loadingUI = true
+        findViewById<CheckBox>(checkId).isChecked = false
+        loadingUI = false
+    }
+
+
     private fun setupPlaybackTab() {
 
         // =====================================================
@@ -496,6 +685,36 @@ class MainActivity : AppCompatActivity() {
     
             updatePreviewProject()
     
+        }
+
+        findViewById<CheckBox>(
+            R.id.checkCueLockedPingPong
+        ).setOnCheckedChangeListener { button, isChecked ->
+
+            if (loadingUI)
+                return@setOnCheckedChangeListener
+
+            if (isChecked) {
+                startPingPongProcessing(locked = true)
+            } else {
+                clearPingPong(locked = true)
+                updatePreviewProject()
+            }
+        }
+
+        findViewById<CheckBox>(
+            R.id.checkCueUnlockedPingPong
+        ).setOnCheckedChangeListener { button, isChecked ->
+
+            if (loadingUI)
+                return@setOnCheckedChangeListener
+
+            if (isChecked) {
+                startPingPongProcessing(locked = false)
+            } else {
+                clearPingPong(locked = false)
+                updatePreviewProject()
+            }
         }
     
     
@@ -544,6 +763,9 @@ class MainActivity : AppCompatActivity() {
                 formatCueTime(
                     cueTime
                 )
+
+            // Mover el cue invalida el ping-pong locked
+            invalidatePingPongIfNeeded(locked = true)
     
             updatePreviewProject()
     
@@ -579,6 +801,8 @@ class MainActivity : AppCompatActivity() {
                 formatCueTime(
                     cueTime
                 )
+
+            invalidatePingPongIfNeeded(locked = false)
     
             updatePreviewProject()
     
@@ -600,6 +824,21 @@ class MainActivity : AppCompatActivity() {
                     CueMode.LOOP
                 else
                     CueMode.PAUSE
+
+            // Pausa incompatible con ping-pong: destildar y borrar clip
+            if (project.cueLockedMode == CueMode.PAUSE &&
+                project.cueLockedPingPong
+            ) {
+                clearPingPong(locked = true)
+                loadingUI = true
+                findViewById<CheckBox>(R.id.checkCueLockedPingPong).isChecked = false
+                loadingUI = false
+                Toast.makeText(
+                    this,
+                    "Ping-pong desactivado: modo Pausa",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         
             ProjectManager.saveProject(project)
         
@@ -651,8 +890,22 @@ class MainActivity : AppCompatActivity() {
                     CueMode.LOOP
                 else
                     CueMode.PAUSE
+
+            if (project.cueUnlockedMode == CueMode.PAUSE &&
+                project.cueUnlockedPingPong
+            ) {
+                clearPingPong(locked = false)
+                loadingUI = true
+                findViewById<CheckBox>(R.id.checkCueUnlockedPingPong).isChecked = false
+                loadingUI = false
+                Toast.makeText(
+                    this,
+                    "Ping-pong desactivado: modo Pausa",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         
-            //ProjectManager.saveProject(project)
+            ProjectManager.saveProject(project)
         
             updatePreviewProject()
         }
@@ -726,6 +979,16 @@ class MainActivity : AppCompatActivity() {
             R.id.checkEnableOverlayLoop
         ).isChecked =
             project.overlayLoopEnabled
+
+        findViewById<CheckBox>(
+            R.id.checkCueLockedPingPong
+        ).isChecked =
+            project.cueLockedPingPong
+
+        findViewById<CheckBox>(
+            R.id.checkCueUnlockedPingPong
+        ).isChecked =
+            project.cueUnlockedPingPong
     
     
         // =====================================================
@@ -990,6 +1253,8 @@ class MainActivity : AppCompatActivity() {
                         formatCueTime(milliseconds)
                 
                 }
+
+                invalidatePingPongIfNeeded(locked)
     
                 updatePreviewProject()
     
@@ -1295,6 +1560,16 @@ class MainActivity : AppCompatActivity() {
             findViewById<CheckBox>(
                 R.id.checkEnableOverlayLoop
             ).isChecked
+
+        project.cueLockedPingPong =
+            findViewById<CheckBox>(
+                R.id.checkCueLockedPingPong
+            ).isChecked
+
+        project.cueUnlockedPingPong =
+            findViewById<CheckBox>(
+                R.id.checkCueUnlockedPingPong
+            ).isChecked
     
     
         // =====================================================
@@ -1448,6 +1723,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(
             R.id.buttonNewProject
         ).setOnClickListener {
+
+            // Limpiar clips de reversa del proyecto anterior
+            ReverseVideoProcessor.clearAll(this)
         
             ProjectManager.resetProject()
         
@@ -2175,6 +2453,14 @@ class MainActivity : AppCompatActivity() {
                 ProjectManager
                     .getProject()
                     .overlayVideo = path
+
+                // Nuevo video: invalidar ambos ping-pong
+                clearPingPong(locked = true)
+                clearPingPong(locked = false)
+                loadingUI = true
+                findViewById<CheckBox>(R.id.checkCueLockedPingPong).isChecked = false
+                findViewById<CheckBox>(R.id.checkCueUnlockedPingPong).isChecked = false
+                loadingUI = false
     
                 editor.save()
     
@@ -2356,12 +2642,19 @@ class MainActivity : AppCompatActivity() {
             
             FilePicker.REQUEST_IMPORT_PROJECT -> {
 
+                // Antes de importar: borrar reversas del proyecto actual
+                ReverseVideoProcessor.clearAll(this)
+
                 ProjectImporter.import(
                     this,
                     uri
                 )
                 
                 reloadProjectUI()
+
+                findViewById<WallpaperPreviewView>(
+                    R.id.previewView
+                ).reloadPlayers()
                 
             }
     
