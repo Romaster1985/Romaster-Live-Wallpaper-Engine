@@ -3,8 +3,18 @@ name: Android Build
 on:
   push:
     branches: [ main, master ]
+    paths-ignore:
+      - 'LiveWallpapers/**'
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
   pull_request:
     branches: [ main, master ]
+    paths-ignore:
+      - 'LiveWallpapers/**'
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
 
 jobs:
   build:
