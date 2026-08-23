@@ -77,6 +77,7 @@ import com.romaster.livewallengine.storage.ProjectExporter
 import com.romaster.livewallengine.storage.ProjectImporter
 import com.romaster.livewallengine.storage.StorageManager
 import com.romaster.livewallengine.debug.FileLogger
+import com.romaster.livewallengine.gallery.ProjectGalleryActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -1369,6 +1370,21 @@ class MainActivity : AppCompatActivity() {
             editor.save()
         }
         
+        // BOTON DE SELECCIONAR PROYECTO (galería GitHub)
+
+        findViewById<MaterialButton>(
+            R.id.buttonSelectProject
+        ).setOnClickListener {
+
+            startActivityForResult(
+                Intent(
+                    this,
+                    ProjectGalleryActivity::class.java
+                ),
+                FilePicker.REQUEST_GALLERY_PROJECT
+            )
+        }
+
         // BOTON DE IMPORTAR PROYECTO
     
         findViewById<MaterialButton>(
@@ -2108,6 +2124,15 @@ class MainActivity : AppCompatActivity() {
     
         if (resultCode != Activity.RESULT_OK)
             return
+
+        // Galería: el proyecto ya fue importado en ProjectGalleryActivity
+        if (requestCode == FilePicker.REQUEST_GALLERY_PROJECT) {
+            reloadProjectUI()
+            findViewById<WallpaperPreviewView>(
+                R.id.previewView
+            ).reloadPlayers()
+            return
+        }
     
         val uri =
             data?.data ?: return

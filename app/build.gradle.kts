@@ -86,4 +86,12 @@ dependencies {
     implementation(
         "com.github.skydoves:colorpickerview:2.4.0"
     )
+
+    implementation(
+        "androidx.recyclerview:recyclerview:1.4.0"
+    )
+
+    implementation(
+        "androidx.lifecycle:lifecycle-runtime-ktx:2.9.2"
+    )
 }

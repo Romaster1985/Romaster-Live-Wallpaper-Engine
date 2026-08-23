@@ -6,4 +6,6 @@ object FilePicker {
 
     const val REQUEST_IMPORT_PROJECT = 4002
 
+    const val REQUEST_GALLERY_PROJECT = 4003
+
 }

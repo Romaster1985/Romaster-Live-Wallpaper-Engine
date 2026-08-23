@@ -45,6 +45,14 @@
                     android:text="Guardar Cambios"/>
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonSelectProject"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Seleccionar Proyecto"/>
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonImportProject"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"

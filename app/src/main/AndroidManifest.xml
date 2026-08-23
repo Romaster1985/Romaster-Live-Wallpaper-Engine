@@ -2,6 +2,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -9,7 +11,8 @@
         android:banner="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.RomasterLiveWall">
+        android:theme="@style/Theme.RomasterLiveWall"
+        android:usesCleartextTraffic="false">
 
         <activity
             android:name=".MainActivity"
@@ -22,6 +25,11 @@
             </intent-filter>
 
         </activity>
+
+        <activity
+            android:name=".gallery.ProjectGalleryActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
 
         <service
             android:name=".wallpaper.VideoWallpaperService"
@@ -37,41 +45,41 @@
                 android:resource="@xml/wallpaper" />
 
         </service>
-        
+
         <service
             android:name=".wallpaper.CanvasWallpaperService"
             android:permission="android.permission.BIND_WALLPAPER"
             android:exported="true">
-            
+
             <intent-filter>
-                
+
                 <action
                     android:name="android.service.wallpaper.WallpaperService" />
-                
+
             </intent-filter>
-            
+
             <meta-data
                 android:name="android.service.wallpaper"
                 android:resource="@xml/canvas_wallpaper" />
-            
+
         </service>
-        
+
         <service
             android:name=".wallpaper.GLWallpaperService"
             android:permission="android.permission.BIND_WALLPAPER"
             android:exported="true">
-        
+
             <intent-filter>
                 <action
                     android:name="android.service.wallpaper.WallpaperService" />
             </intent-filter>
-        
+
             <meta-data
                 android:name="android.service.wallpaper"
                 android:resource="@xml/gl_wallpaper" />
-        
+
         </service>
-        
+
     </application>
 
 </manifest>
