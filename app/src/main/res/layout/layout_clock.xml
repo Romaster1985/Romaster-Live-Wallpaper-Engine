@@ -498,6 +498,13 @@
                     android:valueTo="100"
                     android:stepSize="1"
                     android:value="50"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchClockBehindOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Reloj detrás del Video-OL"/>
         
             </LinearLayout>
         

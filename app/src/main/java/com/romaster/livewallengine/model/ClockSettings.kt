@@ -41,5 +41,11 @@ data class ClockSettings(
     
     var clockFont: String? = null,
 
-    var dateFont: String? = null
+    var dateFont: String? = null,
+
+    /**
+     * Si true, el reloj se dibuja entre el video de fondo y el Video-OL
+     * (queda "detrás" del overlay de video).
+     */
+    var behindVideoOverlay: Boolean = false
 )

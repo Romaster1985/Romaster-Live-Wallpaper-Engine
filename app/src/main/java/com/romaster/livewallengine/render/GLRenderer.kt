@@ -262,13 +262,24 @@ class GLRenderer(
         GLES20.glDisableVertexAttribArray(texCoordHandle)
         GLES20.glDisable(GLES20.GL_BLEND)
 
-        videoOverlayRenderer?.update()
-        videoOverlayRenderer?.draw()
+        val clockBehind =
+            ProjectManager.getProject().clock.behindVideoOverlay
 
-        overlayRenderer?.draw(
-            if (virtualWidth > 0) virtualWidth else width,
-            if (virtualHeight > 0) virtualHeight else height
-        )
+        val vw = if (virtualWidth > 0) virtualWidth else width
+        val vh = if (virtualHeight > 0) virtualHeight else height
+
+        // Orden de capas:
+        // - Normal:  BG → Video-OL → Reloj
+        // - behind:  BG → Reloj → Video-OL
+        if (clockBehind) {
+            overlayRenderer?.draw(vw, vh)
+            videoOverlayRenderer?.update()
+            videoOverlayRenderer?.draw()
+        } else {
+            videoOverlayRenderer?.update()
+            videoOverlayRenderer?.draw()
+            overlayRenderer?.draw(vw, vh)
+        }
 
         egl.swapBuffers()
     }

@@ -2268,6 +2268,11 @@ class MainActivity : AppCompatActivity() {
             R.id.textYValue
         ).text =
             (clock.y * 100f).toInt().toString()
+
+        findViewById<MaterialSwitch>(
+            R.id.switchClockBehindOverlay
+        ).isChecked =
+            clock.behindVideoOverlay
         
         when (clock.alignment) {
 
@@ -2340,6 +2345,16 @@ class MainActivity : AppCompatActivity() {
             if (loadingUI)
                 return@setOnCheckedChangeListener
         
+            updatePreviewProject()
+        }
+
+        findViewById<MaterialSwitch>(
+            R.id.switchClockBehindOverlay
+        ).setOnCheckedChangeListener { _, _ ->
+
+            if (loadingUI)
+                return@setOnCheckedChangeListener
+
             updatePreviewProject()
         }
         
@@ -3339,6 +3354,11 @@ class MainActivity : AppCompatActivity() {
             findViewById<Slider>(
                 R.id.sliderY
             ).value / 100f
+
+        clock.behindVideoOverlay =
+            findViewById<MaterialSwitch>(
+                R.id.switchClockBehindOverlay
+            ).isChecked
         
         clock.dateSpacing =
             dateSpacingValue
