@@ -65,6 +65,7 @@ import com.romaster.livewallengine.project.DefaultProject
 import com.romaster.livewallengine.ui.WallpaperPreviewView
 import com.romaster.livewallengine.ui.SimpleSeekListener
 import com.romaster.livewallengine.video.VideoPicker
+import com.romaster.livewallengine.video.GifToMp4Converter
 import com.romaster.livewallengine.video.VideoStorage
 import com.romaster.livewallengine.video.VideoPlayer
 import com.romaster.livewallengine.video.OverlayVideoPlayer
@@ -292,6 +293,15 @@ class MainActivity : AppCompatActivity() {
                 VideoPicker.REQUEST_WALLPAPER
             )
         }
+
+        findViewById<MaterialButton>(
+            R.id.buttonImportGifWallpaper
+        ).setOnClickListener {
+            VideoPicker.openGif(
+                this,
+                VideoPicker.REQUEST_WALLPAPER_GIF
+            )
+        }
         
         findViewById<MaterialButtonToggleGroup>(
             R.id.toggleVideoMode
@@ -346,6 +356,15 @@ class MainActivity : AppCompatActivity() {
             VideoPicker.open(
                 this,
                 VideoPicker.REQUEST_OVERLAY
+            )
+        }
+
+        findViewById<MaterialButton>(
+            R.id.buttonImportGifOverlay
+        ).setOnClickListener {
+            VideoPicker.openGif(
+                this,
+                VideoPicker.REQUEST_OVERLAY_GIF
             )
         }
         
@@ -2541,6 +2560,14 @@ class MainActivity : AppCompatActivity() {
     
                 refreshPreview()
             }
+
+            VideoPicker.REQUEST_WALLPAPER_GIF -> {
+                importGifAsVideo(uri, isOverlay = false)
+            }
+
+            VideoPicker.REQUEST_OVERLAY_GIF -> {
+                importGifAsVideo(uri, isOverlay = true)
+            }
     
             // ---------------------------------
             // Fuente
@@ -3318,6 +3345,135 @@ class MainActivity : AppCompatActivity() {
     
     }
     
+
+    /**
+     * Importa un GIF → MP4 (nombres fijos wallpaper/overlay).
+     * Antes pregunta si se quiere rellenar la transparencia con un color
+     * (para usar luego como chroma key).
+     */
+    private fun importGifAsVideo(uri: android.net.Uri, isOverlay: Boolean) {
+        AlertDialog.Builder(this)
+            .setTitle("Transparencia del GIF")
+            .setMessage(
+                "El MP4 no conserva transparencia. " +
+                    "¿Querés elegir un color para rellenar las zonas transparentes " +
+                    "(útil si después usás chroma key)?"
+            )
+            .setPositiveButton("Sí") { _, _ ->
+                // Mismo selector que tipografías / colores del reloj
+                ColorPickerDialog.show(
+                    this,
+                    "#00FF00" // verde típico de chroma por defecto
+                ) { hex ->
+                    val fill = try {
+                        android.graphics.Color.parseColor(hex)
+                    } catch (_: Exception) {
+                        android.graphics.Color.GREEN
+                    }
+                    startGifConversion(uri, isOverlay, fill)
+                }
+            }
+            .setNegativeButton("No") { _, _ ->
+                // Fondo negro (comportamiento anterior)
+                startGifConversion(uri, isOverlay, android.graphics.Color.BLACK)
+            }
+            .setNeutralButton("Cancelar", null)
+            .show()
+    }
+
+    private fun startGifConversion(
+        uri: android.net.Uri,
+        isOverlay: Boolean,
+        transparencyFillColor: Int
+    ) {
+        val outName = if (isOverlay) {
+            VideoStorage.OVERLAY_VIDEO
+        } else {
+            VideoStorage.WALLPAPER_VIDEO
+        }
+        val outFile = VideoStorage.getVideoFile(this, outName)
+
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(48, 32, 48, 16)
+        }
+        val label = TextView(this).apply {
+            text = "Convirtiendo GIF a MP4…"
+            textSize = 16f
+        }
+        val bar = ProgressBar(
+            this,
+            null,
+            android.R.attr.progressBarStyleHorizontal
+        ).apply {
+            max = 100
+            isIndeterminate = false
+            progress = 0
+        }
+        val detail = TextView(this).apply {
+            text = "0 %"
+            textSize = 13f
+            setPadding(0, 16, 0, 0)
+        }
+        container.addView(label)
+        container.addView(bar)
+        container.addView(detail)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(container)
+            .setCancelable(false)
+            .create()
+        dialog.show()
+
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    GifToMp4Converter.convert(
+                        context = this@MainActivity,
+                        sourceUri = uri,
+                        outputFile = outFile,
+                        transparencyFillColor = transparencyFillColor
+                    ) { p ->
+                        runOnUiThread {
+                            val pct = (p * 100f).toInt().coerceIn(0, 100)
+                            bar.progress = pct
+                            detail.text = "$pct %"
+                        }
+                    }
+                }
+
+                val project = ProjectManager.getProject()
+                if (isOverlay) {
+                    project.overlayVideo = outName
+                    clearPingPong(locked = true)
+                    clearPingPong(locked = false)
+                    loadingUI = true
+                    findViewById<CheckBox>(R.id.checkCueLockedPingPong).isChecked = false
+                    findViewById<CheckBox>(R.id.checkCueUnlockedPingPong).isChecked = false
+                    loadingUI = false
+                } else {
+                    project.wallpaperVideo = outName
+                }
+                editor.save()
+                dialog.dismiss()
+                Toast.makeText(
+                    this@MainActivity,
+                    "GIF importado como video",
+                    Toast.LENGTH_SHORT
+                ).show()
+                refreshPreview()
+                findViewById<WallpaperPreviewView>(R.id.previewView).reloadPlayers()
+            } catch (e: Exception) {
+                dialog.dismiss()
+                Toast.makeText(
+                    this@MainActivity,
+                    "Error al convertir GIF: ${e.message ?: e.javaClass.simpleName}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     private fun reloadProjectUI(){
         
         loadingUI = true
