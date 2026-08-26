@@ -47,5 +47,20 @@ data class ClockSettings(
      * Si true, el reloj se dibuja entre el video de fondo y el Video-OL
      * (queda "detrás" del overlay de video).
      */
-    var behindVideoOverlay: Boolean = false
+    var behindVideoOverlay: Boolean = false,
+
+    /**
+     * Si true, la fecha va arriba y la hora debajo.
+     */
+    var swapTimeAndDate: Boolean = false,
+
+    /**
+     * Deformación vertical de la hora en px (-500…+500). 0 = normal.
+     */
+    var clockVerticalDeform: Float = 0f,
+
+    /**
+     * Deformación vertical de la fecha en px (-500…+500). 0 = normal.
+     */
+    var dateVerticalDeform: Float = 0f
 )

@@ -283,6 +283,35 @@
                     android:valueTo="250"
                     android:stepSize="1"
                     android:value="64"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Deformación Vertical"/>
+
+                    <TextView
+                        android:id="@+id/textClockVerticalDeform"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderClockVerticalDeform"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-500"
+                    android:valueTo="500"
+                    android:stepSize="1"
+                    android:value="0"/>
         
                 <TextView
                     android:layout_width="wrap_content"
@@ -376,6 +405,35 @@
                     android:valueTo="250"
                     android:stepSize="1"
                     android:value="64"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Deformación Vertical"/>
+
+                    <TextView
+                        android:id="@+id/textDateVerticalDeform"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"/>
+
+                </LinearLayout>
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderDateVerticalDeform"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-500"
+                    android:valueTo="500"
+                    android:stepSize="1"
+                    android:value="0"/>
         
                 <TextView
                     android:layout_width="wrap_content"
@@ -505,6 +563,13 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:text="Reloj detrás del Video-OL"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchSwapTimeDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Intercambiar Hora 🔀 Fecha"/>
         
             </LinearLayout>
         

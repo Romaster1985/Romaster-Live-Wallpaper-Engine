@@ -1833,10 +1833,20 @@ class MainActivity : AppCompatActivity() {
             R.id.sliderClockSize,
             R.id.textClockSizeValue
         )
+
+        connectSlider(
+            R.id.sliderClockVerticalDeform,
+            R.id.textClockVerticalDeform
+        )
     
         connectSlider(
             R.id.sliderDateSize,
             R.id.textDateSizeValue
+        )
+
+        connectSlider(
+            R.id.sliderDateVerticalDeform,
+            R.id.textDateVerticalDeform
         )
     
         connectSlider(
@@ -2273,6 +2283,31 @@ class MainActivity : AppCompatActivity() {
             R.id.switchClockBehindOverlay
         ).isChecked =
             clock.behindVideoOverlay
+
+        findViewById<MaterialSwitch>(
+            R.id.switchSwapTimeDate
+        ).isChecked =
+            clock.swapTimeAndDate
+
+        findViewById<Slider>(
+            R.id.sliderClockVerticalDeform
+        ).value =
+            clock.clockVerticalDeform.coerceIn(-500f, 500f)
+
+        findViewById<TextView>(
+            R.id.textClockVerticalDeform
+        ).text =
+            clock.clockVerticalDeform.toInt().toString()
+
+        findViewById<Slider>(
+            R.id.sliderDateVerticalDeform
+        ).value =
+            clock.dateVerticalDeform.coerceIn(-500f, 500f)
+
+        findViewById<TextView>(
+            R.id.textDateVerticalDeform
+        ).text =
+            clock.dateVerticalDeform.toInt().toString()
         
         when (clock.alignment) {
 
@@ -2350,6 +2385,16 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<MaterialSwitch>(
             R.id.switchClockBehindOverlay
+        ).setOnCheckedChangeListener { _, _ ->
+
+            if (loadingUI)
+                return@setOnCheckedChangeListener
+
+            updatePreviewProject()
+        }
+
+        findViewById<MaterialSwitch>(
+            R.id.switchSwapTimeDate
         ).setOnCheckedChangeListener { _, _ ->
 
             if (loadingUI)
@@ -3359,6 +3404,21 @@ class MainActivity : AppCompatActivity() {
             findViewById<MaterialSwitch>(
                 R.id.switchClockBehindOverlay
             ).isChecked
+
+        clock.swapTimeAndDate =
+            findViewById<MaterialSwitch>(
+                R.id.switchSwapTimeDate
+            ).isChecked
+
+        clock.clockVerticalDeform =
+            findViewById<Slider>(
+                R.id.sliderClockVerticalDeform
+            ).value
+
+        clock.dateVerticalDeform =
+            findViewById<Slider>(
+                R.id.sliderDateVerticalDeform
+            ).value
         
         clock.dateSpacing =
             dateSpacingValue
