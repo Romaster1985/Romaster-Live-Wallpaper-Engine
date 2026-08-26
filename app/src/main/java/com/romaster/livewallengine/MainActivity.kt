@@ -2289,6 +2289,11 @@ class MainActivity : AppCompatActivity() {
         ).isChecked =
             clock.swapTimeAndDate
 
+        findViewById<CheckBox>(
+            R.id.checkAllowOverlap
+        ).isChecked =
+            clock.allowOverlap
+
         findViewById<Slider>(
             R.id.sliderClockVerticalDeform
         ).value =
@@ -2395,6 +2400,16 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<MaterialSwitch>(
             R.id.switchSwapTimeDate
+        ).setOnCheckedChangeListener { _, _ ->
+
+            if (loadingUI)
+                return@setOnCheckedChangeListener
+
+            updatePreviewProject()
+        }
+
+        findViewById<CheckBox>(
+            R.id.checkAllowOverlap
         ).setOnCheckedChangeListener { _, _ ->
 
             if (loadingUI)
@@ -3408,6 +3423,11 @@ class MainActivity : AppCompatActivity() {
         clock.swapTimeAndDate =
             findViewById<MaterialSwitch>(
                 R.id.switchSwapTimeDate
+            ).isChecked
+
+        clock.allowOverlap =
+            findViewById<CheckBox>(
+                R.id.checkAllowOverlap
             ).isChecked
 
         clock.clockVerticalDeform =

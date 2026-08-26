@@ -37,13 +37,50 @@ class ClockRenderer {
         val baseY = canvas.height * settings.y
         val spacing = settings.dateSpacing
 
+        // Superposición en la misma línea: hora detrás, fecha delante.
+        // spacing = 0 → misma baseline; spacing ≠ 0 desplaza el segundo texto.
+        if (settings.allowOverlap && drawClock && drawDate) {
+            val timeBaseline: Float
+            val dateBaseline: Float
+            if (settings.swapTimeAndDate) {
+                // Fecha en baseY; hora desplazada (pero z-order: hora primero)
+                dateBaseline = baseY
+                timeBaseline = baseY + spacing
+            } else {
+                timeBaseline = baseY
+                dateBaseline = baseY + spacing
+            }
+            // Siempre hora detrás (se dibuja primero), fecha encima
+            drawTextLine(
+                context, canvas,
+                text = buildTime(settings),
+                x = baseX,
+                baselineY = timeBaseline,
+                textSize = settings.clockSize,
+                colorHex = settings.clockColor,
+                fontFile = settings.clockFont,
+                alignment = settings.alignment,
+                deformPx = settings.clockVerticalDeform
+            )
+            drawTextLine(
+                context, canvas,
+                text = buildDate(settings),
+                x = baseX,
+                baselineY = dateBaseline,
+                textSize = settings.dateSize,
+                colorHex = settings.dateColor,
+                fontFile = settings.dateFont,
+                alignment = settings.alignment,
+                deformPx = settings.dateVerticalDeform
+            )
+            return
+        }
+
         if (settings.swapTimeAndDate) {
-            // Fecha arriba (baseline = baseY), hora debajo
             var bottom = baseY
             if (drawDate) {
                 bottom = drawTextLine(
-                    context,
-                    canvas,
+                    context, canvas,
                     text = buildDate(settings),
                     x = baseX,
                     baselineY = baseY,
@@ -74,8 +111,7 @@ class ClockRenderer {
                         baseY
                     }
                 drawTextLine(
-                    context,
-                    canvas,
+                    context, canvas,
                     text = buildTime(settings),
                     x = baseX,
                     baselineY = baseline,
@@ -87,12 +123,10 @@ class ClockRenderer {
                 )
             }
         } else {
-            // Hora arriba (baseline = baseY), fecha debajo
             var bottom = baseY
             if (drawClock) {
                 bottom = drawTextLine(
-                    context,
-                    canvas,
+                    context, canvas,
                     text = buildTime(settings),
                     x = baseX,
                     baselineY = baseY,
@@ -123,8 +157,7 @@ class ClockRenderer {
                         baseY
                     }
                 drawTextLine(
-                    context,
-                    canvas,
+                    context, canvas,
                     text = buildDate(settings),
                     x = baseX,
                     baselineY = baseline,
@@ -153,10 +186,6 @@ class ClockRenderer {
         paint.textAlign = convertAlignment(alignment)
     }
 
-    /**
-     * Dibuja una línea de texto con deformación vertical opcional.
-     * @return coordenada Y del borde inferior del glifo (para apilar)
-     */
     private fun drawTextLine(
         context: android.content.Context,
         canvas: Canvas,
@@ -181,7 +210,6 @@ class ClockRenderer {
         return baselineY + metrics.descent * scaleY
     }
 
-    /** 0 = normal; positivo estira; negativo comprime. */
     private fun verticalScale(textSize: Float, deformPx: Float): Float {
         if (textSize <= 0f) return 1f
         return ((textSize + deformPx) / textSize).coerceIn(0.05f, 8f)

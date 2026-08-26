@@ -62,5 +62,12 @@ data class ClockSettings(
     /**
      * Deformación vertical de la fecha en px (-500…+500). 0 = normal.
      */
-    var dateVerticalDeform: Float = 0f
+    var dateVerticalDeform: Float = 0f,
+
+    /**
+     * Si true, hora y fecha comparten la misma línea (baseline).
+     * Con spacing 0 quedan superpuestos; la hora se dibuja detrás de la fecha.
+     * El valor de dateSpacing desplaza en vertical la separación entre ambos.
+     */
+    var allowOverlap: Boolean = false
 )
