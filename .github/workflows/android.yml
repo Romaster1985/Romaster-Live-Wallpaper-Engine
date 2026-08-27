@@ -5,6 +5,7 @@ on:
     branches: [ main, master ]
     paths-ignore:
       - 'LiveWallpapers/**'
+      - 'Fonts/**'
       - '**.md'
       - '.gitignore'
       - 'LICENSE'
@@ -12,6 +13,7 @@ on:
     branches: [ main, master ]
     paths-ignore:
       - 'LiveWallpapers/**'
+      - 'Fonts/**'
       - '**.md'
       - '.gitignore'
       - 'LICENSE'
