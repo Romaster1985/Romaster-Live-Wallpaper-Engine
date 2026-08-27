@@ -69,5 +69,15 @@ data class ClockSettings(
      * Con spacing 0 quedan superpuestos; la hora se dibuja detrás de la fecha.
      * El valor de dateSpacing desplaza en vertical la separación entre ambos.
      */
-    var allowOverlap: Boolean = false
+    var allowOverlap: Boolean = false,
+
+    /** Grosor del borde de la hora (0 = sin borde). */
+    var clockBorderWidth: Float = 0f,
+
+    /** Grosor del borde de la fecha (0 = sin borde). */
+    var dateBorderWidth: Float = 0f,
+
+    var clockBorderColor: String = "#000000",
+
+    var dateBorderColor: String = "#000000"
 )

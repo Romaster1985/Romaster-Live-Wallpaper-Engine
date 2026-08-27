@@ -60,7 +60,9 @@ class ClockRenderer {
                 colorHex = settings.clockColor,
                 fontFile = settings.clockFont,
                 alignment = settings.alignment,
-                deformPx = settings.clockVerticalDeform
+                deformPx = settings.clockVerticalDeform,
+                borderWidth = settings.clockBorderWidth,
+                borderColorHex = settings.clockBorderColor
             )
             drawTextLine(
                 context, canvas,
@@ -71,7 +73,9 @@ class ClockRenderer {
                 colorHex = settings.dateColor,
                 fontFile = settings.dateFont,
                 alignment = settings.alignment,
-                deformPx = settings.dateVerticalDeform
+                deformPx = settings.dateVerticalDeform,
+                borderWidth = settings.dateBorderWidth,
+                borderColorHex = settings.dateBorderColor
             )
             return
         }
@@ -88,7 +92,9 @@ class ClockRenderer {
                     colorHex = settings.dateColor,
                     fontFile = settings.dateFont,
                     alignment = settings.alignment,
-                    deformPx = settings.dateVerticalDeform
+                    deformPx = settings.dateVerticalDeform,
+                    borderWidth = settings.dateBorderWidth,
+                    borderColorHex = settings.dateBorderColor
                 )
             }
             if (drawClock) {
@@ -119,7 +125,9 @@ class ClockRenderer {
                     colorHex = settings.clockColor,
                     fontFile = settings.clockFont,
                     alignment = settings.alignment,
-                    deformPx = settings.clockVerticalDeform
+                    deformPx = settings.clockVerticalDeform,
+                    borderWidth = settings.clockBorderWidth,
+                    borderColorHex = settings.clockBorderColor
                 )
             }
         } else {
@@ -134,7 +142,9 @@ class ClockRenderer {
                     colorHex = settings.clockColor,
                     fontFile = settings.clockFont,
                     alignment = settings.alignment,
-                    deformPx = settings.clockVerticalDeform
+                    deformPx = settings.clockVerticalDeform,
+                    borderWidth = settings.clockBorderWidth,
+                    borderColorHex = settings.clockBorderColor
                 )
             }
             if (drawDate) {
@@ -165,7 +175,9 @@ class ClockRenderer {
                     colorHex = settings.dateColor,
                     fontFile = settings.dateFont,
                     alignment = settings.alignment,
-                    deformPx = settings.dateVerticalDeform
+                    deformPx = settings.dateVerticalDeform,
+                    borderWidth = settings.dateBorderWidth,
+                    borderColorHex = settings.dateBorderColor
                 )
             }
         }
@@ -196,7 +208,9 @@ class ClockRenderer {
         colorHex: String,
         fontFile: String?,
         alignment: TextAlignment,
-        deformPx: Float
+        deformPx: Float,
+        borderWidth: Float = 0f,
+        borderColorHex: String = "#000000"
     ): Float {
         preparePaint(context, textSize, colorHex, fontFile, alignment)
         val scaleY = verticalScale(textSize, deformPx)
@@ -204,6 +218,27 @@ class ClockRenderer {
 
         canvas.save()
         canvas.scale(1f, scaleY, x, baselineY)
+
+        if (borderWidth > 0f) {
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = borderWidth
+            paint.strokeJoin = Paint.Join.ROUND
+            paint.strokeMiter = 10f
+            try {
+                paint.color = Color.parseColor(borderColorHex)
+            } catch (_: Exception) {
+                paint.color = Color.BLACK
+            }
+            canvas.drawText(text, x, baselineY, paint)
+
+            paint.style = Paint.Style.FILL
+            try {
+                paint.color = Color.parseColor(colorHex)
+            } catch (_: Exception) {
+                paint.color = Color.WHITE
+            }
+        }
+
         canvas.drawText(text, x, baselineY, paint)
         canvas.restore()
 

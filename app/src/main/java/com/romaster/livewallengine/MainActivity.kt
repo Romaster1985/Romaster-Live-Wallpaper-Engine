@@ -107,6 +107,12 @@ class MainActivity : AppCompatActivity() {
     private var clockColorHex =
         "#FFFFFF"
     
+    private var clockBorderColorHex =
+        "#000000"
+
+    private var dateBorderColorHex =
+        "#000000"
+
     private var dateColorHex =
         "#FFFFFF"
     
@@ -1829,6 +1835,32 @@ class MainActivity : AppCompatActivity() {
                 updatePreviewProject()
             }
         }
+
+        findViewById<MaterialButton>(
+            R.id.buttonClockBorderColor
+        ).setOnClickListener {
+            ColorPickerDialog.show(
+                this,
+                clockBorderColorHex
+            ) { hex ->
+                clockBorderColorHex = hex
+                updateClockBorderColorUI()
+                updatePreviewProject()
+            }
+        }
+
+        findViewById<MaterialButton>(
+            R.id.buttonDateBorderColor
+        ).setOnClickListener {
+            ColorPickerDialog.show(
+                this,
+                dateBorderColorHex
+            ) { hex ->
+                dateBorderColorHex = hex
+                updateDateBorderColorUI()
+                updatePreviewProject()
+            }
+        }
     }
     
     private fun updateClockColorUI() {
@@ -1857,6 +1889,28 @@ class MainActivity : AppCompatActivity() {
             R.id.textDateColor
         ).text =
             dateColorHex
+    }
+
+    private fun updateClockBorderColorUI() {
+        findViewById<View>(
+            R.id.viewClockBorderColor
+        ).setBackgroundColor(
+            Color.parseColor(clockBorderColorHex)
+        )
+        findViewById<TextView>(
+            R.id.textClockBorderColor
+        ).text = clockBorderColorHex
+    }
+
+    private fun updateDateBorderColorUI() {
+        findViewById<View>(
+            R.id.viewDateBorderColor
+        ).setBackgroundColor(
+            Color.parseColor(dateBorderColorHex)
+        )
+        findViewById<TextView>(
+            R.id.textDateBorderColor
+        ).text = dateBorderColorHex
     }
     
     private fun setupMaterialSliders() {
@@ -1888,6 +1942,16 @@ class MainActivity : AppCompatActivity() {
         connectSlider(
             R.id.sliderDateVerticalDeform,
             R.id.textDateVerticalDeform
+        )
+
+        connectSlider(
+            R.id.sliderClockBorderWidth,
+            R.id.textClockBorderWidth
+        )
+
+        connectSlider(
+            R.id.sliderDateBorderWidth,
+            R.id.textDateBorderWidth
         )
     
         connectSlider(
@@ -2354,6 +2418,31 @@ class MainActivity : AppCompatActivity() {
             R.id.textDateVerticalDeform
         ).text =
             clock.dateVerticalDeform.toInt().toString()
+
+        findViewById<Slider>(
+            R.id.sliderClockBorderWidth
+        ).value =
+            clock.clockBorderWidth.coerceIn(0f, 50f)
+
+        findViewById<TextView>(
+            R.id.textClockBorderWidth
+        ).text =
+            clock.clockBorderWidth.toInt().toString()
+
+        findViewById<Slider>(
+            R.id.sliderDateBorderWidth
+        ).value =
+            clock.dateBorderWidth.coerceIn(0f, 50f)
+
+        findViewById<TextView>(
+            R.id.textDateBorderWidth
+        ).text =
+            clock.dateBorderWidth.toInt().toString()
+
+        clockBorderColorHex = clock.clockBorderColor
+        dateBorderColorHex = clock.dateBorderColor
+        updateClockBorderColorUI()
+        updateDateBorderColorUI()
         
         when (clock.alignment) {
 
@@ -3635,6 +3724,20 @@ class MainActivity : AppCompatActivity() {
             findViewById<Slider>(
                 R.id.sliderDateVerticalDeform
             ).value
+
+
+        clock.clockBorderWidth =
+            findViewById<Slider>(
+                R.id.sliderClockBorderWidth
+            ).value
+
+        clock.dateBorderWidth =
+            findViewById<Slider>(
+                R.id.sliderDateBorderWidth
+            ).value
+
+        clock.clockBorderColor = clockBorderColorHex
+        clock.dateBorderColor = dateBorderColorHex
         
         clock.dateSpacing =
             dateSpacingValue
