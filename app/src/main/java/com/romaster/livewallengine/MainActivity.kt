@@ -377,6 +377,16 @@ class MainActivity : AppCompatActivity() {
     
             updatePreviewProject()
         }
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkOverlayDisableOnLock
+        ).setOnCheckedChangeListener { _, _ ->
+
+            if (loadingUI)
+                return@setOnCheckedChangeListener
+
+            updatePreviewProject()
+        }
         
         findViewById<RadioGroup>(
             R.id.radioGroupOverlayAspect
@@ -2782,6 +2792,11 @@ class MainActivity : AppCompatActivity() {
             (overlay.opacity * 100f)
                 .toInt()
                 .toString()
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkOverlayDisableOnLock
+        ).isChecked =
+            overlay.disableOnLockScreen
         
         findViewById<RadioGroup>(
             R.id.radioGroupOverlayAspect
@@ -3151,6 +3166,11 @@ class MainActivity : AppCompatActivity() {
         overlay.chromaEnabled =
             findViewById<MaterialCheckBox>(
                 R.id.checkOverlayChroma
+            ).isChecked
+
+        overlay.disableOnLockScreen =
+            findViewById<MaterialCheckBox>(
+                R.id.checkOverlayDisableOnLock
             ).isChecked
         
         overlay.chromaColor =

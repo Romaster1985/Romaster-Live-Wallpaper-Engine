@@ -38,6 +38,13 @@ data class OverlaySettings(
     
     var soundVolume: Float = 1f,
     
-    var soundEnabled: Boolean = true
+    var soundEnabled: Boolean = true,
+
+    /**
+     * Si true, Video-OL oculto en pantalla de bloqueo.
+     * Al desbloquear se revela con Soft Start.
+     * Default false = visible (proyectos viejos).
+     */
+    var disableOnLockScreen: Boolean = false
 
 )

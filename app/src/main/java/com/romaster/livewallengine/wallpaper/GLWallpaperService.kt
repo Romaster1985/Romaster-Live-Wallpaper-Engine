@@ -146,23 +146,39 @@ class GLWallpaperService : WallpaperService() {
                         "LOCKED -> siempre original desde 0"
                     )
 
-                    // Ocultar overlay YA para no flash del frame anterior
                     val overlay =
                         renderer?.getVideoOverlayRenderer()
+                    // Anti-flash del frame anterior
                     overlay?.setForceHidden(true)
 
-                    // Al bloquear: SIEMPRE desde 0. Soft Start = duración
-                    // configurable de la card (no un fade fijo de 80 ms).
-                    val softMs =
-                        project.overlayFadeDurationMs.coerceAtLeast(1L)
-                    overlay?.setDirection(
-                        OverlayPlaybackDirection.FORWARD,
-                        startPositionMs = 0,
-                        onReady = {
-                            overlay.setForceHidden(false)
-                            overlay.startOverlayFadeIn(softMs)
-                        }
-                    )
+                    val hideOnLock =
+                        project.overlay.disableOnLockScreen
+
+                    if (hideOnLock) {
+                        // No mostrar Video-OL en pantalla de bloqueo
+                        FileLogger.log(
+                            this@GLWallpaperService,
+                            "LOCKED -> overlay deshabilitado en lock screen"
+                        )
+                        // Sigue en original desde 0 por debajo (sin dibujar)
+                        overlay?.setDirection(
+                            OverlayPlaybackDirection.FORWARD,
+                            startPositionMs = 0
+                        )
+                    } else {
+                        // Soft Start al llegar el frame 0
+                        val softMs =
+                            project.overlayFadeDurationMs
+                                .coerceAtLeast(1L)
+                        overlay?.setDirection(
+                            OverlayPlaybackDirection.FORWARD,
+                            startPositionMs = 0,
+                            onReady = {
+                                overlay.setForceHidden(false)
+                                overlay.startOverlayFadeIn(softMs)
+                            }
+                        )
+                    }
 
                     renderer?.setClockLockScreenState(
                         visible =
@@ -191,16 +207,23 @@ class GLWallpaperService : WallpaperService() {
                         renderer?.getVideoOverlayRenderer()
 
                     if (overlay != null) {
+                        val wasHiddenOnLock =
+                            project.overlay.disableOnLockScreen
+                        if (wasHiddenOnLock) {
+                            // Revelar con Soft Start al desbloquear
+                            val softMs =
+                                project.overlayFadeDurationMs
+                                    .coerceAtLeast(1L)
+                            overlay.setForceHidden(false)
+                            overlay.startSoftStart(softMs)
+                        }
+
                         if (overlay.isPlayingReverseClip()) {
-                            // Dejar terminar la reversa; onCompletion
-                            // volverá al original desde 0 y seguirá
-                            // hasta el final con cues de unlocked.
                             FileLogger.log(
                                 this@GLWallpaperService,
                                 "UNLOCKED durante reversa -> se deja terminar el clip"
                             )
                         } else {
-                            // Directo: no reiniciar; continúa hasta el final
                             overlay.play()
                         }
                     }
@@ -817,17 +840,32 @@ class GLWallpaperService : WallpaperService() {
                                     }
 
                                     if (lockedNow) {
-                                        FileLogger.log(
-                                            this@GLWallpaperService,
-                                            "Overlay LOCKED resume -> desde 0 + Soft Start al frame listo"
-                                        )
                                         deviceLocked = true
                                         lastLockState = true
-                                        overlay.restoreAt(
-                                            0,
-                                            paused = false,
-                                            onReady = softStart
-                                        )
+                                        val hideOnLock =
+                                            ProjectManager.getProject()
+                                                .overlay.disableOnLockScreen
+                                        if (hideOnLock) {
+                                            FileLogger.log(
+                                                this@GLWallpaperService,
+                                                "Overlay LOCKED resume -> oculto (disableOnLockScreen)"
+                                            )
+                                            overlay.setForceHidden(true)
+                                            overlay.restoreAt(
+                                                0,
+                                                paused = false
+                                            )
+                                        } else {
+                                            FileLogger.log(
+                                                this@GLWallpaperService,
+                                                "Overlay LOCKED resume -> desde 0 + Soft Start"
+                                            )
+                                            overlay.restoreAt(
+                                                0,
+                                                paused = false,
+                                                onReady = softStart
+                                            )
+                                        }
                                     } else if (savedOverlayPaused) {
                                         FileLogger.log(
                                             this@GLWallpaperService,

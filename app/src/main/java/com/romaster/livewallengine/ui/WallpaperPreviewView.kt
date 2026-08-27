@@ -334,15 +334,27 @@ class WallpaperPreviewView @JvmOverloads constructor(
                         val lockedNow =
                             ProjectManager.getProject().previewLocked
                         if (lockedNow) {
-                            FileLogger.log(
-                                context,
-                                "Preview LOCKED resume -> desde 0 + Soft Start"
-                            )
-                            overlay.restoreAt(
-                                0,
-                                paused = false,
-                                onReady = softStart
-                            )
+                            val hideOnLock =
+                                ProjectManager.getProject()
+                                    .overlay.disableOnLockScreen
+                            if (hideOnLock) {
+                                FileLogger.log(
+                                    context,
+                                    "Preview LOCKED resume -> oculto"
+                                )
+                                overlay.setForceHidden(true)
+                                overlay.restoreAt(0, paused = false)
+                            } else {
+                                FileLogger.log(
+                                    context,
+                                    "Preview LOCKED resume -> desde 0 + Soft Start"
+                                )
+                                overlay.restoreAt(
+                                    0,
+                                    paused = false,
+                                    onReady = softStart
+                                )
+                            }
                         } else if (savedOverlayPaused) {
                             FileLogger.log(
                                 context,
@@ -512,28 +524,42 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                         context,
                                         "Preview LOCKED (sim) -> original desde 0"
                                     )
-                                    // Anti-parpadeo: ocultar hasta frame en 0
                                     overlay.setForceHidden(true)
-                                    val softMs =
-                                        project.overlayFadeDurationMs
-                                            .coerceAtLeast(1L)
-                                    overlay.setDirection(
-                                        OverlayPlaybackDirection.FORWARD,
-                                        startPositionMs = 0,
-                                        onReady = {
-                                            overlay.setForceHidden(false)
-                                            overlay.startOverlayFadeIn(softMs)
-                                        }
-                                    )
+                                    val hideOnLock =
+                                        project.overlay.disableOnLockScreen
+                                    if (hideOnLock) {
+                                        overlay.setDirection(
+                                            OverlayPlaybackDirection.FORWARD,
+                                            startPositionMs = 0
+                                        )
+                                    } else {
+                                        val softMs =
+                                            project.overlayFadeDurationMs
+                                                .coerceAtLeast(1L)
+                                        overlay.setDirection(
+                                            OverlayPlaybackDirection.FORWARD,
+                                            startPositionMs = 0,
+                                            onReady = {
+                                                overlay.setForceHidden(false)
+                                                overlay.startOverlayFadeIn(softMs)
+                                            }
+                                        )
+                                    }
                                 } else {
                                     FileLogger.log(
                                         context,
                                         "Preview UNLOCKED (sim) reverse=" +
                                             overlay.isPlayingReverseClip()
                                     )
+                                    if (project.overlay.disableOnLockScreen) {
+                                        val softMs =
+                                            project.overlayFadeDurationMs
+                                                .coerceAtLeast(1L)
+                                        overlay.setForceHidden(false)
+                                        overlay.startSoftStart(softMs)
+                                    }
                                     if (overlay.isPlayingReverseClip()) {
-                                        // Dejar terminar la reversa; onCompletion
-                                        // decide el seek según ReverseClipKind
+                                        // Dejar terminar la reversa
                                     } else {
                                         overlay.play()
                                     }

@@ -108,6 +108,13 @@
                     android:valueFrom="0"
                     android:valueTo="100"/>
 
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/checkOverlayDisableOnLock"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Deshabilitar en pantalla de bloqueo"/>
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
