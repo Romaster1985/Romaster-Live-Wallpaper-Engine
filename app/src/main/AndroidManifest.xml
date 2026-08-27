@@ -31,6 +31,11 @@
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 
+        <activity
+            android:name=".gallery.FontGalleryActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
         <service
             android:name=".wallpaper.VideoWallpaperService"
             android:permission="android.permission.BIND_WALLPAPER"

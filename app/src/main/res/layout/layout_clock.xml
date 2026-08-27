@@ -660,6 +660,14 @@
                     android:layout_marginBottom="12dp"/>
         
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonFontGallery"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:text="Galería de Fuentes 🌎📲"/>
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonImportFont"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

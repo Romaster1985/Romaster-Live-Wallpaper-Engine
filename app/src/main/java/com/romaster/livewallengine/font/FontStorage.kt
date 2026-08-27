@@ -107,4 +107,23 @@ object FontStorage {
             ?.sorted()
             ?: emptyList()
     }
+
+    /**
+     * Copia un archivo de fuente ya descargado a la carpeta fonts/
+     * (misma lógica que importFont desde URI).
+     * @return nombre del archivo instalado
+     */
+    fun importFontFile(
+        context: Context,
+        source: File
+    ): String {
+        val fileName = source.name
+        val target = getFontFile(context, fileName)
+        source.inputStream().use { input ->
+            target.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        return fileName
+    }
 }

@@ -8,4 +8,6 @@ object FilePicker {
 
     const val REQUEST_GALLERY_PROJECT = 4003
 
+    const val REQUEST_GALLERY_FONT = 4004
+
 }

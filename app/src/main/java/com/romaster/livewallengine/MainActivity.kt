@@ -1641,6 +1641,18 @@ class MainActivity : AppCompatActivity() {
     private fun setupClockTab() {
 
         findViewById<MaterialButton>(
+            R.id.buttonFontGallery
+        ).setOnClickListener {
+            startActivityForResult(
+                Intent(
+                    this,
+                    com.romaster.livewallengine.gallery.FontGalleryActivity::class.java
+                ),
+                FilePicker.REQUEST_GALLERY_FONT
+            )
+        }
+
+        findViewById<MaterialButton>(
             R.id.buttonImportFont
         ).setOnClickListener {
     
@@ -2513,6 +2525,14 @@ class MainActivity : AppCompatActivity() {
             findViewById<WallpaperPreviewView>(
                 R.id.previewView
             ).reloadPlayers()
+            return
+        }
+
+        // Galería de fuentes: ya instalada en FontGalleryActivity
+        if (requestCode == FilePicker.REQUEST_GALLERY_FONT) {
+            reloadFontLibrary()
+            editor.save()
+            updatePreviewProject()
             return
         }
     

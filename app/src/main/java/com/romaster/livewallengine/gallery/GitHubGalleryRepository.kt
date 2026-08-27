@@ -18,9 +18,13 @@ object GitHubGalleryRepository {
     private const val REPO = "Romaster-Live-Wallpaper-Engine"
     private const val BRANCH = "main"
     private const val FOLDER = "LiveWallpapers"
+    private const val FONTS_FOLDER = "Fonts"
 
     private const val CONTENTS_API =
         "https://api.github.com/repos/$OWNER/$REPO/contents/$FOLDER?ref=$BRANCH"
+
+    private const val FONTS_CONTENTS_API =
+        "https://api.github.com/repos/$OWNER/$REPO/contents/$FONTS_FOLDER?ref=$BRANCH"
 
     private const val USER_AGENT =
         "Romaster-LiveWall-Engine"
@@ -80,6 +84,76 @@ object GitHubGalleryRepository {
                         zipFileName = zip.first
                     )
                 }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /**
+     * Lista fuentes (.ttf / .otf) en la carpeta Fonts del repo.
+     * Debe llamarse en un hilo de fondo.
+     */
+    fun listFonts(): List<GalleryFont> {
+        val connection = openGet(FONTS_CONTENTS_API)
+        try {
+            val code = connection.responseCode
+            if (code !in 200..299) {
+                throw IllegalStateException("GitHub API HTTP $code (Fonts)")
+            }
+
+            val body = connection.inputStream
+                .bufferedReader()
+                .use { it.readText() }
+
+            val array = JSONArray(body)
+            val fonts = mutableListOf<GalleryFont>()
+
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                if (obj.optString("type") != "file") continue
+
+                val name = obj.getString("name")
+                val downloadUrl = obj.optString("download_url")
+                if (downloadUrl.isNullOrBlank()) continue
+
+                val lower = name.lowercase()
+                if (!lower.endsWith(".ttf") && !lower.endsWith(".otf")) continue
+
+                val display = name.substringBeforeLast(".")
+                fonts.add(
+                    GalleryFont(
+                        name = display,
+                        fileName = name,
+                        downloadUrl = downloadUrl
+                    )
+                )
+            }
+
+            return fonts.sortedBy { it.name.lowercase() }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /**
+     * Descarga un archivo (fuente o cualquier URL raw) a [destinationFile].
+     */
+    fun downloadFile(
+        url: String,
+        destinationFile: File
+    ) {
+        destinationFile.parentFile?.mkdirs()
+        val connection = openGet(url)
+        try {
+            val code = connection.responseCode
+            if (code !in 200..299) {
+                throw IllegalStateException("Descarga HTTP $code")
+            }
+            connection.inputStream.use { input ->
+                FileOutputStream(destinationFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
         } finally {
             connection.disconnect()
         }
