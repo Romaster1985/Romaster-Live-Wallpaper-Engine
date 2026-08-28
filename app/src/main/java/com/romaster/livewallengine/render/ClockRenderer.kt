@@ -62,7 +62,8 @@ class ClockRenderer {
                 alignment = settings.alignment,
                 deformPx = settings.clockVerticalDeform,
                 borderWidth = settings.clockBorderWidth,
-                borderColorHex = settings.clockBorderColor
+                borderColorHex = settings.clockBorderColor,
+                variationSettings = variationOf(settings)
             )
             drawTextLine(
                 context, canvas,
@@ -75,7 +76,8 @@ class ClockRenderer {
                 alignment = settings.alignment,
                 deformPx = settings.dateVerticalDeform,
                 borderWidth = settings.dateBorderWidth,
-                borderColorHex = settings.dateBorderColor
+                borderColorHex = settings.dateBorderColor,
+                variationSettings = variationOf(settings)
             )
             return
         }
@@ -94,7 +96,8 @@ class ClockRenderer {
                     alignment = settings.alignment,
                     deformPx = settings.dateVerticalDeform,
                     borderWidth = settings.dateBorderWidth,
-                    borderColorHex = settings.dateBorderColor
+                    borderColorHex = settings.dateBorderColor,
+                    variationSettings = variationOf(settings)
                 )
             }
             if (drawClock) {
@@ -103,7 +106,8 @@ class ClockRenderer {
                     settings.clockSize,
                     settings.clockColor,
                     settings.clockFont,
-                    settings.alignment
+                    settings.alignment,
+                    variationOf(settings)
                 )
                 val scaleY = verticalScale(
                     settings.clockSize,
@@ -127,7 +131,8 @@ class ClockRenderer {
                     alignment = settings.alignment,
                     deformPx = settings.clockVerticalDeform,
                     borderWidth = settings.clockBorderWidth,
-                    borderColorHex = settings.clockBorderColor
+                    borderColorHex = settings.clockBorderColor,
+                    variationSettings = variationOf(settings)
                 )
             }
         } else {
@@ -144,7 +149,8 @@ class ClockRenderer {
                     alignment = settings.alignment,
                     deformPx = settings.clockVerticalDeform,
                     borderWidth = settings.clockBorderWidth,
-                    borderColorHex = settings.clockBorderColor
+                    borderColorHex = settings.clockBorderColor,
+                    variationSettings = variationOf(settings)
                 )
             }
             if (drawDate) {
@@ -153,7 +159,8 @@ class ClockRenderer {
                     settings.dateSize,
                     settings.dateColor,
                     settings.dateFont,
-                    settings.alignment
+                    settings.alignment,
+                    variationOf(settings)
                 )
                 val scaleY = verticalScale(
                     settings.dateSize,
@@ -177,7 +184,8 @@ class ClockRenderer {
                     alignment = settings.alignment,
                     deformPx = settings.dateVerticalDeform,
                     borderWidth = settings.dateBorderWidth,
-                    borderColorHex = settings.dateBorderColor
+                    borderColorHex = settings.dateBorderColor,
+                    variationSettings = variationOf(settings)
                 )
             }
         }
@@ -188,15 +196,24 @@ class ClockRenderer {
         textSize: Float,
         colorHex: String,
         fontFile: String?,
-        alignment: TextAlignment
+        alignment: TextAlignment,
+        variationSettings: String? = null
     ) {
         paint.color = Color.parseColor(colorHex)
         paint.textSize = textSize
         paint.typeface = fontFile?.let {
-            FontManager.loadTypeface(context, it)
+            FontManager.loadTypeface(context, it, variationSettings)
         } ?: Typeface.DEFAULT
         paint.textAlign = convertAlignment(alignment)
     }
+
+    private fun variationOf(settings: ClockSettings): String =
+        FontManager.buildVariationSettings(
+            settings.fontWidth,
+            settings.fontWeight,
+            settings.fontOpticalSize,
+            settings.fontGrade
+        )
 
     private fun drawTextLine(
         context: android.content.Context,
@@ -210,9 +227,12 @@ class ClockRenderer {
         alignment: TextAlignment,
         deformPx: Float,
         borderWidth: Float = 0f,
-        borderColorHex: String = "#000000"
+        borderColorHex: String = "#000000",
+        variationSettings: String? = null
     ): Float {
-        preparePaint(context, textSize, colorHex, fontFile, alignment)
+        preparePaint(
+            context, textSize, colorHex, fontFile, alignment, variationSettings
+        )
         val scaleY = verticalScale(textSize, deformPx)
         val metrics = paint.fontMetrics
 

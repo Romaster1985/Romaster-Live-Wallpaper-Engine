@@ -79,5 +79,20 @@ data class ClockSettings(
 
     var clockBorderColor: String = "#000000",
 
-    var dateBorderColor: String = "#000000"
+    var dateBorderColor: String = "#000000",
+
+    // --- Ejes de fuente variable (OpenType) ---
+    // Valores por defecto ~ "normales"; en estáticas no suelen notarse.
+    /** Width (wdth), típ. 30–150. Bajo = más condensada / laterales planos. */
+    var fontWidth: Float = 100f,
+
+    /** Weight (wght), típ. 1–1000. */
+    var fontWeight: Float = 400f,
+
+    /** Optical size (opsz), típ. 17–96. */
+    var fontOpticalSize: Float = 28f,
+
+    /** Grade (GRAD), típ. 0–1000. */
+    var fontGrade: Float = 0f
 )
+

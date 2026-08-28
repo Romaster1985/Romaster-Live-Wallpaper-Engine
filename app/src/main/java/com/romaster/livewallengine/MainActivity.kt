@@ -1953,6 +1953,23 @@ class MainActivity : AppCompatActivity() {
             R.id.sliderDateBorderWidth,
             R.id.textDateBorderWidth
         )
+
+        connectSlider(
+            R.id.sliderFontWidth,
+            R.id.textFontWidth
+        )
+        connectSlider(
+            R.id.sliderFontWeight,
+            R.id.textFontWeight
+        )
+        connectSlider(
+            R.id.sliderFontOpticalSize,
+            R.id.textFontOpticalSize
+        )
+        connectSlider(
+            R.id.sliderFontGrade,
+            R.id.textFontGrade
+        )
     
         connectSlider(
             R.id.sliderX,
@@ -2443,6 +2460,26 @@ class MainActivity : AppCompatActivity() {
         dateBorderColorHex = clock.dateBorderColor
         updateClockBorderColorUI()
         updateDateBorderColorUI()
+
+        findViewById<Slider>(R.id.sliderFontWidth).value =
+            clock.fontWidth.coerceIn(30f, 150f)
+        findViewById<TextView>(R.id.textFontWidth).text =
+            clock.fontWidth.toInt().toString()
+
+        findViewById<Slider>(R.id.sliderFontWeight).value =
+            clock.fontWeight.coerceIn(1f, 1000f)
+        findViewById<TextView>(R.id.textFontWeight).text =
+            clock.fontWeight.toInt().toString()
+
+        findViewById<Slider>(R.id.sliderFontOpticalSize).value =
+            clock.fontOpticalSize.coerceIn(17f, 96f)
+        findViewById<TextView>(R.id.textFontOpticalSize).text =
+            clock.fontOpticalSize.toInt().toString()
+
+        findViewById<Slider>(R.id.sliderFontGrade).value =
+            clock.fontGrade.coerceIn(0f, 1000f)
+        findViewById<TextView>(R.id.textFontGrade).text =
+            clock.fontGrade.toInt().toString()
         
         when (clock.alignment) {
 
@@ -3738,6 +3775,15 @@ class MainActivity : AppCompatActivity() {
 
         clock.clockBorderColor = clockBorderColorHex
         clock.dateBorderColor = dateBorderColorHex
+
+        clock.fontWidth =
+            findViewById<Slider>(R.id.sliderFontWidth).value
+        clock.fontWeight =
+            findViewById<Slider>(R.id.sliderFontWeight).value
+        clock.fontOpticalSize =
+            findViewById<Slider>(R.id.sliderFontOpticalSize).value
+        clock.fontGrade =
+            findViewById<Slider>(R.id.sliderFontGrade).value
         
         clock.dateSpacing =
             dateSpacingValue
