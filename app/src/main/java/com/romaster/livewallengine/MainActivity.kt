@@ -842,6 +842,25 @@ class MainActivity : AppCompatActivity() {
             updatePreviewProject()
     
         }
+
+        run {
+            val sliderL = findViewById<Slider>(R.id.sliderCueLocked)
+            val textL = findViewById<TextView>(R.id.textCueLocked)
+            attachSliderResetButton(sliderL, textL, 0.01f) { v ->
+                val duration = ProjectManager.getProject().overlayDurationMs
+                textL.text = formatCueTime((duration * v).toInt())
+                invalidatePingPongIfNeeded(locked = true)
+                if (!loadingUI) updatePreviewProject()
+            }
+            val sliderU = findViewById<Slider>(R.id.sliderCueUnlocked)
+            val textU = findViewById<TextView>(R.id.textCueUnlocked)
+            attachSliderResetButton(sliderU, textU, 0.99f) { v ->
+                val duration = ProjectManager.getProject().overlayDurationMs
+                textU.text = formatCueTime((duration * v).toInt())
+                invalidatePingPongIfNeeded(locked = false)
+                if (!loadingUI) updatePreviewProject()
+            }
+        }
         
         findViewById<MaterialButtonToggleGroup>(
             R.id.toggleCueLockedMode
@@ -1924,122 +1943,41 @@ class MainActivity : AppCompatActivity() {
     
     private fun setupClockSliders() {
 
-        connectSlider(
-            R.id.sliderClockSize,
-            R.id.textClockSizeValue
-        )
-
-        connectSlider(
-            R.id.sliderClockVerticalDeform,
-            R.id.textClockVerticalDeform
-        )
-    
-        connectSlider(
-            R.id.sliderDateSize,
-            R.id.textDateSizeValue
-        )
-
-        connectSlider(
-            R.id.sliderDateVerticalDeform,
-            R.id.textDateVerticalDeform
-        )
-
-        connectSlider(
-            R.id.sliderClockBorderWidth,
-            R.id.textClockBorderWidth
-        )
-
-        connectSlider(
-            R.id.sliderDateBorderWidth,
-            R.id.textDateBorderWidth
-        )
-
-        connectSlider(
-            R.id.sliderFontWidth,
-            R.id.textFontWidth
-        )
-        connectSlider(
-            R.id.sliderFontWeight,
-            R.id.textFontWeight
-        )
-        connectSlider(
-            R.id.sliderFontOpticalSize,
-            R.id.textFontOpticalSize
-        )
-        connectSlider(
-            R.id.sliderFontGrade,
-            R.id.textFontGrade
-        )
-    
-        connectSlider(
-            R.id.sliderX,
-            R.id.textXValue
-        )
-    
-        connectSlider(
-            R.id.sliderY,
-            R.id.textYValue
-        )
+        // Defaults = valores iniciales del layout / primer arranque
+        connectSlider(R.id.sliderClockSize, R.id.textClockSizeValue, 64f)
+        connectSlider(R.id.sliderClockVerticalDeform, R.id.textClockVerticalDeform, 0f)
+        connectSlider(R.id.sliderDateSize, R.id.textDateSizeValue, 64f)
+        connectSlider(R.id.sliderDateVerticalDeform, R.id.textDateVerticalDeform, 0f)
+        connectSlider(R.id.sliderClockBorderWidth, R.id.textClockBorderWidth, 0f)
+        connectSlider(R.id.sliderDateBorderWidth, R.id.textDateBorderWidth, 0f)
+        connectSlider(R.id.sliderFontWidth, R.id.textFontWidth, 100f)
+        connectSlider(R.id.sliderFontWeight, R.id.textFontWeight, 400f)
+        connectSlider(R.id.sliderFontOpticalSize, R.id.textFontOpticalSize, 28f)
+        connectSlider(R.id.sliderFontGrade, R.id.textFontGrade, 0f)
+        connectSlider(R.id.sliderX, R.id.textXValue, 50f)
+        connectSlider(R.id.sliderY, R.id.textYValue, 50f)
     }
     
     private fun setupVideoSliders() {
 
-        connectSlider(
-            R.id.sliderVideoZoom,
-            R.id.textVideoZoomValue
-        )
-    
-        connectSlider(
-            R.id.sliderVideoPosX,
-            R.id.textVideoPosXValue
-        )
-    
-        connectSlider(
-            R.id.sliderVideoPosY,
-            R.id.textVideoPosYValue
-        )
+        connectSlider(R.id.sliderVideoZoom, R.id.textVideoZoomValue, 100f)
+        connectSlider(R.id.sliderVideoPosX, R.id.textVideoPosXValue, 0f)
+        connectSlider(R.id.sliderVideoPosY, R.id.textVideoPosYValue, 0f)
     }
     
     private fun setupOverlaySliders() {
 
-        connectSlider(
-            R.id.sliderOverlayAlpha,
-            R.id.textOverlayAlphaValue
-        )
-    
-        connectSlider(
-            R.id.sliderOverlayZoom,
-            R.id.textOverlayZoomValue
-        )
-    
-        connectSlider(
-            R.id.sliderOverlayPosX,
-            R.id.textOverlayPosXValue
-        )
-    
-        connectSlider(
-            R.id.sliderOverlayPosY,
-            R.id.textOverlayPosYValue
-        )
-    
-        connectSlider(
-            R.id.sliderOverlayRotation,
-            R.id.textOverlayRotationValue
-        )
-    
+        connectSlider(R.id.sliderOverlayAlpha, R.id.textOverlayAlphaValue, 100f)
+        connectSlider(R.id.sliderOverlayZoom, R.id.textOverlayZoomValue, 100f)
+        connectSlider(R.id.sliderOverlayPosX, R.id.textOverlayPosXValue, 0f)
+        connectSlider(R.id.sliderOverlayPosY, R.id.textOverlayPosYValue, 0f)
+        connectSlider(R.id.sliderOverlayRotation, R.id.textOverlayRotationValue, 0f)
+
         // -----------------------------
         // Chroma Key
         // -----------------------------
-    
-        connectSlider(
-            R.id.sliderChromaThreshold,
-            R.id.textChromaThresholdValue
-        )
-    
-        connectSlider(
-            R.id.sliderChromaSoftness,
-            R.id.textChromaSoftnessValue
-        )
+        connectSlider(R.id.sliderChromaThreshold, R.id.textChromaThresholdValue, 50f)
+        connectSlider(R.id.sliderChromaSoftness, R.id.textChromaSoftnessValue, 20f)
     }
     
     private fun setupChromaCheckbox() {
@@ -2057,82 +1995,107 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun connectSlider(
-
         sliderId: Int,
-    
-        labelId: Int
-    
+        labelId: Int,
+        defaultValue: Float? = null
     ) {
-    
-        val slider =
-            findViewById<Slider>(
-                sliderId
-            )
-    
-        val label =
-            findViewById<TextView>(
-                labelId
-            )
-    
-        slider.addOnChangeListener {
-    
-                _,
-                value,
-                fromUser ->
-    
-            label.text =
-                value.toInt().toString()
-    
-            if (!fromUser || loadingUI)
-                return@addOnChangeListener
-    
+        val slider = findViewById<Slider>(sliderId)
+        val label = findViewById<TextView>(labelId)
+
+        slider.addOnChangeListener { _, value, fromUser ->
+            label.text = value.toInt().toString()
+            if (!fromUser || loadingUI) return@addOnChangeListener
             updatePreviewProject()
         }
+
+        if (defaultValue != null) {
+            attachSliderResetButton(slider, label, defaultValue)
+        }
+    }
+
+    /**
+     * Botón compacto ↺ al lado del valor del slider (Material icon button).
+     * Restaura el valor por defecto del primer arranque.
+     */
+    private fun attachSliderResetButton(
+        slider: Slider,
+        label: TextView,
+        defaultValue: Float,
+        onReset: ((Float) -> Unit)? = null
+    ) {
+        val parent = label.parent as? android.view.ViewGroup ?: return
+        val tag = "slider_reset_${slider.id}"
+        if (parent.findViewWithTag<android.view.View>(tag) != null) return
+
+        val density = resources.displayMetrics.density
+        val btn = MaterialButton(
+            this,
+            null,
+            com.google.android.material.R.attr.materialIconButtonStyle
+        ).apply {
+            this.tag = tag
+            text = "↺"
+            contentDescription = "Restablecer valor"
+            textSize = 14f
+            minWidth = 0
+            minimumWidth = (36 * density).toInt()
+            minHeight = 0
+            minimumHeight = (36 * density).toInt()
+            insetTop = 0
+            insetBottom = 0
+            setPadding(
+                (4 * density).toInt(),
+                0,
+                (4 * density).toInt(),
+                0
+            )
+            setOnClickListener {
+                val v = defaultValue.coerceIn(slider.valueFrom, slider.valueTo)
+                val stepped = if (slider.stepSize > 0f) {
+                    val steps = ((v - slider.valueFrom) / slider.stepSize).toInt()
+                    slider.valueFrom + steps * slider.stepSize
+                } else {
+                    v
+                }.coerceIn(slider.valueFrom, slider.valueTo)
+                slider.value = stepped
+                if (onReset != null) {
+                    onReset(stepped)
+                } else {
+                    label.text = stepped.toInt().toString()
+                    if (!loadingUI) {
+                        updatePreviewProject()
+                    }
+                }
+            }
+        }
+        parent.addView(btn)
     }
     
     private fun connectVolumeSlider(
-
         sliderId: Int,
-    
         labelId: Int,
-    
-        iconId: Int
-    
+        iconId: Int,
+        defaultValue: Float = 100f
     ) {
-    
-        val slider =
-            findViewById<Slider>(sliderId)
-    
-        val label =
-            findViewById<TextView>(labelId)
-    
-        val icon =
-            findViewById<ImageView>(iconId)
-    
-        slider.addOnChangeListener { _, value, fromUser ->
-    
-            label.text =
-                value.toInt().toString()
-    
+        val slider = findViewById<Slider>(sliderId)
+        val label = findViewById<TextView>(labelId)
+        val icon = findViewById<ImageView>(iconId)
+
+        fun syncIcon(value: Float) {
             icon.setImageResource(
-    
-                if (value == 0f)
-    
-                    R.drawable.baseline_volume_off_24
-    
-                else
-    
-                    R.drawable.baseline_volume_up_24
-    
+                if (value == 0f) R.drawable.baseline_volume_off_24
+                else R.drawable.baseline_volume_up_24
             )
-    
-            if (!fromUser || loadingUI)
-                return@addOnChangeListener
-    
-            updatePreviewProject()
-    
         }
-    
+
+        slider.addOnChangeListener { _, value, fromUser ->
+            label.text = value.toInt().toString()
+            syncIcon(value)
+            if (!fromUser || loadingUI) return@addOnChangeListener
+            updatePreviewProject()
+        }
+
+        attachSliderResetButton(slider, label, defaultValue)
     }
     
     private fun setupMaterialDropdowns() {
