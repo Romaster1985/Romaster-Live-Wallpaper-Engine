@@ -1,3 +1,21 @@
+/*
+ * Copyright 2026 Román Ignacio Romero (Romaster)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Nota: Este proyecto incluye ColorPickerView (skydoves) licenciado bajo Apache 2.0.
+ */
+
 package com.romaster.livewallengine.model
 
 import kotlinx.serialization.Serializable
@@ -81,18 +99,33 @@ data class ClockSettings(
 
     var dateBorderColor: String = "#000000",
 
-    // --- Ejes de fuente variable (OpenType) ---
-    // Valores por defecto ~ "normales"; en estáticas no suelen notarse.
-    /** Width (wdth), típ. 30–150. Bajo = más condensada / laterales planos. */
+    // --- Ejes de fuente variable (OpenType / Roboto Flex) ---
+    // Defaults = valores "neutros"; en fuentes estáticas se ignoran.
+    /** Width (wdth) 25–151 */
     var fontWidth: Float = 100f,
-
-    /** Weight (wght), típ. 1–1000. */
+    /** Weight (wght) 100–1000 */
     var fontWeight: Float = 400f,
-
-    /** Optical size (opsz), típ. 17–96. */
+    /** Optical Size (opsz) 8–144 */
     var fontOpticalSize: Float = 28f,
-
-    /** Grade (GRAD), típ. 0–1000. */
-    var fontGrade: Float = 0f
+    /** Grade (GRAD) -200–150 */
+    var fontGrade: Float = 0f,
+    /** Slant (slnt) -10–0 */
+    var fontSlant: Float = 0f,
+    /** Thick stroke / stems (XOPQ) 27–175 */
+    var fontXopq: Float = 96f,
+    /** Thin stroke / bars (YOPQ) 25–135 */
+    var fontYopq: Float = 79f,
+    /** Counter width (XTRA) 323–603 */
+    var fontXtra: Float = 468f,
+    /** Uppercase height (YTUC) 528–760 */
+    var fontYtuc: Float = 712f,
+    /** Lowercase height (YTLC) 416–570 */
+    var fontYtlc: Float = 514f,
+    /** Ascender height (YTAS) 649–854 */
+    var fontYtas: Float = 750f,
+    /** Descender depth (YTDE) -305–-98 */
+    var fontYtde: Float = -203f,
+    /** Figure height (YTFI) 560–788 — útil en relojes */
+    var fontYtfi: Float = 738f
 )
 

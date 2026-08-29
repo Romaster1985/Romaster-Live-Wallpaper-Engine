@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!--
+  Copyright 2026 Román Ignacio Romero (Romaster)
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+  Nota: Este proyecto incluye ColorPickerView (skydoves) licenciado bajo Apache 2.0.
+-->
+
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -626,7 +644,7 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.card.MaterialCardView
+                <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardFontVariations"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -643,17 +661,39 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Variaciones de fuente"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"/>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Variaciones de fuente"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonFontVariationsInfo"
+                        style="?attr/materialIconButtonStyle"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:padding="0dp"
+                        android:text="ⓘ"
+                        android:textSize="16sp"
+                        android:contentDescription="Información de ejes"/>
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Solo afectan fuentes variables (p. ej. SF Pro variable). En fuentes fijas se ignoran."
+                    android:text="Ejes OpenType (Roboto Flex y otras variables). En fuentes fijas se ignoran."
                     android:textSize="12sp"
                     android:alpha="0.7"/>
 
@@ -661,12 +701,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="12dp">
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Width (anchura)"/>
+                        android:text="Width (wdth)"/>
                     <TextView
                         android:id="@+id/textFontWidth"
                         android:layout_width="wrap_content"
@@ -677,21 +718,21 @@
                     android:id="@+id/sliderFontWidth"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="30"
-                    android:valueTo="150"
+                    android:valueFrom="25"
+                    android:valueTo="151"
                     android:stepSize="1"
                     android:value="100"/>
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Weight (peso)"/>
+                        android:text="Weight (wght)"/>
                     <TextView
                         android:id="@+id/textFontWeight"
                         android:layout_width="wrap_content"
@@ -702,21 +743,21 @@
                     android:id="@+id/sliderFontWeight"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="1"
+                    android:valueFrom="100"
                     android:valueTo="1000"
                     android:stepSize="1"
                     android:value="400"/>
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Optical Size"/>
+                        android:text="Optical Size (opsz)"/>
                     <TextView
                         android:id="@+id/textFontOpticalSize"
                         android:layout_width="wrap_content"
@@ -727,21 +768,21 @@
                     android:id="@+id/sliderFontOpticalSize"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="17"
-                    android:valueTo="96"
+                    android:valueFrom="8"
+                    android:valueTo="144"
                     android:stepSize="1"
                     android:value="28"/>
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Grade"/>
+                        android:text="Grade (GRAD)"/>
                     <TextView
                         android:id="@+id/textFontGrade"
                         android:layout_width="wrap_content"
@@ -752,13 +793,239 @@
                     android:id="@+id/sliderFontGrade"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="0"
-                    android:valueTo="1000"
+                    android:valueFrom="-200"
+                    android:valueTo="150"
                     android:stepSize="1"
                     android:value="0"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Slant (slnt)"/>
+                    <TextView
+                        android:id="@+id/textFontSlant"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontSlant"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-10"
+                    android:valueTo="0"
+                    android:stepSize="1"
+                    android:value="0"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Thick stroke XOPQ"/>
+                    <TextView
+                        android:id="@+id/textFontXopq"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="96"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontXopq"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="27"
+                    android:valueTo="175"
+                    android:stepSize="1"
+                    android:value="96"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Thin stroke YOPQ"/>
+                    <TextView
+                        android:id="@+id/textFontYopq"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="79"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontYopq"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="25"
+                    android:valueTo="135"
+                    android:stepSize="1"
+                    android:value="79"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Counter width XTRA"/>
+                    <TextView
+                        android:id="@+id/textFontXtra"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="468"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontXtra"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="323"
+                    android:valueTo="603"
+                    android:stepSize="1"
+                    android:value="468"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Uppercase YTUC"/>
+                    <TextView
+                        android:id="@+id/textFontYtuc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="712"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontYtuc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="528"
+                    android:valueTo="760"
+                    android:stepSize="1"
+                    android:value="712"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Lowercase YTLC"/>
+                    <TextView
+                        android:id="@+id/textFontYtlc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="514"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontYtlc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="416"
+                    android:valueTo="570"
+                    android:stepSize="1"
+                    android:value="514"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ascender YTAS"/>
+                    <TextView
+                        android:id="@+id/textFontYtas"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="750"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontYtas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="649"
+                    android:valueTo="854"
+                    android:stepSize="1"
+                    android:value="750"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Descender YTDE"/>
+                    <TextView
+                        android:id="@+id/textFontYtde"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-203"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontYtde"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="-305"
+                    android:valueTo="-98"
+                    android:stepSize="1"
+                    android:value="-203"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Figure height YTFI"/>
+                    <TextView
+                        android:id="@+id/textFontYtfi"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="738"/>
+                </LinearLayout>
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/sliderFontYtfi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="560"
+                    android:valueTo="788"
+                    android:stepSize="1"
+                    android:value="738"/>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
         
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardPosition"

@@ -1,3 +1,21 @@
+/*
+ * Copyright 2026 Román Ignacio Romero (Romaster)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Nota: Este proyecto incluye ColorPickerView (skydoves) licenciado bajo Apache 2.0.
+ */
+
 package com.romaster.livewallengine
 
 import android.app.Activity
@@ -1954,8 +1972,55 @@ class MainActivity : AppCompatActivity() {
         connectSlider(R.id.sliderFontWeight, R.id.textFontWeight, 400f)
         connectSlider(R.id.sliderFontOpticalSize, R.id.textFontOpticalSize, 28f)
         connectSlider(R.id.sliderFontGrade, R.id.textFontGrade, 0f)
+        connectSlider(R.id.sliderFontSlant, R.id.textFontSlant, 0f)
+        connectSlider(R.id.sliderFontXopq, R.id.textFontXopq, 96f)
+        connectSlider(R.id.sliderFontYopq, R.id.textFontYopq, 79f)
+        connectSlider(R.id.sliderFontXtra, R.id.textFontXtra, 468f)
+        connectSlider(R.id.sliderFontYtuc, R.id.textFontYtuc, 712f)
+        connectSlider(R.id.sliderFontYtlc, R.id.textFontYtlc, 514f)
+        connectSlider(R.id.sliderFontYtas, R.id.textFontYtas, 750f)
+        connectSlider(R.id.sliderFontYtde, R.id.textFontYtde, -203f)
+        connectSlider(R.id.sliderFontYtfi, R.id.textFontYtfi, 738f)
         connectSlider(R.id.sliderX, R.id.textXValue, 50f)
         connectSlider(R.id.sliderY, R.id.textYValue, 50f)
+
+        setupFontVariationsInfoButton()
+    }
+
+    private fun setupFontVariationsInfoButton() {
+        findViewById<MaterialButton>(R.id.buttonFontVariationsInfo)
+            .setOnClickListener {
+                showFontVariationsInfoDialog()
+            }
+    }
+
+    private fun showFontVariationsInfoDialog() {
+        val message = """
+Ejes estándar
+• Width (wdth) — Anchura: condensada ↔ expandida (laterales más planos o más anchos).
+• Weight (wght) — Grosor: Light → Regular → Bold → Black.
+• Optical Size (opsz) — Optimiza el dibujo para tamaño chico (UI) o grande (títulos).
+• Grade (GRAD) — “Peso visual” sin cambiar el ancho de avance: más denso o más liviano manteniendo el layout.
+• Slant (slnt) — Inclinación oblicua (no es itálica verdadera).
+
+Ejes paramétricos (forma del glifo)
+• Thick stroke (XOPQ) — Grosor de trazos verticales (palos de H, I, n…).
+• Thin stroke (YOPQ) — Grosor de trazos horizontales (barras de E, H, f…).
+• Counter width (XTRA) — Ancho del contraespacio (huecos internos): más cerrado o más abierto.
+• Uppercase (YTUC) — Altura de mayúsculas.
+• Lowercase (YTLC) — Altura de minúsculas (x-height).
+• Ascender (YTAS) — Altura de ascendentes (b, d, h, l…).
+• Descender (YTDE) — Profundidad de descendentes (g, p, q, y…).
+• Figure height (YTFI) — Altura / proporción de números (muy útil en relojes).
+
+Nota: Todas estas variaciones están disponibles en fuentes variables completas como Roboto Flex. En fuentes fijas o con menos ejes, los controles no soportados se ignoran.
+""".trimIndent()
+
+        AlertDialog.Builder(this)
+            .setTitle("Ejes parámetros (forma del glifo)")
+            .setMessage(message)
+            .setPositiveButton("Entendido", null)
+            .show()
     }
     
     private fun setupVideoSliders() {
@@ -2424,25 +2489,24 @@ class MainActivity : AppCompatActivity() {
         updateClockBorderColorUI()
         updateDateBorderColorUI()
 
-        findViewById<Slider>(R.id.sliderFontWidth).value =
-            clock.fontWidth.coerceIn(30f, 150f)
-        findViewById<TextView>(R.id.textFontWidth).text =
-            clock.fontWidth.toInt().toString()
-
-        findViewById<Slider>(R.id.sliderFontWeight).value =
-            clock.fontWeight.coerceIn(1f, 1000f)
-        findViewById<TextView>(R.id.textFontWeight).text =
-            clock.fontWeight.toInt().toString()
-
-        findViewById<Slider>(R.id.sliderFontOpticalSize).value =
-            clock.fontOpticalSize.coerceIn(17f, 96f)
-        findViewById<TextView>(R.id.textFontOpticalSize).text =
-            clock.fontOpticalSize.toInt().toString()
-
-        findViewById<Slider>(R.id.sliderFontGrade).value =
-            clock.fontGrade.coerceIn(0f, 1000f)
-        findViewById<TextView>(R.id.textFontGrade).text =
-            clock.fontGrade.toInt().toString()
+        fun loadAxis(sliderId: Int, textId: Int, value: Float, from: Float, to: Float) {
+            val v = value.coerceIn(from, to)
+            findViewById<Slider>(sliderId).value = v
+            findViewById<TextView>(textId).text = v.toInt().toString()
+        }
+        loadAxis(R.id.sliderFontWidth, R.id.textFontWidth, clock.fontWidth, 25f, 151f)
+        loadAxis(R.id.sliderFontWeight, R.id.textFontWeight, clock.fontWeight, 100f, 1000f)
+        loadAxis(R.id.sliderFontOpticalSize, R.id.textFontOpticalSize, clock.fontOpticalSize, 8f, 144f)
+        loadAxis(R.id.sliderFontGrade, R.id.textFontGrade, clock.fontGrade, -200f, 150f)
+        loadAxis(R.id.sliderFontSlant, R.id.textFontSlant, clock.fontSlant, -10f, 0f)
+        loadAxis(R.id.sliderFontXopq, R.id.textFontXopq, clock.fontXopq, 27f, 175f)
+        loadAxis(R.id.sliderFontYopq, R.id.textFontYopq, clock.fontYopq, 25f, 135f)
+        loadAxis(R.id.sliderFontXtra, R.id.textFontXtra, clock.fontXtra, 323f, 603f)
+        loadAxis(R.id.sliderFontYtuc, R.id.textFontYtuc, clock.fontYtuc, 528f, 760f)
+        loadAxis(R.id.sliderFontYtlc, R.id.textFontYtlc, clock.fontYtlc, 416f, 570f)
+        loadAxis(R.id.sliderFontYtas, R.id.textFontYtas, clock.fontYtas, 649f, 854f)
+        loadAxis(R.id.sliderFontYtde, R.id.textFontYtde, clock.fontYtde, -305f, -98f)
+        loadAxis(R.id.sliderFontYtfi, R.id.textFontYtfi, clock.fontYtfi, 560f, 788f)
         
         when (clock.alignment) {
 
@@ -3747,6 +3811,24 @@ class MainActivity : AppCompatActivity() {
             findViewById<Slider>(R.id.sliderFontOpticalSize).value
         clock.fontGrade =
             findViewById<Slider>(R.id.sliderFontGrade).value
+        clock.fontSlant =
+            findViewById<Slider>(R.id.sliderFontSlant).value
+        clock.fontXopq =
+            findViewById<Slider>(R.id.sliderFontXopq).value
+        clock.fontYopq =
+            findViewById<Slider>(R.id.sliderFontYopq).value
+        clock.fontXtra =
+            findViewById<Slider>(R.id.sliderFontXtra).value
+        clock.fontYtuc =
+            findViewById<Slider>(R.id.sliderFontYtuc).value
+        clock.fontYtlc =
+            findViewById<Slider>(R.id.sliderFontYtlc).value
+        clock.fontYtas =
+            findViewById<Slider>(R.id.sliderFontYtas).value
+        clock.fontYtde =
+            findViewById<Slider>(R.id.sliderFontYtde).value
+        clock.fontYtfi =
+            findViewById<Slider>(R.id.sliderFontYtfi).value
         
         clock.dateSpacing =
             dateSpacingValue
