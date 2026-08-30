@@ -21,6 +21,7 @@ package com.romaster.livewallengine
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Build
 import android.view.View
@@ -84,6 +85,7 @@ import com.romaster.livewallengine.ui.WallpaperPreviewView
 import com.romaster.livewallengine.ui.SimpleSeekListener
 import com.romaster.livewallengine.video.VideoPicker
 import com.romaster.livewallengine.video.GifToMp4Converter
+import com.romaster.livewallengine.video.VideoTranscoder
 import com.romaster.livewallengine.video.VideoStorage
 import com.romaster.livewallengine.video.VideoPlayer
 import com.romaster.livewallengine.video.OverlayVideoPlayer
@@ -2699,20 +2701,7 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
             // ---------------------------------
     
             VideoPicker.REQUEST_WALLPAPER -> {
-    
-                val path =
-                    VideoStorage.importWallpaperVideo(
-                        this,
-                        uri
-                    )
-    
-                ProjectManager
-                    .getProject()
-                    .wallpaperVideo = path
-    
-                editor.save()
-    
-                refreshPreview()
+                offerVideoImport(uri, isOverlay = false)
             }
     
             // ---------------------------------
@@ -2720,28 +2709,7 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
             // ---------------------------------
     
             VideoPicker.REQUEST_OVERLAY -> {
-    
-                val path =
-                    VideoStorage.importOverlayVideo(
-                        this,
-                        uri
-                    )
-    
-                ProjectManager
-                    .getProject()
-                    .overlayVideo = path
-
-                // Nuevo video: invalidar ambos ping-pong
-                clearPingPong(locked = true)
-                clearPingPong(locked = false)
-                loadingUI = true
-                findViewById<CheckBox>(R.id.checkCueLockedPingPong).isChecked = false
-                findViewById<CheckBox>(R.id.checkCueUnlockedPingPong).isChecked = false
-                loadingUI = false
-    
-                editor.save()
-    
-                refreshPreview()
+                offerVideoImport(uri, isOverlay = true)
             }
 
             VideoPicker.REQUEST_WALLPAPER_GIF -> {
@@ -3538,6 +3506,137 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
     
     }
     
+
+    /**
+     * Pregunta si re-encodear el video (bucles más suaves) o copiarlo tal cual.
+     */
+    private fun offerVideoImport(uri: Uri, isOverlay: Boolean) {
+        AlertDialog.Builder(this)
+            .setTitle("Rectificar video")
+            .setMessage(
+                "¿Querés re-encodear el video a un MP4 ligero (como los GIF) " +
+                    "para bucles más suaves sin pausas al reiniciar?\n\n" +
+                    "• Sí: procesa el video (puede tardar según duración y resolución).\n" +
+                    "• No: lo importa sin cambios (más rápido)."
+            )
+            .setPositiveButton("Sí") { _, _ ->
+                importVideoWithTranscode(uri, isOverlay)
+            }
+            .setNegativeButton("No") { _, _ ->
+                importVideoDirect(uri, isOverlay)
+            }
+            .setCancelable(true)
+            .show()
+    }
+
+    private fun importVideoDirect(uri: Uri, isOverlay: Boolean) {
+        try {
+            val path = if (isOverlay) {
+                VideoStorage.importOverlayVideo(this, uri)
+            } else {
+                VideoStorage.importWallpaperVideo(this, uri)
+            }
+            applyImportedVideo(path, isOverlay)
+            Toast.makeText(this, "Video importado", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                "Error al importar: ${e.message ?: e.javaClass.simpleName}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun importVideoWithTranscode(uri: Uri, isOverlay: Boolean) {
+        val outName = if (isOverlay) {
+            VideoStorage.OVERLAY_VIDEO
+        } else {
+            VideoStorage.WALLPAPER_VIDEO
+        }
+        val outFile = VideoStorage.getVideoFile(this, outName)
+
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(48, 32, 48, 16)
+        }
+        val label = TextView(this).apply {
+            text = "Rectificando video…"
+            textSize = 16f
+        }
+        val bar = ProgressBar(
+            this,
+            null,
+            android.R.attr.progressBarStyleHorizontal
+        ).apply {
+            max = 100
+            isIndeterminate = false
+            progress = 0
+        }
+        val detail = TextView(this).apply {
+            text = "0 %"
+            textSize = 13f
+            setPadding(0, 16, 0, 0)
+        }
+        container.addView(label)
+        container.addView(bar)
+        container.addView(detail)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(container)
+            .setCancelable(false)
+            .create()
+        dialog.show()
+
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    VideoTranscoder.transcode(
+                        context = this@MainActivity,
+                        sourceUri = uri,
+                        outputFile = outFile
+                    ) { p ->
+                        runOnUiThread {
+                            val pct = (p * 100f).toInt().coerceIn(0, 100)
+                            bar.progress = pct
+                            detail.text = "$pct %"
+                        }
+                    }
+                }
+                applyImportedVideo(outName, isOverlay)
+                dialog.dismiss()
+                Toast.makeText(
+                    this@MainActivity,
+                    "Video rectificado e importado",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
+                dialog.dismiss()
+                Toast.makeText(
+                    this@MainActivity,
+                    "Error al rectificar: ${e.message ?: e.javaClass.simpleName}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun applyImportedVideo(path: String, isOverlay: Boolean) {
+        val project = ProjectManager.getProject()
+        if (isOverlay) {
+            project.overlayVideo = path
+            clearPingPong(locked = true)
+            clearPingPong(locked = false)
+            loadingUI = true
+            findViewById<CheckBox>(R.id.checkCueLockedPingPong).isChecked = false
+            findViewById<CheckBox>(R.id.checkCueUnlockedPingPong).isChecked = false
+            loadingUI = false
+        } else {
+            project.wallpaperVideo = path
+        }
+        editor.save()
+        refreshPreview()
+        findViewById<WallpaperPreviewView>(R.id.previewView).reloadPlayers()
+    }
 
     /**
      * Importa un GIF → MP4 (nombres fijos wallpaper/overlay).
