@@ -1,3 +1,21 @@
+/*
+ * Copyright 2026 Román Ignacio Romero (Romaster)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Nota: Este proyecto incluye ColorPickerView (skydoves) licenciado bajo Apache 2.0.
+ */
+
 package com.romaster.livewallengine.storage
 
 import android.content.Context
@@ -12,65 +30,82 @@ import java.util.zip.ZipOutputStream
 
 object ProjectExporter {
 
+    /**
+     * @param onProgress 0f..1f (opcional)
+     * @return true si el ZIP se escribió sin error fatal
+     */
     fun export(
-
         context: Context,
-    
         destination: Uri,
-    
-        previewBitmap: Bitmap?
-    
-    ) {
+        previewBitmap: Bitmap?,
+        onProgress: ((Float) -> Unit)? = null
+    ): Boolean {
 
-        val output =
-            context.contentResolver
-                .openOutputStream(destination)
-                ?: return
-
-        ZipOutputStream(output).use { zip ->
-
-            // 1) Config y preview primero (nunca deben faltar)
-            try {
-                writeProjectJson(zip)
-            } catch (e: Exception) {
-                FileLogger.log(context, "ProjectExporter project.json ERROR: ${e.message}")
+        val output = context.contentResolver.openOutputStream(destination)
+            ?: run {
+                FileLogger.log(context, "ProjectExporter FAIL: no se pudo abrir destino")
+                return false
             }
 
-            try {
-                writePreview(zip, previewBitmap)
-            } catch (e: Exception) {
-                FileLogger.log(context, "ProjectExporter preview.png ERROR: ${e.message}")
-            }
+        // Pasos estimados: json + preview + N recursos
+        val resourceSlots = countResourceSlots(context)
+        val totalSteps = 2 + resourceSlots.coerceAtLeast(1)
+        var step = 0
 
-            // 2) Recursos
-            try {
-                writeResources(context, zip)
-            } catch (e: Exception) {
-                FileLogger.log(context, "ProjectExporter resources ERROR: ${e.message}")
+        fun tick() {
+            step++
+            onProgress?.invoke((step.toFloat() / totalSteps).coerceIn(0f, 1f))
+        }
+
+        return try {
+            ZipOutputStream(output).use { zip ->
+
+                try {
+                    writeProjectJson(zip)
+                } catch (e: Exception) {
+                    FileLogger.log(context, "ProjectExporter project.json ERROR: ${e.message}")
+                }
+                tick()
+
+                try {
+                    writePreview(zip, previewBitmap)
+                } catch (e: Exception) {
+                    FileLogger.log(context, "ProjectExporter preview.png ERROR: ${e.message}")
+                }
+                tick()
+
+                try {
+                    writeResources(context, zip) { tick() }
+                } catch (e: Exception) {
+                    FileLogger.log(context, "ProjectExporter resources ERROR: ${e.message}")
+                }
             }
-        
+            onProgress?.invoke(1f)
+            FileLogger.log(context, "ProjectExporter OK")
+            true
+        } catch (e: Exception) {
+            FileLogger.log(context, "ProjectExporter FAIL: ${e.message}")
+            false
         }
     }
 
-    private fun writeProjectJson(
+    private fun countResourceSlots(context: Context): Int {
+        val project = ProjectManager.getProject()
+        var n = 0
+        if (!project.wallpaperVideo.isNullOrBlank()) n++
+        if (!project.overlayVideo.isNullOrBlank()) n++
+        n += 2 // reverse locked + unlocked (se intentan siempre)
+        if (!project.layers.firstOrNull()?.soundPath.isNullOrBlank()) n++
+        if (!project.overlay.soundPath.isNullOrBlank()) n++
+        if (!project.clock.clockFont.isNullOrBlank()) n++
+        if (!project.clock.dateFont.isNullOrBlank()) n++
+        return n
+    }
 
-        zip: ZipOutputStream
-
-    ) {
-
-        val json =
-            ProjectSerializer.encode(
-                ProjectManager.getProject()
-            )
-
-        zip.putNextEntry(
-            ZipEntry("project.json")
-        )
-
-        zip.write(
-            json.toByteArray()
-        )
-
+    private fun writeProjectJson(zip: ZipOutputStream) {
+        val json = ProjectSerializer.encode(ProjectManager.getProject())
+        zip.putNextEntry(ZipEntry("project.json"))
+        zip.write(json.toByteArray())
         zip.closeEntry()
     }
 
@@ -78,69 +113,38 @@ object ProjectExporter {
         zip: ZipOutputStream,
         bitmap: Bitmap?
     ) {
-    
-        if (bitmap == null)
-            return
-    
-        zip.putNextEntry(
-            ZipEntry("preview.png")
-        )
-    
-        bitmap.compress(
-            Bitmap.CompressFormat.PNG,
-            100,
-            zip
-        )
-    
+        if (bitmap == null) return
+
+        zip.putNextEntry(ZipEntry("preview.png"))
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, zip)
         zip.closeEntry()
     }
-    
+
     private fun addFile(
-
         zip: ZipOutputStream,
-    
         file: File,
-    
-        zipName: String,
-    
+        entryName: String,
         context: Context
-    
     ): Boolean {
-    
-        if (!file.exists() || !file.isFile || file.length() <= 0L) {
-            return false
-        }
-
+        if (!file.exists() || file.length() <= 0L) return false
         return try {
-            zip.putNextEntry(ZipEntry(zipName))
+            zip.putNextEntry(ZipEntry(entryName))
             file.inputStream().use { it.copyTo(zip) }
             zip.closeEntry()
-            FileLogger.log(
-                context,
-                "ProjectExporter OK: $zipName (${file.length()} bytes)"
-            )
             true
         } catch (e: Exception) {
-            FileLogger.log(
-                context,
-                "ProjectExporter FAIL: $zipName ${e.message}"
-            )
+            FileLogger.log(context, "ProjectExporter addFile ERROR $entryName: ${e.message}")
             false
         }
     }
-    
-    private fun writeResources(
 
+    private fun writeResources(
         context: Context,
-    
-        zip: ZipOutputStream
-    
+        zip: ZipOutputStream,
+        onFileDone: () -> Unit
     ) {
-    
-        val project =
-            ProjectManager.getProject()
-    
-        // Video principal
+        val project = ProjectManager.getProject()
+
         project.wallpaperVideo?.let {
             addFile(
                 zip,
@@ -148,9 +152,9 @@ object ProjectExporter {
                 "videos/$it",
                 context
             )
+            onFileDone()
         }
-    
-        // Video overlay
+
         project.overlayVideo?.let {
             addFile(
                 zip,
@@ -158,23 +162,25 @@ object ProjectExporter {
                 "videos/$it",
                 context
             )
+            onFileDone()
         }
 
-        // Clips de reversa (nombres fijos en videos/)
         addFile(
             zip,
             VideoStorage.getReverseLockedFile(context),
             "videos/${VideoStorage.OVERLAY_REVERSE_LOCKED}",
             context
         )
+        onFileDone()
+
         addFile(
             zip,
             VideoStorage.getReverseUnlockedFile(context),
             "videos/${VideoStorage.OVERLAY_REVERSE_UNLOCKED}",
             context
         )
-    
-        // MP3 fondo
+        onFileDone()
+
         project.layers.firstOrNull()?.soundPath?.let {
             addFile(
                 zip,
@@ -182,9 +188,9 @@ object ProjectExporter {
                 "audio/$it",
                 context
             )
+            onFileDone()
         }
-    
-        // MP3 overlay
+
         project.overlay.soundPath?.let {
             addFile(
                 zip,
@@ -192,9 +198,9 @@ object ProjectExporter {
                 "audio/$it",
                 context
             )
+            onFileDone()
         }
-    
-        // Fuente reloj
+
         project.clock.clockFont?.let {
             addFile(
                 zip,
@@ -202,9 +208,9 @@ object ProjectExporter {
                 "fonts/$it",
                 context
             )
+            onFileDone()
         }
-    
-        // Fuente fecha
+
         project.clock.dateFont?.let {
             addFile(
                 zip,
@@ -212,7 +218,7 @@ object ProjectExporter {
                 "fonts/$it",
                 context
             )
+            onFileDone()
         }
     }
-
 }

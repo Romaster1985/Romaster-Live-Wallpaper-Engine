@@ -2866,29 +2866,74 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
             
             FilePicker.REQUEST_EXPORT_PROJECT -> {
 
-                val previewBitmap =
-                    exportPreviewBitmap
-            
+                val previewBitmap = exportPreviewBitmap
                 exportPreviewBitmap = null
-            
+
+                val container = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    setPadding(48, 32, 48, 16)
+                }
+                val label = TextView(this).apply {
+                    text = "Exportando proyecto…"
+                    textSize = 16f
+                }
+                val bar = ProgressBar(
+                    this,
+                    null,
+                    android.R.attr.progressBarStyleHorizontal
+                ).apply {
+                    max = 100
+                    isIndeterminate = false
+                    progress = 0
+                }
+                val detail = TextView(this).apply {
+                    text = "0 %"
+                    textSize = 13f
+                    setPadding(0, 16, 0, 0)
+                }
+                container.addView(label)
+                container.addView(bar)
+                container.addView(detail)
+
+                val dialog = AlertDialog.Builder(this)
+                    .setView(container)
+                    .setCancelable(false)
+                    .create()
+                dialog.show()
+
                 lifecycleScope.launch {
-            
-                    try {
-            
-                        withContext(
-                            Dispatchers.IO
-                        ) {
-            
+                    val ok = try {
+                        withContext(Dispatchers.IO) {
                             ProjectExporter.export(
                                 this@MainActivity,
                                 uri,
                                 previewBitmap
-                            )
+                            ) { p ->
+                                runOnUiThread {
+                                    val pct = (p * 100f).toInt().coerceIn(0, 100)
+                                    bar.progress = pct
+                                    detail.text = "$pct %"
+                                }
+                            }
                         }
-            
                     } catch (e: Exception) {
-            
                         e.printStackTrace()
+                        false
+                    }
+
+                    dialog.dismiss()
+                    if (ok) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Proyecto exportado correctamente",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Error al exportar el proyecto",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             }
