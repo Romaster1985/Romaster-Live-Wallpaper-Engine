@@ -52,6 +52,8 @@ class GLImageLayersRenderer {
     private val movies = mutableMapOf<String, Movie>()
     private val movieStart = mutableMapOf<String, Long>()
     private val bitmapSize = mutableMapOf<String, Pair<Int, Int>>()
+    private val fadeStartTimes = mutableMapOf<String, Long>()
+    private val forceHidden = mutableMapOf<String, Boolean>()
 
     private var screenW = 1
     private var screenH = 1
@@ -193,6 +195,31 @@ class GLImageLayersRenderer {
         }
     }
 
+    fun startSoftStartAll() {
+        val layers = ProjectManager.getProject().imageLayers
+        val now = android.os.SystemClock.elapsedRealtime()
+        for (layer in layers) {
+            if (forceHidden[layer.id] == true) continue
+            fadeStartTimes[layer.id] = now
+        }
+    }
+
+    fun startSoftStart(id: String) {
+        if (forceHidden[id] == true) return
+        fadeStartTimes[id] = android.os.SystemClock.elapsedRealtime()
+    }
+
+    fun setLockScreenVisible(deviceLocked: Boolean) {
+        val layers = ProjectManager.getProject().imageLayers
+        for (layer in layers) {
+            val show = !deviceLocked || layer.enabledOnLockScreen
+            forceHidden[layer.id] = !show
+            if (!show) {
+                fadeStartTimes.remove(layer.id)
+            }
+        }
+    }
+
     /** Dibuja una capa de imagen por id (orden lo decide layerStack). */
     fun drawById(id: String) {
         val layer = ProjectManager.getProject().imageLayers
@@ -201,7 +228,11 @@ class GLImageLayersRenderer {
     }
 
     private fun drawLayer(layer: ImageLayer) {
+        if (forceHidden[layer.id] == true) return
         val tex = textures[layer.id] ?: return
+
+        val fadeAlpha = layerFadeAlpha(layer)
+        if (fadeAlpha <= 0.001f) return
 
         // Actualizar frame de GIF
         movies[layer.id]?.let { movie ->
@@ -259,7 +290,7 @@ class GLImageLayersRenderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         tex.bind(0)
         GLES20.glUniform1i(samplerHandle, 0)
-        GLES20.glUniform1f(alphaHandle, layer.opacity.coerceIn(0f, 1f))
+        GLES20.glUniform1f(alphaHandle, (layer.opacity * fadeAlpha).coerceIn(0f, 1f))
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0)
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)
@@ -291,6 +322,15 @@ class GLImageLayersRenderer {
             GLES20.glDeleteProgram(program)
             program = 0
         }
+    }
+
+    private fun layerFadeAlpha(layer: ImageLayer): Float {
+        val start = fadeStartTimes[layer.id] ?: return 1f
+        val dur = layer.fadeDurationMs.coerceAtLeast(1L)
+        val elapsed = android.os.SystemClock.elapsedRealtime() - start
+        val a = (elapsed.toFloat() / dur.toFloat()).coerceIn(0f, 1f)
+        if (a >= 1f) fadeStartTimes.remove(layer.id)
+        return a
     }
 
     private fun compile(type: Int, code: String): Int {

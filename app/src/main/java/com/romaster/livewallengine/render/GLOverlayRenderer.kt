@@ -148,6 +148,22 @@ class GLOverlayRenderer {
             fadeStartTime = 0L
         }
     }
+
+    /** Soft Start del reloj (p. ej. al volver a visible el wallpaper). */
+    fun startSoftStart(durationMs: Long? = null) {
+        clockAlpha = 0f
+        // duration se lee de clockFadeDurationMs en updateFade;
+        // si se pasa uno puntual, ajustamos via fadeStartTime únicamente
+        fadeStartTime = SystemClock.elapsedRealtime()
+        if (durationMs != null && durationMs > 0L) {
+            // Guardamos override en un campo opcional
+            softStartOverrideMs = durationMs
+        } else {
+            softStartOverrideMs = null
+        }
+    }
+
+    private var softStartOverrideMs: Long? = null
     
     private fun updateFade() {
 
@@ -159,10 +175,11 @@ class GLOverlayRenderer {
             SystemClock.elapsedRealtime() -
             fadeStartTime
     
+        val dur = (softStartOverrideMs ?: fadeDurationMs).coerceAtLeast(1L)
         clockAlpha =
             (
                 elapsed.toFloat() /
-                fadeDurationMs.toFloat()
+                dur.toFloat()
             ).coerceIn(
                 0f,
                 1f
@@ -173,6 +190,7 @@ class GLOverlayRenderer {
             clockAlpha = 1f
     
             fadeStartTime = 0L
+            softStartOverrideMs = null
         }
     }
 

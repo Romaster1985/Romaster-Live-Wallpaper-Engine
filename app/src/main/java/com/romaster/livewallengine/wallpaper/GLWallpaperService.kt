@@ -203,6 +203,7 @@ class GLWallpaperService : WallpaperService() {
                             clock.enabledOnLockScreen,
                         fadeIn = false
                     )
+                    renderer?.setImageLayersLockState(true)
 
                 } else {
 
@@ -220,6 +221,8 @@ class GLWallpaperService : WallpaperService() {
                         visible = true,
                         fadeIn = !clock.enabledOnLockScreen
                     )
+                    renderer?.setImageLayersLockState(false)
+                    renderer?.startImageLayersSoftStart()
 
                     val overlay =
                         renderer?.getVideoOverlayRenderer()
@@ -651,6 +654,21 @@ class GLWallpaperService : WallpaperService() {
                         }
 
                         renderer!!.startFadeIn()
+
+                        // Soft Start reloj + capas de imagen al volver a visible
+                        run {
+                            val project = ProjectManager.getProject()
+                            renderer!!.setImageLayersLockState(deviceLocked)
+                            if (deviceLocked) {
+                                renderer!!.setClockLockScreenState(
+                                    visible = project.clock.enabledOnLockScreen,
+                                    fadeIn = project.clock.enabledOnLockScreen
+                                )
+                            } else {
+                                renderer!!.startClockSoftStart()
+                            }
+                            renderer!!.startImageLayersSoftStart()
+                        }
 
                         videoPlayer!!.play()
 

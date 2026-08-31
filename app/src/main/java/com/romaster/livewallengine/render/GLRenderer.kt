@@ -403,6 +403,18 @@ class GLRenderer(
         overlayRenderer?.setLockScreenVisible(visible = visible, fadeIn = fadeIn)
     }
 
+    fun startClockSoftStart() {
+        overlayRenderer?.startSoftStart()
+    }
+
+    fun startImageLayersSoftStart() {
+        imageLayersRenderer?.startSoftStartAll()
+    }
+
+    fun setImageLayersLockState(deviceLocked: Boolean) {
+        imageLayersRenderer?.setLockScreenVisible(deviceLocked)
+    }
+
     fun clearSurface() {
         if (width <= 0 || height <= 0) return
         try {

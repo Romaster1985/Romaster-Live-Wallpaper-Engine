@@ -1765,6 +1765,78 @@ class MainActivity : AppCompatActivity() {
             val card = buildImageLayerCard(layer, index + 1)
             container.addView(card)
         }
+        rebuildImageSoftStartRows()
+    }
+
+    private fun rebuildImageSoftStartRows() {
+        val container = findViewById<LinearLayout>(R.id.containerImageFadeDurations)
+            ?: return
+        container.removeAllViews()
+        val project = ProjectManager.getProject()
+        val density = resources.displayMetrics.density
+
+        project.imageLayers.forEachIndexed { index, layer ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (16 * density).toInt(), 0, 0)
+            }
+            val texts = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            texts.addView(TextView(this).apply {
+                text = "Capa de Imagen ${index + 1}"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            val valueTv = TextView(this).apply {
+                text = "${layer.fadeDurationMs} ms"
+                textSize = 14f
+                setPadding(0, (2 * density).toInt(), 0, 0)
+            }
+            texts.addView(valueTv)
+            row.addView(texts)
+            row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = "Editar..."
+                setOnClickListener {
+                    showImageLayerFadeDialog(layer.id, valueTv)
+                }
+            })
+            container.addView(row)
+        }
+    }
+
+    private fun showImageLayerFadeDialog(layerId: String, valueTv: TextView) {
+        val project = ProjectManager.getProject()
+        val layer = project.imageLayers.find { it.id == layerId } ?: return
+        val input = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(layer.fadeDurationMs.toString())
+            selectAll()
+        }
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 0, 48, 0)
+            addView(input)
+        }
+        val idx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
+        AlertDialog.Builder(this)
+            .setTitle("Soft Start — Capa de Imagen $idx")
+            .setMessage("Duración del fade en milisegundos.")
+            .setView(box)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val value = input.text.toString().toLongOrNull()
+                if (value == null || value < 0L) {
+                    Toast.makeText(this, "Ingresá un valor válido.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                layer.fadeDurationMs = value
+                valueTv.text = "$value ms"
+                editor.save()
+                notifyImageLayersChanged()
+            }
+            .show()
     }
 
     private fun buildImageLayerCard(
@@ -1842,6 +1914,19 @@ class MainActivity : AppCompatActivity() {
             tag = "file_${layer.id}"
         })
 
+        // Habilitar en pantalla de bloqueo (default: true)
+        root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = "Habilitar en pantalla de bloqueo"
+            isChecked = layer.enabledOnLockScreen
+            setPadding(0, (8 * density).toInt(), 0, 0)
+            setOnCheckedChangeListener { _, checked ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                layer.enabledOnLockScreen = checked
+                editor.save()
+                notifyImageLayersChanged()
+            }
+        })
+
         // Ubicación en el stack de capas
         val btnPos = com.google.android.material.button.MaterialButton(this).apply {
             text = "Seleccionar ubicación de capa"
@@ -1858,11 +1943,13 @@ class MainActivity : AppCompatActivity() {
             valueFrom: Float,
             valueTo: Float,
             value: Float,
+            defaultValue: Float,
             format: (Float) -> String,
             onChange: (Float) -> Unit
         ) {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
                 setPadding(0, (10 * density).toInt(), 0, 0)
             }
             row.addView(TextView(this).apply {
@@ -1887,21 +1974,27 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             root.addView(slider)
+            attachSliderResetButton(slider, valueTv, defaultValue) { v ->
+                valueTv.text = format(v)
+                onChange(v)
+                editor.save()
+                notifyImageLayersChanged()
+            }
         }
 
-        addSliderRow("Transparencia", 0f, 100f, layer.opacity * 100f, { "${it.toInt()} %" }) {
+        addSliderRow("Transparencia", 0f, 100f, layer.opacity * 100f, 100f, { "${it.toInt()} %" }) {
             layer.opacity = it / 100f
         }
-        addSliderRow("Posición X", 0f, 100f, layer.x * 100f, { it.toInt().toString() }) {
+        addSliderRow("Posición X", 0f, 100f, layer.x * 100f, 50f, { it.toInt().toString() }) {
             layer.x = it / 100f
         }
-        addSliderRow("Posición Y", 0f, 100f, layer.y * 100f, { it.toInt().toString() }) {
+        addSliderRow("Posición Y", 0f, 100f, layer.y * 100f, 50f, { it.toInt().toString() }) {
             layer.y = it / 100f
         }
-        addSliderRow("Zoom", 10f, 800f, (layer.zoom * 100f).coerceIn(10f, 800f), { "${it.toInt()} %" }) {
+        addSliderRow("Zoom", 10f, 800f, (layer.zoom * 100f).coerceIn(10f, 800f), 100f, { "${it.toInt()} %" }) {
             layer.zoom = it / 100f
         }
-        addSliderRow("Rotación", -180f, 180f, layer.rotation.coerceIn(-180f, 180f), { "${it.toInt()}°" }) {
+        addSliderRow("Rotación", -180f, 180f, layer.rotation.coerceIn(-180f, 180f), 0f, { "${it.toInt()}°" }) {
             layer.rotation = it
         }
 

@@ -49,5 +49,11 @@ data class ImageLayer(
     /** Grados */
     var rotation: Float = 0f,
     /** @deprecated Usar WallpaperProject.layerStack */
-    var zSlot: Int = 4
+    var zSlot: Int = 4,
+
+    /** Visible en pantalla de bloqueo (default: sí) */
+    var enabledOnLockScreen: Boolean = true,
+
+    /** Soft Start propio en ms */
+    var fadeDurationMs: Long = 1000L
 )

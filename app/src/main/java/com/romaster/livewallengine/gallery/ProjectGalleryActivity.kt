@@ -118,15 +118,20 @@ class ProjectGalleryActivity : AppCompatActivity() {
         name.text = project.name
         buttonApply.isEnabled = false
 
-        val localZip = File(
-            AppDirectories.galleryDownloads(this),
-            project.zipFileName
-        )
+        // Resolver ZIP usable (privado; migra desde Documentos si hace falta)
+        var localZip = AppDirectories.resolveGalleryZip(this, project.zipFileName)
 
-        if (localZip.exists() && localZip.length() > 0L) {
+        if (localZip != null && AppDirectories.isUsableZip(localZip)) {
             status.text = "Ya descargado. Podés aplicar el proyecto."
             buttonApply.isEnabled = true
             buttonDownload.text = "Re-descargar"
+        } else {
+            localZip = File(
+                AppDirectories.galleryDownloads(this),
+                project.zipFileName
+            )
+            status.text = "Pendiente de descarga"
+            buttonApply.isEnabled = false
         }
 
         // Preview del diálogo
@@ -171,12 +176,9 @@ class ProjectGalleryActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    withContext(Dispatchers.IO) {
-                        // Archivo temporal por si falla a mitad
-                        val temp = File(
-                            localZip.parentFile,
-                            "${localZip.name}.part"
-                        )
+                    val saved = withContext(Dispatchers.IO) {
+                        val privateDir = AppDirectories.galleryDownloads(this@ProjectGalleryActivity)
+                        val temp = File(privateDir, "${project.zipFileName}.part")
                         if (temp.exists()) temp.delete()
 
                         GitHubGalleryRepository.downloadZip(
@@ -184,13 +186,15 @@ class ProjectGalleryActivity : AppCompatActivity() {
                             temp
                         )
 
-                        if (localZip.exists()) localZip.delete()
-                        if (!temp.renameTo(localZip)) {
-                            temp.copyTo(localZip, overwrite = true)
-                            temp.delete()
-                        }
+                        // Guarda en privado (siempre) + espejo a Documentos si se puede
+                        AppDirectories.saveGalleryZip(
+                            this@ProjectGalleryActivity,
+                            project.zipFileName,
+                            temp
+                        )
                     }
 
+                    localZip = saved
                     progressBar.visibility = View.GONE
                     status.text = "Descarga completa. Ya podés aplicar el proyecto."
                     buttonApply.isEnabled = true
@@ -198,12 +202,21 @@ class ProjectGalleryActivity : AppCompatActivity() {
                     buttonDownload.text = "Re-descargar"
                     Toast.makeText(
                         this@ProjectGalleryActivity,
-                        "Guardado en Documentos/Romaster_LiveWall_Engine",
+                        "Proyecto guardado",
                         Toast.LENGTH_SHORT
                     ).show()
                 } catch (e: Exception) {
                     progressBar.visibility = View.GONE
                     buttonDownload.isEnabled = true
+                    // Si ya había un ZIP usable, reactivar Aplicar
+                    val existing = AppDirectories.resolveGalleryZip(
+                        this@ProjectGalleryActivity,
+                        project.zipFileName
+                    )
+                    if (existing != null) {
+                        localZip = existing
+                        buttonApply.isEnabled = true
+                    }
                     status.text =
                         "Error al descargar: ${e.message ?: e.javaClass.simpleName}"
                     Toast.makeText(
@@ -216,7 +229,9 @@ class ProjectGalleryActivity : AppCompatActivity() {
         }
 
         buttonApply.setOnClickListener {
-            if (!localZip.exists()) {
+            val zip = AppDirectories.resolveGalleryZip(this, project.zipFileName)
+                ?: localZip
+            if (zip == null || !AppDirectories.isUsableZip(zip)) {
                 Toast.makeText(
                     this,
                     "Primero descargá el proyecto",
@@ -233,7 +248,7 @@ class ProjectGalleryActivity : AppCompatActivity() {
                     withContext(Dispatchers.IO) {
                         ProjectImporter.importFromFile(
                             this@ProjectGalleryActivity,
-                            localZip
+                            zip
                         )
                     }
 
