@@ -118,18 +118,14 @@ class ProjectGalleryActivity : AppCompatActivity() {
         name.text = project.name
         buttonApply.isEnabled = false
 
-        // Resolver ZIP usable (privado; migra desde Documentos si hace falta)
-        var localZip = AppDirectories.resolveGalleryZip(this, project.zipFileName)
-
-        if (localZip != null && AppDirectories.isUsableZip(localZip)) {
+        // Si el ZIP ya está en privado o en Documentos → se puede aplicar
+        // (mismo espíritu que Importar: abrir stream, no exigir re-descarga)
+        val alreadyPresent = AppDirectories.galleryZipPresent(this, project.zipFileName)
+        if (alreadyPresent) {
             status.text = "Ya descargado. Podés aplicar el proyecto."
             buttonApply.isEnabled = true
             buttonDownload.text = "Re-descargar"
         } else {
-            localZip = File(
-                AppDirectories.galleryDownloads(this),
-                project.zipFileName
-            )
             status.text = "Pendiente de descarga"
             buttonApply.isEnabled = false
         }
@@ -176,7 +172,7 @@ class ProjectGalleryActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    val saved = withContext(Dispatchers.IO) {
+                    withContext(Dispatchers.IO) {
                         val privateDir = AppDirectories.galleryDownloads(this@ProjectGalleryActivity)
                         val temp = File(privateDir, "${project.zipFileName}.part")
                         if (temp.exists()) temp.delete()
@@ -186,7 +182,6 @@ class ProjectGalleryActivity : AppCompatActivity() {
                             temp
                         )
 
-                        // Guarda en privado (siempre) + espejo a Documentos si se puede
                         AppDirectories.saveGalleryZip(
                             this@ProjectGalleryActivity,
                             project.zipFileName,
@@ -194,7 +189,6 @@ class ProjectGalleryActivity : AppCompatActivity() {
                         )
                     }
 
-                    localZip = saved
                     progressBar.visibility = View.GONE
                     status.text = "Descarga completa. Ya podés aplicar el proyecto."
                     buttonApply.isEnabled = true
@@ -209,12 +203,11 @@ class ProjectGalleryActivity : AppCompatActivity() {
                     progressBar.visibility = View.GONE
                     buttonDownload.isEnabled = true
                     // Si ya había un ZIP usable, reactivar Aplicar
-                    val existing = AppDirectories.resolveGalleryZip(
-                        this@ProjectGalleryActivity,
-                        project.zipFileName
-                    )
-                    if (existing != null) {
-                        localZip = existing
+                    if (AppDirectories.galleryZipPresent(
+                            this@ProjectGalleryActivity,
+                            project.zipFileName
+                        )
+                    ) {
                         buttonApply.isEnabled = true
                     }
                     status.text =
@@ -229,9 +222,7 @@ class ProjectGalleryActivity : AppCompatActivity() {
         }
 
         buttonApply.setOnClickListener {
-            val zip = AppDirectories.resolveGalleryZip(this, project.zipFileName)
-                ?: localZip
-            if (zip == null || !AppDirectories.isUsableZip(zip)) {
+            if (!AppDirectories.galleryZipPresent(this, project.zipFileName)) {
                 Toast.makeText(
                     this,
                     "Primero descargá el proyecto",
@@ -246,10 +237,19 @@ class ProjectGalleryActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 try {
                     withContext(Dispatchers.IO) {
-                        ProjectImporter.importFromFile(
+                        // Mismo mecanismo que Importar: abrir stream y aplicar
+                        val stream = AppDirectories.openGalleryZipStream(
                             this@ProjectGalleryActivity,
-                            zip
+                            project.zipFileName
+                        ) ?: throw IllegalStateException(
+                            "No se pudo abrir el ZIP (permiso o archivo dañado)"
                         )
+                        stream.use { input ->
+                            ProjectImporter.importFromInputStream(
+                                this@ProjectGalleryActivity,
+                                input
+                            )
+                        }
                     }
 
                     Toast.makeText(

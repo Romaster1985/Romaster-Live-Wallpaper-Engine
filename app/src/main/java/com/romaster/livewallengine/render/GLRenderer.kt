@@ -412,7 +412,15 @@ class GLRenderer(
     }
 
     fun setImageLayersLockState(deviceLocked: Boolean) {
-        imageLayersRenderer?.setLockScreenVisible(deviceLocked)
+        imageLayersRenderer?.applyLockScreenState(deviceLocked)
+    }
+
+    fun startImageLayersSoftStartOnLock() {
+        imageLayersRenderer?.startSoftStartOnLockScreen()
+    }
+
+    fun revealImageLayersAfterUnlock() {
+        imageLayersRenderer?.revealAfterUnlock()
     }
 
     fun clearSurface() {

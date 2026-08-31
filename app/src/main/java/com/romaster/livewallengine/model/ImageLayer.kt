@@ -51,8 +51,11 @@ data class ImageLayer(
     /** @deprecated Usar WallpaperProject.layerStack */
     var zSlot: Int = 4,
 
-    /** Visible en pantalla de bloqueo (default: sí) */
-    var enabledOnLockScreen: Boolean = true,
+    /**
+     * Igual que Video-OL [OverlaySettings.disableOnLockScreen]:
+     * false (default) = visible en bloqueo; true = oculto en bloqueo.
+     */
+    var disableOnLockScreen: Boolean = false,
 
     /** Soft Start propio en ms */
     var fadeDurationMs: Long = 1000L

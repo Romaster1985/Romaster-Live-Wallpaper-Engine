@@ -412,6 +412,20 @@ class WallpaperPreviewView @JvmOverloads constructor(
                     if (revision != lastRevision) {
 
                         lastRevision = revision
+
+                        // Re-aplicar visibilidad de capas; no cancelar Soft Start del reloj
+                        val projRev = ProjectManager.getProject()
+                        if (projRev.previewLocked) {
+                            renderer?.setImageLayersLockState(true)
+                            if (!projRev.clock.enabledOnLockScreen) {
+                                renderer?.setClockLockScreenState(
+                                    visible = false,
+                                    fadeIn = false
+                                )
+                            }
+                        } else {
+                            renderer?.setImageLayersLockState(false)
+                        }
                     
                         initializeAudioConfiguration()
                     
@@ -564,6 +578,20 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                             }
                                         )
                                     }
+
+                                    // Reloj e imágenes: misma lógica que el wallpaper real
+                                    if (project.clock.enabledOnLockScreen) {
+                                        renderer?.setClockLockScreenState(
+                                            visible = true,
+                                            fadeIn = true
+                                        )
+                                    } else {
+                                        renderer?.setClockLockScreenState(
+                                            visible = false,
+                                            fadeIn = false
+                                        )
+                                    }
+                                    renderer?.startImageLayersSoftStartOnLock()
                                 } else {
                                     FileLogger.log(
                                         context,
@@ -582,6 +610,12 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                     } else {
                                         overlay.play()
                                     }
+
+                                    renderer?.setClockLockScreenState(
+                                        visible = true,
+                                        fadeIn = !project.clock.enabledOnLockScreen
+                                    )
+                                    renderer?.revealImageLayersAfterUnlock()
                                 }
                             }
 

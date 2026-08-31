@@ -209,13 +209,49 @@ class GLImageLayersRenderer {
         fadeStartTimes[id] = android.os.SystemClock.elapsedRealtime()
     }
 
-    fun setLockScreenVisible(deviceLocked: Boolean) {
+    /**
+     * Igual que Video-OL disableOnLockScreen:
+     * - disableOnLockScreen=false (default) → visible en bloqueo
+     * - disableOnLockScreen=true → oculto en bloqueo
+     */
+    fun applyLockScreenState(deviceLocked: Boolean) {
         val layers = ProjectManager.getProject().imageLayers
         for (layer in layers) {
-            val show = !deviceLocked || layer.enabledOnLockScreen
+            val show = !deviceLocked || !layer.disableOnLockScreen
             forceHidden[layer.id] = !show
-            if (!show) {
+            if (!show) fadeStartTimes.remove(layer.id)
+        }
+    }
+
+    /** Soft Start de capas visibles en lock (disableOnLockScreen=false). */
+    fun startSoftStartOnLockScreen() {
+        val layers = ProjectManager.getProject().imageLayers
+        val now = android.os.SystemClock.elapsedRealtime()
+        for (layer in layers) {
+            if (!layer.disableOnLockScreen) {
+                forceHidden[layer.id] = false
+                fadeStartTimes[layer.id] = now
+            } else {
+                forceHidden[layer.id] = true
                 fadeStartTimes.remove(layer.id)
+            }
+        }
+    }
+
+    /**
+     * Al desbloquear:
+     * - capas visibles en lock → sin fade
+     * - capas con disableOnLockScreen → Soft Start
+     */
+    fun revealAfterUnlock() {
+        val layers = ProjectManager.getProject().imageLayers
+        val now = android.os.SystemClock.elapsedRealtime()
+        for (layer in layers) {
+            forceHidden[layer.id] = false
+            if (layer.disableOnLockScreen) {
+                fadeStartTimes[layer.id] = now // estaba oculto
+            } else {
+                fadeStartTimes.remove(layer.id) // ya visible
             }
         }
     }

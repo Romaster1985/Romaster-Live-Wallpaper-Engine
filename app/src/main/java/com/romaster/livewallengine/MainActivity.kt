@@ -1845,6 +1845,9 @@ class MainActivity : AppCompatActivity() {
     ): View {
         val density = resources.displayMetrics.density
         val pad = (12 * density).toInt()
+        val layerId = layer.id
+        fun liveLayer(): ImageLayer? =
+            ProjectManager.getProject().imageLayers.find { it.id == layerId }
 
         val card = com.google.android.material.card.MaterialCardView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -1878,7 +1881,7 @@ class MainActivity : AppCompatActivity() {
                 marginEnd = (6 * density).toInt()
             }
             setOnClickListener {
-                pendingImageLayerId = layer.id
+                pendingImageLayerId = layerId
                 val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
                     type = "image/*"
                     putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
@@ -1900,7 +1903,7 @@ class MainActivity : AppCompatActivity() {
             }
             setBackgroundColor(0xFFB00020.toInt())
             setTextColor(0xFFFFFFFF.toInt())
-            setOnClickListener { removeImageLayer(layer.id) }
+            setOnClickListener { removeImageLayer(layerId) }
         }
         rowBtns.addView(btnLoad)
         rowBtns.addView(btnDel)
@@ -1914,14 +1917,14 @@ class MainActivity : AppCompatActivity() {
             tag = "file_${layer.id}"
         })
 
-        // Habilitar en pantalla de bloqueo (default: true)
+        // Igual que Video-OL: destildado = visible en bloqueo
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
-            text = "Habilitar en pantalla de bloqueo"
-            isChecked = layer.enabledOnLockScreen
+            text = "Deshabilitar en pantalla de bloqueo"
+            isChecked = layer.disableOnLockScreen
             setPadding(0, (8 * density).toInt(), 0, 0)
             setOnCheckedChangeListener { _, checked ->
                 if (loadingUI) return@setOnCheckedChangeListener
-                layer.enabledOnLockScreen = checked
+                liveLayer()?.disableOnLockScreen = checked
                 editor.save()
                 notifyImageLayersChanged()
             }
@@ -1934,7 +1937,7 @@ class MainActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = pad }
-            setOnClickListener { showLayerPositionDialog(layer.id) }
+            setOnClickListener { showLayerPositionDialog(layerId) }
         }
         root.addView(btnPos)
 
@@ -1983,19 +1986,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         addSliderRow("Transparencia", 0f, 100f, layer.opacity * 100f, 100f, { "${it.toInt()} %" }) {
-            layer.opacity = it / 100f
+            liveLayer()?.opacity = it / 100f
         }
         addSliderRow("Posición X", 0f, 100f, layer.x * 100f, 50f, { it.toInt().toString() }) {
-            layer.x = it / 100f
+            liveLayer()?.x = it / 100f
         }
         addSliderRow("Posición Y", 0f, 100f, layer.y * 100f, 50f, { it.toInt().toString() }) {
-            layer.y = it / 100f
+            liveLayer()?.y = it / 100f
         }
         addSliderRow("Zoom", 10f, 800f, (layer.zoom * 100f).coerceIn(10f, 800f), 100f, { "${it.toInt()} %" }) {
-            layer.zoom = it / 100f
+            liveLayer()?.zoom = it / 100f
         }
         addSliderRow("Rotación", -180f, 180f, layer.rotation.coerceIn(-180f, 180f), 0f, { "${it.toInt()}°" }) {
-            layer.rotation = it
+            liveLayer()?.rotation = it
         }
 
         card.addView(root)
@@ -2990,13 +2993,16 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
             clock.dateFont
         )
         
-        findViewById<CheckBox>(
+        findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
             R.id.checkClockLockScreen
-        ).setOnCheckedChangeListener { _, _ ->
+        ).setOnCheckedChangeListener { _, checked ->
         
             if (loadingUI)
                 return@setOnCheckedChangeListener
-        
+
+            // Aplicar al instante (wallpaper lee ProjectManager)
+            ProjectManager.getProject().clock.enabledOnLockScreen = checked
+            editor.save()
             updatePreviewProject()
         }
         

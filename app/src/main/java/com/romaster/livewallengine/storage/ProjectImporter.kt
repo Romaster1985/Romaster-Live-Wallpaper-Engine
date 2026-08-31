@@ -37,22 +37,11 @@ object ProjectImporter {
         uri: Uri
 
     ) {
-        ReverseVideoProcessor.clearAll(context)
-        try { File(context.filesDir, "images").deleteRecursively() } catch (_: Exception) {}
-
-        context.contentResolver
-            .openInputStream(uri)
-            ?.use { input ->
-                importFromStream(context, input)
-            }
-
-        val project =
-            StorageManager.loadProject(context)
-                ?: return
-
-        normalizeReverseNames(context, project)
-        ProjectManager.setProject(project)
-        StorageManager.saveProject(context, project)
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw IllegalStateException("No se pudo abrir el archivo")
+        input.use {
+            importFromInputStream(context, it)
+        }
     }
 
     /**
@@ -66,12 +55,22 @@ object ProjectImporter {
         zipFile: File
 
     ) {
+        zipFile.inputStream().use { input ->
+            importFromInputStream(context, input)
+        }
+    }
+
+    /**
+     * Mismo pipeline que el botón Importar, desde un stream ya abierto.
+     */
+    fun importFromInputStream(
+        context: Context,
+        input: InputStream
+    ) {
         ReverseVideoProcessor.clearAll(context)
         try { File(context.filesDir, "images").deleteRecursively() } catch (_: Exception) {}
 
-        zipFile.inputStream().use { input ->
-            importFromStream(context, input)
-        }
+        importFromStream(context, input)
 
         val project =
             StorageManager.loadProject(context)
@@ -84,7 +83,7 @@ object ProjectImporter {
         StorageManager.saveProject(context, project)
     }
 
-    private fun importFromStream(
+    fun importFromStream(
 
         context: Context,
 

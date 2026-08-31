@@ -198,9 +198,13 @@ class GLWallpaperService : WallpaperService() {
                         )
                     }
 
+                    // NO editor.load() aquí: reemplaza el WallpaperProject en memoria
+                    // y los controles de la UI quedan apuntando a capas "muertas".
+                    val clockNow = ProjectManager.getProject().clock
+
+                    // Bloqueo con pantalla ya visible: sin re-fade
                     renderer?.setClockLockScreenState(
-                        visible =
-                            clock.enabledOnLockScreen,
+                        visible = clockNow.enabledOnLockScreen,
                         fadeIn = false
                     )
                     renderer?.setImageLayersLockState(true)
@@ -217,12 +221,24 @@ class GLWallpaperService : WallpaperService() {
                                 ?.isPlayingReverseClip() == true)
                     )
 
-                    renderer?.setClockLockScreenState(
-                        visible = true,
-                        fadeIn = !clock.enabledOnLockScreen
-                    )
-                    renderer?.setImageLayersLockState(false)
-                    renderer?.startImageLayersSoftStart()
+                    val clockNow = ProjectManager.getProject().clock
+
+                    // Soft Start del reloj SOLO si estaba oculto en lock
+                    if (clockNow.enabledOnLockScreen) {
+                        renderer?.setClockLockScreenState(
+                            visible = true,
+                            fadeIn = false
+                        )
+                    } else {
+                        // startSoftStart dedicado (no lo cancele un revision handler)
+                        renderer?.setClockLockScreenState(
+                            visible = true,
+                            fadeIn = true
+                        )
+                        renderer?.startClockSoftStart()
+                    }
+                    // Capas: fade solo las que estaban ocultas en lock
+                    renderer?.revealImageLayersAfterUnlock()
 
                     val overlay =
                         renderer?.getVideoOverlayRenderer()
@@ -655,19 +671,36 @@ class GLWallpaperService : WallpaperService() {
 
                         renderer!!.startFadeIn()
 
-                        // Soft Start reloj + capas de imagen al volver a visible
+                        // Soft Start según estado real de bloqueo al volverse visible
+                        // No editor.load(): reemplaza el proyecto en memoria y rompe
+                        // las referencias de los controles de capas en MainActivity.
                         run {
                             val project = ProjectManager.getProject()
-                            renderer!!.setImageLayersLockState(deviceLocked)
-                            if (deviceLocked) {
-                                renderer!!.setClockLockScreenState(
-                                    visible = project.clock.enabledOnLockScreen,
-                                    fadeIn = project.clock.enabledOnLockScreen
-                                )
+                            val keyguard = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+                            val locked = keyguard.isKeyguardLocked
+                            deviceLocked = locked
+                            lastLockState = locked
+
+                            if (locked) {
+                                // Pantalla de bloqueo: fade solo si está habilitado
+                                if (project.clock.enabledOnLockScreen) {
+                                    renderer!!.setClockLockScreenState(
+                                        visible = true,
+                                        fadeIn = true
+                                    )
+                                } else {
+                                    renderer!!.setClockLockScreenState(
+                                        visible = false,
+                                        fadeIn = false
+                                    )
+                                }
+                                renderer!!.startImageLayersSoftStartOnLock()
                             } else {
+                                // Escritorio / visible desbloqueado
+                                renderer!!.setImageLayersLockState(false)
                                 renderer!!.startClockSoftStart()
+                                renderer!!.startImageLayersSoftStart()
                             }
-                            renderer!!.startImageLayersSoftStart()
                         }
 
                         videoPlayer!!.play()
@@ -976,6 +1009,27 @@ class GLWallpaperService : WallpaperService() {
 
                                 lastRevision =
                                     revision
+
+                                // Re-aplicar SOLO visibilidad de capas según checkbox.
+                                // NUNCA forzar fadeIn=false del reloj aquí: cancela el Soft Start
+                                // en curso al desbloquear / al encender en lock.
+                                try {
+                                    val projRev = ProjectManager.getProject()
+                                    if (deviceLocked) {
+                                        renderer?.setImageLayersLockState(true)
+                                        // Si el reloj no debe verse en lock, ocultarlo;
+                                        // si debe verse, no tocar alpha (puede estar en fade-in)
+                                        if (!projRev.clock.enabledOnLockScreen) {
+                                            renderer?.setClockLockScreenState(
+                                                visible = false,
+                                                fadeIn = false
+                                            )
+                                        }
+                                    } else {
+                                        renderer?.setImageLayersLockState(false)
+                                    }
+                                } catch (_: Exception) {
+                                }
 
                                 initializeAudioConfiguration()
 

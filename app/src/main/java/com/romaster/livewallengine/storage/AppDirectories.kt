@@ -19,7 +19,11 @@
 package com.romaster.livewallengine.storage
 
 import android.content.Context
+import android.net.Uri
+import android.provider.MediaStore
 import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
 
 object AppDirectories {
 
@@ -125,27 +129,11 @@ object AppDirectories {
         }
     }
 
-    /**
-     * ZIP local usable: prioriza privado; si solo existe uno público legible,
-     * intenta copiarlo a privado.
-     */
-    fun resolveGalleryZip(context: Context, zipFileName: String): File? {
-        val private = File(galleryDownloads(context), zipFileName)
-        if (isUsableZip(private)) return private
+    fun privateGalleryZip(context: Context, zipFileName: String): File =
+        File(galleryDownloads(context), zipFileName)
 
-        val publicDir = publicGalleryDownloads() ?: return null
-        val public = File(publicDir, zipFileName)
-        if (!isUsableZip(public)) return null
-
-        // Migrar a privado para futuros apply / re-descargas
-        return try {
-            public.copyTo(private, overwrite = true)
-            if (isUsableZip(private)) private else public
-        } catch (_: Exception) {
-            // Público legible pero no copiable: devolver público
-            if (public.canRead()) public else null
-        }
-    }
+    fun publicGalleryZip(zipFileName: String): File =
+        File(publicDocumentsRoot(), "downloads${File.separator}$zipFileName")
 
     fun isUsableZip(file: File): Boolean {
         return try {
@@ -153,6 +141,102 @@ object AppDirectories {
         } catch (_: Exception) {
             false
         }
+    }
+
+    /**
+     * True si hay un ZIP con ese nombre en privado o en Documentos
+     * (aunque el path público no sea "canRead" por ownership: puede abrirse por MediaStore).
+     */
+    fun galleryZipPresent(context: Context, zipFileName: String): Boolean {
+        if (isUsableZip(privateGalleryZip(context, zipFileName))) return true
+        val pub = publicGalleryZip(zipFileName)
+        return try {
+            pub.exists() && pub.isFile && pub.length() > 32L
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Abre el ZIP como InputStream, igual de espíritu que "Importar":
+     * 1) archivo privado de la app
+     * 2) path público si se puede leer
+     * 3) MediaStore / content URI (ZIP viejo en Documentos tras reinstalar)
+     */
+    fun openGalleryZipStream(context: Context, zipFileName: String): InputStream? {
+        val private = privateGalleryZip(context, zipFileName)
+        if (isUsableZip(private)) {
+            return try { FileInputStream(private) } catch (_: Exception) { null }
+        }
+
+        val public = publicGalleryZip(zipFileName)
+        if (isUsableZip(public)) {
+            return try { FileInputStream(public) } catch (_: Exception) { null }
+        }
+
+        // Path público existe pero FileInputStream falla → MediaStore
+        if (public.exists() && public.length() > 32L) {
+            findPublicZipUri(context, zipFileName)?.let { uri ->
+                try {
+                    return context.contentResolver.openInputStream(uri)
+                } catch (_: Exception) {
+                }
+            }
+        }
+        return null
+    }
+
+    /**
+     * Busca el ZIP en MediaStore por nombre bajo Documents/Romaster_LiveWall_Engine/downloads.
+     */
+    fun findPublicZipUri(context: Context, zipFileName: String): Uri? {
+        return try {
+            val collection = MediaStore.Files.getContentUri("external")
+            val projection = arrayOf(MediaStore.Files.FileColumns._ID)
+            val selection =
+                "${MediaStore.Files.FileColumns.DISPLAY_NAME}=? AND (" +
+                    "${MediaStore.Files.FileColumns.RELATIVE_PATH} LIKE ? OR " +
+                    "${MediaStore.Files.FileColumns.RELATIVE_PATH} LIKE ?)"
+            val args = arrayOf(
+                zipFileName,
+                "%Romaster_LiveWall_Engine/downloads%",
+                "%Romaster_LiveWall_Engine%/downloads%"
+            )
+            context.contentResolver.query(
+                collection, projection, selection, args, null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val id = cursor.getLong(0)
+                    return android.content.ContentUris.withAppendedId(collection, id)
+                }
+            }
+            // Fallback: solo por nombre
+            val selection2 = "${MediaStore.Files.FileColumns.DISPLAY_NAME}=?"
+            context.contentResolver.query(
+                collection,
+                projection,
+                selection2,
+                arrayOf(zipFileName),
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val id = cursor.getLong(0)
+                    return android.content.ContentUris.withAppendedId(collection, id)
+                }
+            }
+            null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** @deprecated Preferir openGalleryZipStream / galleryZipPresent */
+    fun resolveGalleryZip(context: Context, zipFileName: String): File? {
+        val private = privateGalleryZip(context, zipFileName)
+        if (isUsableZip(private)) return private
+        val public = publicGalleryZip(zipFileName)
+        if (isUsableZip(public)) return public
+        return null
     }
 
     /**
