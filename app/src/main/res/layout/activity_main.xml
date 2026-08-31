@@ -79,6 +79,15 @@
                 layout="@layout/layout_playback"/>
 
             <!-- ========================= -->
+            <!-- Pics Overlay -->
+            <!-- ========================= -->
+
+            <include
+                android:id="@+id/panelPics"
+                android:visibility="gone"
+                layout="@layout/layout_pics"/>
+
+            <!-- ========================= -->
             <!-- Proyecto -->
             <!-- ========================= -->
 

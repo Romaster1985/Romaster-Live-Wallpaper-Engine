@@ -35,6 +35,17 @@ data class WallpaperProject(
     var clock: ClockSettings =
         ClockSettings(),
 
+    /** Capas de imagen (Pics-OL). */
+    var imageLayers: MutableList<ImageLayer> =
+        mutableListOf(),
+
+    /**
+     * Orden de composición de atrás hacia adelante.
+     * Tokens: "vbg", "vol", "ckol" + ids de ImageLayer.
+     */
+    var layerStack: MutableList<String> =
+        mutableListOf(),
+
     var overlay: OverlaySettings =
         OverlaySettings(),
     

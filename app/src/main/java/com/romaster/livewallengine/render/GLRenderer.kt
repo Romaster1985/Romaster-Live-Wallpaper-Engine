@@ -32,6 +32,7 @@ import java.nio.ByteOrder
 import com.romaster.livewallengine.model.VideoFitMode
 import com.romaster.livewallengine.model.VideoAspectMode
 import com.romaster.livewallengine.project.ProjectManager
+import com.romaster.livewallengine.model.LayerStack
 import com.romaster.livewallengine.model.VideoLayer
 import com.romaster.livewallengine.debug.FileLogger
 
@@ -48,6 +49,7 @@ class GLRenderer(
 
     private var overlayRenderer: GLOverlayRenderer? = null
     private var videoOverlayRenderer: GLVideoOverlayRenderer? = null
+    private var imageLayersRenderer: GLImageLayersRenderer? = null
 
     private var positionHandle = 0
     private var texCoordHandle = 0
@@ -122,6 +124,7 @@ class GLRenderer(
         this.width = width
         this.height = height
         videoOverlayRenderer?.setSize(width, height)
+        imageLayersRenderer?.setSize(width, height)
     }
 
     fun initialize() {
@@ -163,8 +166,19 @@ class GLRenderer(
         // 3. Ahora sí inicializamos con matrices ortográficas válidas
         videoOverlayRenderer!!.initialize()
 
+        imageLayersRenderer = GLImageLayersRenderer()
+        imageLayersRenderer!!.initialize(context, realWidth, realHeight)
+
         // Sincronizamos las variables globales del renderizador principal
         onSurfaceChanged(realWidth, realHeight)
+    }
+
+    fun reloadImageLayers(force: Boolean = true) {
+        try {
+            imageLayersRenderer?.reloadFromProject(force)
+        } catch (_: Exception) {
+            // No tumbar el hilo GL
+        }
     }
 
     private fun initializeTriangle() {
@@ -249,6 +263,36 @@ class GLRenderer(
         GLES20.glClearColor(0f, 0f, 0f, 1f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
 
+        val project = ProjectManager.getProject()
+        LayerStack.ensure(project)
+
+        val vw = if (virtualWidth > 0) virtualWidth else width
+        val vh = if (virtualHeight > 0) virtualHeight else height
+
+        // Orden global de atrás → adelante (cada capa aislada de fallos)
+        for (id in project.layerStack) {
+            try {
+                when (id) {
+                    LayerStack.ID_VBG -> drawVideoBackground()
+                    LayerStack.ID_VOL -> {
+                        videoOverlayRenderer?.update()
+                        videoOverlayRenderer?.draw()
+                    }
+                    LayerStack.ID_CLOCK -> overlayRenderer?.draw(vw, vh)
+                    else -> imageLayersRenderer?.drawById(id)
+                }
+            } catch (_: Exception) {
+                // Seguir con el resto de capas
+            }
+        }
+
+        try {
+            egl.swapBuffers()
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun drawVideoBackground() {
         GLES20.glUseProgram(program)
         updateFade()
 
@@ -279,27 +323,6 @@ class GLRenderer(
         GLES20.glDisableVertexAttribArray(positionHandle)
         GLES20.glDisableVertexAttribArray(texCoordHandle)
         GLES20.glDisable(GLES20.GL_BLEND)
-
-        val clockBehind =
-            ProjectManager.getProject().clock.behindVideoOverlay
-
-        val vw = if (virtualWidth > 0) virtualWidth else width
-        val vh = if (virtualHeight > 0) virtualHeight else height
-
-        // Orden de capas:
-        // - Normal:  BG → Video-OL → Reloj
-        // - behind:  BG → Reloj → Video-OL
-        if (clockBehind) {
-            overlayRenderer?.draw(vw, vh)
-            videoOverlayRenderer?.update()
-            videoOverlayRenderer?.draw()
-        } else {
-            videoOverlayRenderer?.update()
-            videoOverlayRenderer?.draw()
-            overlayRenderer?.draw(vw, vh)
-        }
-
-        egl.swapBuffers()
     }
 
     private fun updateVideoTransform() {
@@ -413,6 +436,8 @@ class GLRenderer(
         videoOverlayRenderer = null
         overlayRenderer?.release()
         overlayRenderer = null
+        imageLayersRenderer?.release()
+        imageLayersRenderer = null
         egl.release()
     }
 

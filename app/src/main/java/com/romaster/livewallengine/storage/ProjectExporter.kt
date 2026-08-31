@@ -99,6 +99,7 @@ object ProjectExporter {
         if (!project.overlay.soundPath.isNullOrBlank()) n++
         if (!project.clock.clockFont.isNullOrBlank()) n++
         if (!project.clock.dateFont.isNullOrBlank()) n++
+        n += project.imageLayers.count { !it.fileName.isNullOrBlank() }
         return n
     }
 
@@ -216,6 +217,18 @@ object ProjectExporter {
                 zip,
                 File(context.filesDir, "fonts/$it"),
                 "fonts/$it",
+                context
+            )
+            onFileDone()
+        }
+
+        // Capas de imagen (Pics-OL)
+        for (layer in project.imageLayers) {
+            val name = layer.fileName ?: continue
+            addFile(
+                zip,
+                File(context.filesDir, "images/$name"),
+                "images/$name",
                 context
             )
             onFileDone()

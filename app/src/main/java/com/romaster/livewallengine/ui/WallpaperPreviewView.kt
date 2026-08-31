@@ -54,6 +54,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
     private var holderRef: SurfaceHolder? = null
 
     private var renderer: GLRenderer? = null
+    @Volatile private var pendingReloadImageLayers = false
 
     private var videoPlayer: VideoPlayer? = null
     
@@ -691,32 +692,53 @@ class WallpaperPreviewView @JvmOverloads constructor(
                             }
                         }
 
-                    renderer!!.drawFrame()
-                
-                    pendingCapture?.let {
-                
-                        GLES20.glFinish()
-                
-                        val bmp =
-                            renderer!!.captureBitmap()
-                
-                        post {
-                
-                            it(
-                                bmp
-                            )
-                
+                    try {
+                        if (pendingReloadImageLayers) {
+                            try {
+                                renderer?.reloadImageLayers()
+                            } catch (e: Exception) {
+                                FileLogger.logException(
+                                    context,
+                                    "Preview reloadImageLayers",
+                                    e
+                                )
+                            }
+                            pendingReloadImageLayers = false
                         }
-                
-                        pendingCapture =
-                            null
-                
+                        renderer?.drawFrame()
+
+                        pendingCapture?.let {
+                            try {
+                                GLES20.glFinish()
+                                val bmp = renderer?.captureBitmap()
+                                if (bmp != null) {
+                                    post { it(bmp) }
+                                }
+                            } catch (e: Exception) {
+                                FileLogger.logException(
+                                    context,
+                                    "Preview capture",
+                                    e
+                                )
+                            }
+                            pendingCapture = null
+                        }
+                    } catch (e: Exception) {
+                        // No matar el RenderThread por un frame fallido
+                        FileLogger.logException(
+                            context,
+                            "Preview frame",
+                            e
+                        )
+                        try {
+                            Thread.sleep(32)
+                        } catch (_: InterruptedException) {
+                            throw InterruptedException()
+                        }
                     }
-                
-                    Thread.sleep(
-                        16
-                    )
-                
+
+                    Thread.sleep(16)
+
                 }
 
             } catch (e: InterruptedException) {
@@ -993,4 +1015,10 @@ class WallpaperPreviewView @JvmOverloads constructor(
         stopRendering()
         startRendering()
     }
+
+    /** Marca recarga de texturas Pics-OL en el hilo de render. */
+    fun reloadImageLayers() {
+        pendingReloadImageLayers = true
+    }
+
 }

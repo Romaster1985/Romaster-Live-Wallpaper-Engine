@@ -86,6 +86,9 @@ import com.romaster.livewallengine.ui.SimpleSeekListener
 import com.romaster.livewallengine.video.VideoPicker
 import com.romaster.livewallengine.video.GifToMp4Converter
 import com.romaster.livewallengine.video.VideoTranscoder
+import com.romaster.livewallengine.model.ImageLayer
+import com.romaster.livewallengine.model.LayerStack
+import com.romaster.livewallengine.image.ImageStorage
 import com.romaster.livewallengine.video.VideoStorage
 import com.romaster.livewallengine.video.VideoPlayer
 import com.romaster.livewallengine.video.OverlayVideoPlayer
@@ -118,11 +121,14 @@ class MainActivity : AppCompatActivity() {
     
     private lateinit var panelPlayback: View
     
+    private lateinit var panelPics: View
     private lateinit var panelClock: View
     
     private lateinit var panelProject: View
     
     private var exportPreviewBitmap: Bitmap? = null
+    private var pendingImageLayerId: String? = null
+    private val REQUEST_IMAGE_LAYER = 4711
     
     private var clockColorHex =
         "#FFFFFF"
@@ -175,6 +181,9 @@ class MainActivity : AppCompatActivity() {
     
             FileLogger.log(this, "6 - setupClockTab")
             setupClockTab()
+
+            FileLogger.log(this, "6b - setupPicsTab")
+            setupPicsTab()
     
             FileLogger.log(this, "7 - setupProjectTab")
             setupProjectTab()
@@ -218,6 +227,7 @@ class MainActivity : AppCompatActivity() {
         panelPlayback = findViewById(R.id.panelPlayback)
         
         panelClock = findViewById(R.id.panelClock)
+        panelPics = findViewById(R.id.panelPics)
     
         panelProject = findViewById(R.id.panelProject)
     
@@ -242,20 +252,27 @@ class MainActivity : AppCompatActivity() {
             tabLayout.newTab()
                 .setText("🕓 Clock-OL")
         )
+
+        tabLayout.addTab(
+            tabLayout.newTab()
+                .setText("🖼️ Pics-OL")
+        )
     
         tabLayout.addTab(
             tabLayout.newTab()
                 .setText("⚙️ Proyecto")
         )
     
+        // Una línea + scroll horizontal (no comprimir ni partir texto)
+        tabLayout.tabMode = TabLayout.MODE_SCROLLABLE
+        tabLayout.tabGravity = TabLayout.GRAVITY_START
+        tabLayout.isInlineLabel = true
+
         panelVideo.visibility = View.VISIBLE
-    
         panelOverlay.visibility = View.GONE
-        
         panelPlayback.visibility = View.GONE
-        
         panelClock.visibility = View.GONE
-    
+        panelPics.visibility = View.GONE
         panelProject.visibility = View.GONE
     
         tabLayout.addOnTabSelectedListener(
@@ -267,31 +284,19 @@ class MainActivity : AppCompatActivity() {
                 ) {
     
                     panelVideo.visibility = View.GONE
-    
                     panelOverlay.visibility = View.GONE
-                    
                     panelPlayback.visibility = View.GONE
-    
                     panelClock.visibility = View.GONE
-    
+                    panelPics.visibility = View.GONE
                     panelProject.visibility = View.GONE
     
                     when (tab.position) {
-    
-                        0 ->
-                            panelVideo.visibility = View.VISIBLE
-    
-                        1 ->
-                            panelOverlay.visibility = View.VISIBLE
-                        
-                        2 ->
-                            panelPlayback.visibility = View.VISIBLE
-    
-                        3 ->
-                            panelClock.visibility = View.VISIBLE
-    
-                        4 ->
-                            panelProject.visibility = View.VISIBLE
+                        0 -> panelVideo.visibility = View.VISIBLE
+                        1 -> panelOverlay.visibility = View.VISIBLE
+                        2 -> panelPlayback.visibility = View.VISIBLE
+                        3 -> panelClock.visibility = View.VISIBLE
+                        4 -> panelPics.visibility = View.VISIBLE
+                        5 -> panelProject.visibility = View.VISIBLE
                     }
                 }
     
@@ -1716,6 +1721,343 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
+
+    private fun setupPicsTab() {
+        val addBtn = findViewById<View>(R.id.buttonAddImageLayer)
+        addBtn.isClickable = true
+        addBtn.isFocusable = true
+        addBtn.setOnClickListener {
+            addImageLayer()
+        }
+        rebuildImageLayerCards()
+    }
+
+    private fun addImageLayer() {
+        val project = ProjectManager.getProject()
+        LayerStack.ensure(project)
+        val layer = ImageLayer()
+        project.imageLayers.add(layer)
+        project.layerStack.add(layer.id)
+        editor.save()
+        rebuildImageLayerCards()
+        notifyImageLayersChanged()
+    }
+
+    private fun removeImageLayer(layerId: String) {
+        val project = ProjectManager.getProject()
+        val layer = project.imageLayers.find { it.id == layerId } ?: return
+        ImageStorage.deleteImage(this, layer.fileName)
+        project.imageLayers.removeAll { it.id == layerId }
+        project.layerStack.removeAll { it == layerId }
+        LayerStack.ensure(project)
+        editor.save()
+        rebuildImageLayerCards()
+        notifyImageLayersChanged(reloadTextures = true)
+    }
+
+    private fun rebuildImageLayerCards() {
+        val container = findViewById<LinearLayout>(R.id.containerImageLayers)
+        container.removeAllViews()
+        val project = ProjectManager.getProject()
+        LayerStack.ensure(project)
+
+        project.imageLayers.forEachIndexed { index, layer ->
+            val card = buildImageLayerCard(layer, index + 1)
+            container.addView(card)
+        }
+    }
+
+    private fun buildImageLayerCard(
+        layer: ImageLayer,
+        displayIndex: Int
+    ): View {
+        val density = resources.displayMetrics.density
+        val pad = (12 * density).toInt()
+
+        val card = com.google.android.material.card.MaterialCardView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (8 * density).toInt() }
+            radius = 16 * density
+            cardElevation = 4 * density
+        }
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad, pad, pad)
+        }
+
+        // Título
+        root.addView(TextView(this).apply {
+            text = "Capa de imagen $displayIndex"
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+
+        // Botones cargar / eliminar
+        val rowBtns = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, pad, 0, 0)
+        }
+        val btnLoad = com.google.android.material.button.MaterialButton(this).apply {
+            text = "Cargar imagen"
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginEnd = (6 * density).toInt()
+            }
+            setOnClickListener {
+                pendingImageLayerId = layer.id
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                        "image/png", "image/jpeg", "image/jpg", "image/webp",
+                        "image/gif", "image/bmp", "image/*"
+                    ))
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+                startActivityForResult(
+                    Intent.createChooser(intent, "Seleccionar imagen"),
+                    REQUEST_IMAGE_LAYER
+                )
+            }
+        }
+        val btnDel = com.google.android.material.button.MaterialButton(this).apply {
+            text = "Eliminar capa"
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = (6 * density).toInt()
+            }
+            setBackgroundColor(0xFFB00020.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
+            setOnClickListener { removeImageLayer(layer.id) }
+        }
+        rowBtns.addView(btnLoad)
+        rowBtns.addView(btnDel)
+        root.addView(rowBtns)
+
+        // Archivo actual
+        root.addView(TextView(this).apply {
+            text = "Archivo: ${layer.fileName ?: "(ninguno)"}"
+            textSize = 12f
+            setPadding(0, (8 * density).toInt(), 0, 0)
+            tag = "file_${layer.id}"
+        })
+
+        // Ubicación en el stack de capas
+        val btnPos = com.google.android.material.button.MaterialButton(this).apply {
+            text = "Seleccionar ubicación de capa"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = pad }
+            setOnClickListener { showLayerPositionDialog(layer.id) }
+        }
+        root.addView(btnPos)
+
+        fun addSliderRow(
+            title: String,
+            valueFrom: Float,
+            valueTo: Float,
+            value: Float,
+            format: (Float) -> String,
+            onChange: (Float) -> Unit
+        ) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(0, (10 * density).toInt(), 0, 0)
+            }
+            row.addView(TextView(this).apply {
+                text = title
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            val valueTv = TextView(this).apply { text = format(value) }
+            row.addView(valueTv)
+            root.addView(row)
+            val slider = com.google.android.material.slider.Slider(this).apply {
+                this.valueFrom = valueFrom
+                this.valueTo = valueTo
+                stepSize = 1f
+                this.value = value.coerceIn(valueFrom, valueTo)
+                addOnChangeListener { _, v, fromUser ->
+                    valueTv.text = format(v)
+                    if (fromUser && !loadingUI) {
+                        onChange(v)
+                        editor.save()
+                        notifyImageLayersChanged()
+                    }
+                }
+            }
+            root.addView(slider)
+        }
+
+        addSliderRow("Transparencia", 0f, 100f, layer.opacity * 100f, { "${it.toInt()} %" }) {
+            layer.opacity = it / 100f
+        }
+        addSliderRow("Posición X", 0f, 100f, layer.x * 100f, { it.toInt().toString() }) {
+            layer.x = it / 100f
+        }
+        addSliderRow("Posición Y", 0f, 100f, layer.y * 100f, { it.toInt().toString() }) {
+            layer.y = it / 100f
+        }
+        addSliderRow("Zoom", 10f, 800f, (layer.zoom * 100f).coerceIn(10f, 800f), { "${it.toInt()} %" }) {
+            layer.zoom = it / 100f
+        }
+        addSliderRow("Rotación", -180f, 180f, layer.rotation.coerceIn(-180f, 180f), { "${it.toInt()}°" }) {
+            layer.rotation = it
+        }
+
+        card.addView(root)
+        return card
+    }
+
+    /**
+     * @param reloadTextures true solo si cambió un archivo de imagen (carga/borrado).
+     *        Cambios de orden/opacidad/posición no deben recargar texturas GL
+     *        (eso a veces congelaba el preview).
+     */
+    private fun notifyImageLayersChanged(reloadTextures: Boolean = false) {
+        if (reloadTextures) {
+            findViewById<WallpaperPreviewView>(R.id.previewView).post {
+                findViewById<WallpaperPreviewView>(R.id.previewView).reloadImageLayers()
+            }
+        }
+        // El orden vive en ProjectManager.layerStack y se lee cada frame
+        updatePreviewProject()
+    }
+
+
+    private fun showLayerPositionDialog(layerId: String) {
+        val project = ProjectManager.getProject()
+        LayerStack.ensure(project)
+        val working = project.layerStack.toMutableList()
+
+        val density = resources.displayMetrics.density
+        val pad = (20 * density).toInt()
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad / 2, pad, pad / 2)
+        }
+
+        val note = TextView(this).apply {
+            text = "Usá Subir / Bajar para mover la capa actual en el orden de dibujo (de atrás hacia adelante)."
+            textSize = 13f
+            setPadding(0, 0, 0, (12 * density).toInt())
+        }
+        container.addView(note)
+
+        val listBox = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((8 * density).toInt(), (8 * density).toInt(), (8 * density).toInt(), (8 * density).toInt())
+        }
+        container.addView(listBox)
+
+        fun refreshList() {
+            listBox.removeAllViews()
+            for (id in working) {
+                val label = LayerStack.label(id, project)
+                val tv = TextView(this).apply {
+                    text = label
+                    textSize = 16f
+                    setPadding(0, (6 * density).toInt(), 0, (6 * density).toInt())
+                    if (id == layerId) {
+                        setTextColor(0xFFD32F2F.toInt())
+                        setTypeface(typeface, android.graphics.Typeface.BOLD)
+                        text = "$label  · actual"
+                    }
+                }
+                listBox.addView(tv)
+            }
+        }
+        refreshList()
+
+        // Botones Material 3 con iconos de flecha (sin emoji)
+        val btnRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(0, (16 * density).toInt(), 0, (4 * density).toInt())
+        }
+
+        fun iconMoveButton(
+            iconRes: Int,
+            label: String,
+            contentDesc: String,
+            onClick: () -> Unit
+        ): MaterialButton {
+            return MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                this.icon = androidx.core.content.ContextCompat.getDrawable(
+                    this@MainActivity,
+                    iconRes
+                )
+                iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+                iconPadding = (8 * density).toInt()
+                text = label
+                contentDescription = contentDesc
+                insetTop = 0
+                insetBottom = 0
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                ).apply {
+                    marginStart = (4 * density).toInt()
+                    marginEnd = (4 * density).toInt()
+                }
+                setOnClickListener { onClick() }
+            }
+        }
+
+        val btnUp = iconMoveButton(
+            R.drawable.ic_arrow_upward_24,
+            "Subir",
+            "Subir capa"
+        ) {
+            val i = working.indexOf(layerId)
+            if (i > 0) {
+                working.removeAt(i)
+                working.add(i - 1, layerId)
+                refreshList()
+            }
+        }
+        val btnDown = iconMoveButton(
+            R.drawable.ic_arrow_downward_24,
+            "Bajar",
+            "Bajar capa"
+        ) {
+            val i = working.indexOf(layerId)
+            if (i >= 0 && i < working.lastIndex) {
+                working.removeAt(i)
+                working.add(i + 1, layerId)
+                refreshList()
+            }
+        }
+        btnRow.addView(btnUp)
+        btnRow.addView(btnDown)
+        container.addView(btnRow)
+
+        val titleIdx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
+        AlertDialog.Builder(this)
+            .setTitle("Ubicación Capa de Imagen $titleIdx")
+            .setView(container)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                project.layerStack.clear()
+                project.layerStack.addAll(working)
+                // Mantener coherencia VOL/CLOCK con el switch actual
+                LayerStack.syncClockVolOrder(
+                    project.layerStack,
+                    project.clock.behindVideoOverlay
+                )
+                editor.save()
+                notifyImageLayersChanged()
+                Toast.makeText(this, "Orden de capas actualizado", Toast.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
     private fun setupProjectTab() {
 
         // BOTON DE GUARDAR
@@ -1812,7 +2154,8 @@ class MainActivity : AppCompatActivity() {
 
             // Limpiar clips de reversa del proyecto anterior
             ReverseVideoProcessor.clearAll(this)
-        
+            ImageStorage.clearAll(this)
+            
             ProjectManager.resetProject()
         
             StorageManager.saveProject(
@@ -2586,11 +2929,18 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
 
         findViewById<MaterialSwitch>(
             R.id.switchClockBehindOverlay
-        ).setOnCheckedChangeListener { _, _ ->
+        ).setOnCheckedChangeListener { _, checked ->
 
             if (loadingUI)
                 return@setOnCheckedChangeListener
 
+            val project = ProjectManager.getProject()
+            project.clock.behindVideoOverlay = checked
+            LayerStack.ensure(project)
+            LayerStack.syncClockVolOrder(project.layerStack, checked)
+            editor.save()
+            rebuildImageLayerCards()
+            notifyImageLayersChanged()
             updatePreviewProject()
         }
 
@@ -2718,6 +3068,31 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
 
             VideoPicker.REQUEST_OVERLAY_GIF -> {
                 importGifAsVideo(uri, isOverlay = true)
+            }
+
+            REQUEST_IMAGE_LAYER -> {
+                val layerId = pendingImageLayerId
+                pendingImageLayerId = null
+                if (layerId != null) {
+                    try {
+                        val name = ImageStorage.importImage(this, uri, layerId)
+                        val layer = ProjectManager.getProject().imageLayers
+                            .find { it.id == layerId }
+                        if (layer != null) {
+                            layer.fileName = name
+                            editor.save()
+                            rebuildImageLayerCards()
+                            notifyImageLayersChanged(reloadTextures = true)
+                            Toast.makeText(this, "Imagen cargada", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            this,
+                            "Error al cargar imagen: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
             }
     
             // ---------------------------------
@@ -3816,6 +4191,7 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         loadingUI = true
                 
         reloadFontLibrary()
+        rebuildImageLayerCards()
         
         loadVideoLayerSettings()
         
@@ -4562,3 +4938,36 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
     }
     
 }
+
+
+/**
+ * ArrayAdapter que no filtra: siempre lista todos los ítems.
+ * Necesario para ExposedDropdownMenu con texto fijo seleccionado
+ * (si no, solo aparece la opción cuyo texto coincide con el campo).
+ */
+private class NonFilteringArrayAdapter(
+    context: android.content.Context,
+    resource: Int,
+    private val items: List<String>
+) : ArrayAdapter<String>(context, resource, ArrayList(items)) {
+
+    override fun getFilter(): android.widget.Filter {
+        return object : android.widget.Filter() {
+            override fun performFiltering(constraint: CharSequence?): FilterResults {
+                return FilterResults().apply {
+                    values = ArrayList(items)
+                    count = items.size
+                }
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                clear()
+                val list = results?.values as? List<String> ?: items
+                addAll(list)
+                notifyDataSetChanged()
+            }
+        }
+    }
+}
+

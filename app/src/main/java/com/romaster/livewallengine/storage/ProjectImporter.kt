@@ -38,6 +38,7 @@ object ProjectImporter {
 
     ) {
         ReverseVideoProcessor.clearAll(context)
+        try { File(context.filesDir, "images").deleteRecursively() } catch (_: Exception) {}
 
         context.contentResolver
             .openInputStream(uri)
@@ -66,6 +67,7 @@ object ProjectImporter {
 
     ) {
         ReverseVideoProcessor.clearAll(context)
+        try { File(context.filesDir, "images").deleteRecursively() } catch (_: Exception) {}
 
         zipFile.inputStream().use { input ->
             importFromStream(context, input)
@@ -117,6 +119,12 @@ object ProjectImporter {
                         )
 
                     entry.name.startsWith("fonts/") ->
+                        File(
+                            context.filesDir,
+                            entry.name
+                        )
+
+                    entry.name.startsWith("images/") ->
                         File(
                             context.filesDir,
                             entry.name
