@@ -233,5 +233,16 @@ object ProjectExporter {
             )
             onFileDone()
         }
+
+        // Textura cristal del reloj
+        project.clock.crystalTextureFile?.let { name ->
+            addFile(
+                zip,
+                File(context.filesDir, "images/$name"),
+                "images/$name",
+                context
+            )
+            onFileDone()
+        }
     }
 }

@@ -126,6 +126,15 @@ data class ClockSettings(
     /** Descender depth (YTDE) -305–-98 */
     var fontYtde: Float = -203f,
     /** Figure height (YTFI) 560–788 — útil en relojes */
-    var fontYtfi: Float = 738f
+    var fontYtfi: Float = 738f,
+
+    /** Modo cristal: relleno translúcido + blur del fondo + textura opcional */
+    var crystalMode: Boolean = false,
+
+    /** Intensidad del difuminado del fondo detrás del reloj (0–50) */
+    var crystalBlur: Float = 12f,
+
+    /** PNG de textura (en files/images/), opcional */
+    var crystalTextureFile: String? = null
 )
 

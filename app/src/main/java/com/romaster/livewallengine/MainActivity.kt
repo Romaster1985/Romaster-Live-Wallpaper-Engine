@@ -129,6 +129,7 @@ class MainActivity : AppCompatActivity() {
     private var exportPreviewBitmap: Bitmap? = null
     private var pendingImageLayerId: String? = null
     private val REQUEST_IMAGE_LAYER = 4711
+    private val REQUEST_CLOCK_CRYSTAL_TEXTURE = 4712
     
     private var clockColorHex =
         "#FFFFFF"
@@ -2408,6 +2409,7 @@ class MainActivity : AppCompatActivity() {
         connectSlider(R.id.sliderDateSize, R.id.textDateSizeValue, 64f)
         connectSlider(R.id.sliderDateVerticalDeform, R.id.textDateVerticalDeform, 0f)
         connectSlider(R.id.sliderClockBorderWidth, R.id.textClockBorderWidth, 0f)
+        connectSlider(R.id.sliderClockCrystalBlur, R.id.textClockCrystalBlur, 12f)
         connectSlider(R.id.sliderDateBorderWidth, R.id.textDateBorderWidth, 0f)
         connectSlider(R.id.sliderFontWidth, R.id.textFontWidth, 100f)
         connectSlider(R.id.sliderFontWeight, R.id.textFontWeight, 400f)
@@ -2769,6 +2771,19 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         ).isChecked =
             clock.enabledOnLockScreen
 
+        findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
+            R.id.checkClockCrystal
+        ).isChecked = clock.crystalMode
+
+        findViewById<TextView>(R.id.textClockCrystalTexture).text =
+            "Textura: ${clock.crystalTextureFile ?: "(ninguna)"}"
+
+        findViewById<com.google.android.material.slider.Slider>(
+            R.id.sliderClockCrystalBlur
+        ).value = clock.crystalBlur.coerceIn(0f, 50f)
+        findViewById<TextView>(R.id.textClockCrystalBlur).text =
+            clock.crystalBlur.toInt().toString()
+
         findViewById<CheckBox>(
             R.id.checkClock
         ).isChecked =
@@ -3005,6 +3020,34 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
             editor.save()
             updatePreviewProject()
         }
+
+        findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
+            R.id.checkClockCrystal
+        ).setOnCheckedChangeListener { _, checked ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            ProjectManager.getProject().clock.crystalMode = checked
+            editor.save()
+            updatePreviewProject()
+        }
+
+        findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListener {
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/png", "image/webp"))
+                addCategory(Intent.CATEGORY_OPENABLE)
+            }
+            startActivityForResult(
+                Intent.createChooser(intent, "Textura del reloj (PNG)"),
+                REQUEST_CLOCK_CRYSTAL_TEXTURE
+            )
+        }
+
+        findViewById<MaterialButton>(R.id.buttonClearClockCrystalTexture).setOnClickListener {
+            ProjectManager.getProject().clock.crystalTextureFile = null
+            findViewById<TextView>(R.id.textClockCrystalTexture).text = "Textura: (ninguna)"
+            editor.save()
+            updatePreviewProject()
+        }
         
         findViewById<CheckBox>(
             R.id.checkClock
@@ -3167,6 +3210,27 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
 
             VideoPicker.REQUEST_OVERLAY_GIF -> {
                 importGifAsVideo(uri, isOverlay = true)
+            }
+
+            REQUEST_CLOCK_CRYSTAL_TEXTURE -> {
+                if (resultCode == Activity.RESULT_OK && data?.data != null) {
+                    try {
+                        val name = "clock_crystal_texture.png"
+                        val dir = File(filesDir, "images")
+                        dir.mkdirs()
+                        val out = File(dir, name)
+                        contentResolver.openInputStream(data.data!!)?.use { input ->
+                            out.outputStream().use { input.copyTo(it) }
+                        }
+                        ProjectManager.getProject().clock.crystalTextureFile = name
+                        findViewById<TextView>(R.id.textClockCrystalTexture).text =
+                            "Textura: $name"
+                        editor.save()
+                        updatePreviewProject()
+                    } catch (e: Exception) {
+                        Toast.makeText(this, "No se pudo cargar la textura", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
 
             REQUEST_IMAGE_LAYER -> {
@@ -4318,6 +4382,19 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
             findViewById<CheckBox>(
                 R.id.checkClockLockScreen
             ).isChecked
+
+        clock.crystalMode =
+            findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
+                R.id.checkClockCrystal
+            ).isChecked
+
+        clock.crystalBlur =
+            findViewById<com.google.android.material.slider.Slider>(
+                R.id.sliderClockCrystalBlur
+            ).value
+        // crystalTextureFile se gestiona al cargar/quitar textura
+        clock.crystalTextureFile =
+            ProjectManager.getProject().clock.crystalTextureFile
     
         clock.enabled =
             findViewById<CheckBox>(
