@@ -19,13 +19,16 @@
 package com.romaster.livewallengine.render
 
 import android.graphics.Bitmap
+import android.graphics.BlurMaskFilter
 import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.Shader
@@ -40,6 +43,9 @@ import com.romaster.livewallengine.model.TimeFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.PI
 
 class ClockRenderer {
 
@@ -66,162 +72,202 @@ class ClockRenderer {
         currentSettings = settings
         ensureCrystalTexture(context, settings)
 
+        // Contenido derecho (sin reflejo por línea)
+        val bounds = drawClockContent(context, canvas, settings)
+
+        // Reflejo del BLOQUE completo (fecha + hora juntos)
+        if (settings.reflectionEnabled && bounds != null) {
+            drawGroupReflection(context, canvas, settings, bounds.first, bounds.second)
+        }
+    }
+
+    /**
+     * Dibuja hora/fecha y devuelve (groupTop, groupBottom) en coords de canvas
+     * para poder espejar el conjunto como un solo bloque.
+     */
+    private fun drawClockContent(
+        context: android.content.Context,
+        canvas: Canvas,
+        settings: ClockSettings
+    ): Pair<Float, Float>? {
+        val drawClock = settings.enabled
+        val drawDate = settings.showDate
+        if (!drawClock && !drawDate) return null
+
         val baseX = canvas.width * settings.x
         val baseY = canvas.height * settings.y
         val spacing = settings.dateSpacing
+        var groupTop = Float.POSITIVE_INFINITY
+        var groupBottom = Float.NEGATIVE_INFINITY
 
-        // Superposición en la misma línea: hora detrás, fecha delante.
-        // spacing = 0 → misma baseline; spacing ≠ 0 desplaza el segundo texto.
+        fun track(baselineY: Float, textSize: Float, deformPx: Float, fontFile: String?) {
+            preparePaint(
+                context, textSize, "#FFFFFF",
+                fontFile, settings.alignment, variationOf(settings)
+            )
+            val scaleY = verticalScale(textSize, deformPx)
+            val fm = paint.fontMetrics
+            val top = baselineY + fm.ascent * scaleY
+            val bot = baselineY + fm.descent * scaleY
+            if (top < groupTop) groupTop = top
+            if (bot > groupBottom) groupBottom = bot
+        }
+
+        fun line(
+            text: String,
+            baselineY: Float,
+            textSize: Float,
+            colorHex: String,
+            fontFile: String?,
+            deformPx: Float,
+            borderWidth: Float,
+            borderColorHex: String
+        ) {
+            track(baselineY, textSize, deformPx, fontFile)
+            drawTextLine(
+                context, canvas,
+                text = text,
+                x = baseX,
+                baselineY = baselineY,
+                textSize = textSize,
+                colorHex = colorHex,
+                fontFile = fontFile,
+                alignment = settings.alignment,
+                deformPx = deformPx,
+                borderWidth = borderWidth,
+                borderColorHex = borderColorHex,
+                variationSettings = variationOf(settings),
+                enableReflection = false
+            )
+        }
+
         if (settings.allowOverlap && drawClock && drawDate) {
             val timeBaseline: Float
             val dateBaseline: Float
             if (settings.swapTimeAndDate) {
-                // Fecha en baseY; hora desplazada (pero z-order: hora primero)
                 dateBaseline = baseY
                 timeBaseline = baseY + spacing
             } else {
                 timeBaseline = baseY
                 dateBaseline = baseY + spacing
             }
-            // Siempre hora detrás (se dibuja primero), fecha encima
-            drawTextLine(
-                context, canvas,
-                text = buildTime(settings),
-                x = baseX,
-                baselineY = timeBaseline,
-                textSize = settings.clockSize,
-                colorHex = settings.clockColor,
-                fontFile = settings.clockFont,
-                alignment = settings.alignment,
-                deformPx = settings.clockVerticalDeform,
-                borderWidth = settings.clockBorderWidth,
-                borderColorHex = settings.clockBorderColor,
-                variationSettings = variationOf(settings)
+            line(
+                buildTime(settings), timeBaseline, settings.clockSize,
+                settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
+                settings.clockBorderWidth, settings.clockBorderColor
             )
-            drawTextLine(
-                context, canvas,
-                text = buildDate(settings),
-                x = baseX,
-                baselineY = dateBaseline,
-                textSize = settings.dateSize,
-                colorHex = settings.dateColor,
-                fontFile = settings.dateFont,
-                alignment = settings.alignment,
-                deformPx = settings.dateVerticalDeform,
-                borderWidth = settings.dateBorderWidth,
-                borderColorHex = settings.dateBorderColor,
-                variationSettings = variationOf(settings)
+            line(
+                buildDate(settings), dateBaseline, settings.dateSize,
+                settings.dateColor, settings.dateFont, settings.dateVerticalDeform,
+                settings.dateBorderWidth, settings.dateBorderColor
             )
-            return
-        }
-
-        if (settings.swapTimeAndDate) {
+        } else if (settings.swapTimeAndDate) {
             var bottom = baseY
             if (drawDate) {
-                bottom = drawTextLine(
-                    context, canvas,
-                    text = buildDate(settings),
-                    x = baseX,
-                    baselineY = baseY,
-                    textSize = settings.dateSize,
-                    colorHex = settings.dateColor,
-                    fontFile = settings.dateFont,
-                    alignment = settings.alignment,
-                    deformPx = settings.dateVerticalDeform,
-                    borderWidth = settings.dateBorderWidth,
-                    borderColorHex = settings.dateBorderColor,
-                    variationSettings = variationOf(settings)
+                line(
+                    buildDate(settings), baseY, settings.dateSize,
+                    settings.dateColor, settings.dateFont, settings.dateVerticalDeform,
+                    settings.dateBorderWidth, settings.dateBorderColor
                 )
+                paint.textSize = settings.dateSize
+                val scaleY = verticalScale(settings.dateSize, settings.dateVerticalDeform)
+                bottom = baseY + paint.fontMetrics.descent * scaleY
             }
             if (drawClock) {
                 preparePaint(
-                    context,
-                    settings.clockSize,
-                    settings.clockColor,
-                    settings.clockFont,
-                    settings.alignment,
-                    variationOf(settings)
+                    context, settings.clockSize, settings.clockColor,
+                    settings.clockFont, settings.alignment, variationOf(settings)
                 )
-                val scaleY = verticalScale(
-                    settings.clockSize,
-                    settings.clockVerticalDeform
-                )
+                val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
                 val metrics = paint.fontMetrics
                 val baseline =
-                    if (drawDate) {
-                        bottom + spacing - metrics.ascent * scaleY
-                    } else {
-                        baseY
-                    }
-                drawTextLine(
-                    context, canvas,
-                    text = buildTime(settings),
-                    x = baseX,
-                    baselineY = baseline,
-                    textSize = settings.clockSize,
-                    colorHex = settings.clockColor,
-                    fontFile = settings.clockFont,
-                    alignment = settings.alignment,
-                    deformPx = settings.clockVerticalDeform,
-                    borderWidth = settings.clockBorderWidth,
-                    borderColorHex = settings.clockBorderColor,
-                    variationSettings = variationOf(settings)
+                    if (drawDate) bottom + spacing - metrics.ascent * scaleY else baseY
+                line(
+                    buildTime(settings), baseline, settings.clockSize,
+                    settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
+                    settings.clockBorderWidth, settings.clockBorderColor
                 )
             }
         } else {
             var bottom = baseY
             if (drawClock) {
-                bottom = drawTextLine(
-                    context, canvas,
-                    text = buildTime(settings),
-                    x = baseX,
-                    baselineY = baseY,
-                    textSize = settings.clockSize,
-                    colorHex = settings.clockColor,
-                    fontFile = settings.clockFont,
-                    alignment = settings.alignment,
-                    deformPx = settings.clockVerticalDeform,
-                    borderWidth = settings.clockBorderWidth,
-                    borderColorHex = settings.clockBorderColor,
-                    variationSettings = variationOf(settings)
+                line(
+                    buildTime(settings), baseY, settings.clockSize,
+                    settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
+                    settings.clockBorderWidth, settings.clockBorderColor
                 )
+                paint.textSize = settings.clockSize
+                val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
+                bottom = baseY + paint.fontMetrics.descent * scaleY
             }
             if (drawDate) {
                 preparePaint(
-                    context,
-                    settings.dateSize,
-                    settings.dateColor,
-                    settings.dateFont,
-                    settings.alignment,
-                    variationOf(settings)
+                    context, settings.dateSize, settings.dateColor,
+                    settings.dateFont, settings.alignment, variationOf(settings)
                 )
-                val scaleY = verticalScale(
-                    settings.dateSize,
-                    settings.dateVerticalDeform
-                )
+                val scaleY = verticalScale(settings.dateSize, settings.dateVerticalDeform)
                 val metrics = paint.fontMetrics
                 val baseline =
-                    if (drawClock) {
-                        bottom + spacing - metrics.ascent * scaleY
-                    } else {
-                        baseY
-                    }
-                drawTextLine(
-                    context, canvas,
-                    text = buildDate(settings),
-                    x = baseX,
-                    baselineY = baseline,
-                    textSize = settings.dateSize,
-                    colorHex = settings.dateColor,
-                    fontFile = settings.dateFont,
-                    alignment = settings.alignment,
-                    deformPx = settings.dateVerticalDeform,
-                    borderWidth = settings.dateBorderWidth,
-                    borderColorHex = settings.dateBorderColor,
-                    variationSettings = variationOf(settings)
+                    if (drawClock) bottom + spacing - metrics.ascent * scaleY else baseY
+                line(
+                    buildDate(settings), baseline, settings.dateSize,
+                    settings.dateColor, settings.dateFont, settings.dateVerticalDeform,
+                    settings.dateBorderWidth, settings.dateBorderColor
                 )
             }
         }
+
+        if (groupTop == Float.POSITIVE_INFINITY) return null
+        return groupTop to groupBottom
+    }
+
+    /**
+     * Espeja fecha+hora como un solo bloque.
+     * gap=0 → eje en el centro (invertido superpuesto al derecho).
+     * gap↑ → el reflejo baja (puede salir de pantalla).
+     */
+    private fun drawGroupReflection(
+        context: android.content.Context,
+        canvas: Canvas,
+        settings: ClockSettings,
+        groupTop: Float,
+        groupBottom: Float
+    ) {
+        val opacity = (settings.reflectionOpacity / 100f).coerceIn(0f, 1f)
+        if (opacity <= 0.01f) return
+        val height = groupBottom - groupTop
+        if (height <= 1f) return
+
+        val gap = settings.reflectionGap.coerceAtLeast(0f)
+        val center = (groupTop + groupBottom) / 2f
+        val pivotY = center + gap
+
+        // Tras el flip, el bloque queda en [2P - groupBottom, 2P - groupTop]
+        val reflTop = 2f * pivotY - groupBottom
+        val reflBottom = 2f * pivotY - groupTop
+        val w = canvas.width.toFloat()
+        val layerTop = minOf(reflTop, reflBottom) - 2f
+        val layerBottom = maxOf(reflTop, reflBottom) + 2f
+
+        val count = canvas.saveLayer(0f, layerTop, w, layerBottom, Paint(Paint.ANTI_ALIAS_FLAG))
+        canvas.save()
+        canvas.scale(1f, -1f, 0f, pivotY)
+        drawClockContent(context, canvas, settings)
+        canvas.restore()
+
+        val topAlpha = (opacity * 255f).toInt().coerceIn(0, 255)
+        val fade = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(
+                0f, layerTop,
+                0f, layerBottom,
+                Color.argb(topAlpha, 255, 255, 255),
+                Color.TRANSPARENT,
+                Shader.TileMode.CLAMP
+            )
+            xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
+        }
+        canvas.drawRect(0f, layerTop, w, layerBottom, fade)
+        canvas.restoreToCount(count)
     }
 
     private fun preparePaint(
@@ -270,7 +316,8 @@ class ClockRenderer {
         deformPx: Float,
         borderWidth: Float = 0f,
         borderColorHex: String = "#000000",
-        variationSettings: String? = null
+        variationSettings: String? = null,
+        enableReflection: Boolean = true
     ): Float {
         preparePaint(
             context, textSize, colorHex, fontFile, alignment, variationSettings
@@ -282,81 +329,179 @@ class ClockRenderer {
         canvas.scale(1f, scaleY, x, baselineY)
 
         val crystal = currentSettings?.crystalMode == true
-        val hasCrystalTex = crystal && crystalTextureCache != null && crystalTextureCache?.isRecycled == false
+        val hasCrystalTex = crystal && crystalTextureCache != null &&
+            crystalTextureCache?.isRecycled == false
+        val bevel = currentSettings?.bevelEnabled == true
 
         paint.shader = null
         paint.colorFilter = null
+        paint.xfermode = null
+
+        val fillColor = try {
+            Color.parseColor(colorHex)
+        } catch (_: Exception) {
+            Color.WHITE
+        }
+        val borderColor = try {
+            Color.parseColor(borderColorHex)
+        } catch (_: Exception) {
+            Color.WHITE
+        }
+
+        // --- 1) Relieve clásico: luz + sombra por desplazamiento del glifo ---
+        if (bevel) {
+            val strength = ((currentSettings?.bevelStrength ?: 40f) / 100f).coerceIn(0f, 1f)
+            val amount = (textSize * 0.022f * (0.35f + strength)).coerceIn(1f, 6f)
+            val angleDeg = currentSettings?.bevelAngle ?: 315f
+            val rad = angleDeg / 180f * PI.toFloat()
+            val ox = cos(rad) * amount
+            val oy = sin(rad) * amount
+            paint.style = Paint.Style.FILL
+            // Luz
+            paint.color = Color.argb(
+                (130 + 90 * strength).toInt().coerceIn(0, 255),
+                (Color.red(fillColor) + (255 - Color.red(fillColor)) * 0.7f).toInt().coerceIn(0, 255),
+                (Color.green(fillColor) + (255 - Color.green(fillColor)) * 0.7f).toInt().coerceIn(0, 255),
+                (Color.blue(fillColor) + (255 - Color.blue(fillColor)) * 0.7f).toInt().coerceIn(0, 255)
+            )
+            canvas.drawText(text, x - ox, baselineY - oy, paint)
+            // Sombra
+            paint.color = Color.argb(
+                (80 + 80 * strength).toInt().coerceIn(0, 255),
+                (Color.red(fillColor) * 0.25f).toInt().coerceIn(0, 255),
+                (Color.green(fillColor) * 0.25f).toInt().coerceIn(0, 255),
+                (Color.blue(fillColor) * 0.25f).toInt().coerceIn(0, 255)
+            )
+            canvas.drawText(text, x + ox, baselineY + oy, paint)
+        }
+
+        // --- 2) Borde SOLO exterior (stroke offscreen + DST_OUT del glifo) ---
+        if (borderWidth > 0f) {
+            drawExteriorOutline(
+                canvas = canvas,
+                text = text,
+                x = x,
+                baselineY = baselineY,
+                outlineWidth = borderWidth,
+                color = borderColor,
+                soft = false
+            )
+        }
+
+        // --- 3) Relleno ---
+        paint.style = Paint.Style.FILL
+        paint.strokeWidth = 0f
+        paint.maskFilter = null
+        paint.xfermode = null
 
         if (crystal && hasCrystalTex) {
-            // Textura solo dentro del glifo (offscreen + SRC_IN)
             drawCrystalFill(canvas, text, x, baselineY, colorHex)
-            if (borderWidth > 0f) {
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = borderWidth
-                paint.strokeJoin = Paint.Join.ROUND
-                paint.alpha = 255
-                try {
-                    paint.color = Color.parseColor(borderColorHex)
-                } catch (_: Exception) {
-                    paint.color = Color.BLACK
-                }
-                canvas.drawText(text, x, baselineY, paint)
-            }
         } else if (crystal) {
-            // Cristal sin textura: un solo drawText con alpha (barato, sin bitmap extra)
             val blur = (currentSettings?.crystalBlur ?: 12f).coerceIn(0f, 50f)
-            val glassAlpha = ((0.85f - (blur / 50f) * 0.60f) * 255f).toInt().coerceIn(50, 230)
-            paint.style = Paint.Style.FILL
-            try {
-                val c = Color.parseColor(colorHex)
-                paint.color = Color.argb(glassAlpha, Color.red(c), Color.green(c), Color.blue(c))
-            } catch (_: Exception) {
-                paint.color = Color.argb(glassAlpha, 255, 255, 255)
-            }
+            val glassAlpha = ((0.88f - (blur / 50f) * 0.78f) * 255f).toInt().coerceIn(25, 230)
+            paint.color = Color.argb(
+                glassAlpha,
+                Color.red(fillColor),
+                Color.green(fillColor),
+                Color.blue(fillColor)
+            )
             canvas.drawText(text, x, baselineY, paint)
-            if (borderWidth > 0f) {
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = borderWidth
-                paint.strokeJoin = Paint.Join.ROUND
-                paint.alpha = 255
-                try {
-                    paint.color = Color.parseColor(borderColorHex)
-                } catch (_: Exception) {
-                    paint.color = Color.BLACK
-                }
-                canvas.drawText(text, x, baselineY, paint)
-            }
         } else {
-            if (borderWidth > 0f) {
-                paint.style = Paint.Style.STROKE
-                paint.strokeWidth = borderWidth
-                paint.strokeJoin = Paint.Join.ROUND
-                paint.strokeMiter = 10f
-                paint.alpha = 255
-                try {
-                    paint.color = Color.parseColor(borderColorHex)
-                } catch (_: Exception) {
-                    paint.color = Color.BLACK
-                }
-                canvas.drawText(text, x, baselineY, paint)
-            }
-            paint.style = Paint.Style.FILL
+            paint.color = fillColor
             paint.alpha = 255
-            try {
-                paint.color = Color.parseColor(colorHex)
-            } catch (_: Exception) {
-                paint.color = Color.WHITE
-            }
             canvas.drawText(text, x, baselineY, paint)
         }
 
         paint.shader = null
         paint.colorFilter = null
+        paint.xfermode = null
+        paint.maskFilter = null
         paint.alpha = 255
         paint.style = Paint.Style.FILL
         canvas.restore()
 
         return baselineY + metrics.descent * scaleY
+    }
+
+
+    /**
+     * Dibuja un contorno que SOLO crece hacia afuera del glifo.
+     * Técnica: stroke (ancho 2×) en bitmap offscreen → DST_OUT con el relleno
+     * del texto → elimina todo lo interior al contorno original.
+     * soft=true aplica un leve blur al anillo (luz del relieve).
+     */
+    private fun drawExteriorOutline(
+        canvas: Canvas,
+        text: String,
+        x: Float,
+        baselineY: Float,
+        outlineWidth: Float,
+        color: Int,
+        soft: Boolean
+    ) {
+        if (outlineWidth <= 0.01f) return
+
+        val tw = paint.measureText(text)
+        val fm = paint.fontMetrics
+        val pad = outlineWidth * 2f + if (soft) outlineWidth * 1.5f else 2f
+        val left = when (paint.textAlign) {
+            Paint.Align.CENTER -> x - tw / 2f
+            Paint.Align.RIGHT -> x - tw
+            else -> x
+        }
+        val top = baselineY + fm.ascent
+        val bw = (tw + pad * 2f).toInt().coerceAtLeast(1)
+        val bh = (fm.descent - fm.ascent + pad * 2f).toInt().coerceAtLeast(1)
+
+        val layer = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
+        layer.eraseColor(Color.TRANSPARENT)
+        val lc = Canvas(layer)
+
+        val localX = when (paint.textAlign) {
+            Paint.Align.CENTER -> bw / 2f
+            Paint.Align.RIGHT -> bw - pad
+            else -> pad
+        }
+        val localBaseline = pad - fm.ascent
+
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = paint.textSize
+            typeface = paint.typeface
+            textAlign = paint.textAlign
+            isFilterBitmap = true
+        }
+
+        // Stroke centrado con 2× el ancho pedido → la mitad exterior = outlineWidth
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = outlineWidth * 2f
+        p.strokeJoin = Paint.Join.ROUND
+        p.color = color
+        lc.drawText(text, localX, localBaseline, p)
+
+        // Saca TODO lo que esté dentro del glifo original (incluye mitad interior del stroke)
+        p.style = Paint.Style.FILL
+        p.strokeWidth = 0f
+        p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+        p.color = Color.WHITE
+        lc.drawText(text, localX, localBaseline, p)
+        p.xfermode = null
+
+        val out = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            isFilterBitmap = true
+            if (soft) {
+                // Halo luminoso suave (solo afecta al anillo ya exterior)
+                try {
+                    maskFilter = BlurMaskFilter(
+                        (outlineWidth * 0.65f).coerceAtLeast(1f),
+                        BlurMaskFilter.Blur.NORMAL
+                    )
+                } catch (_: Exception) {
+                    // algunos contextos GL/software pueden fallar
+                }
+            }
+        }
+        canvas.drawBitmap(layer, left - pad, top - pad, out)
+        layer.recycle()
     }
 
     private fun verticalScale(textSize: Float, deformPx: Float): Float {
@@ -450,22 +595,27 @@ class ClockRenderer {
         }
         fillPaint.xfermode = null
 
-        // 3) Tinte + transparencia del cristal (crystalBlur 0→50 → alpha 0.85→0.25)
+        // 3) Tinte por capas: SRC_IN ya dejó el color/textura.
+        //    Solo modulamos ALFA (el RGB no se comprime hacia gris).
         val tint = try {
             Color.parseColor(colorHex)
         } catch (_: Exception) {
             Color.WHITE
         }
         val blur = (currentSettings?.crystalBlur ?: 12f).coerceIn(0f, 50f)
-        val glassAlpha = (0.85f - (blur / 50f) * 0.60f).coerceIn(0.20f, 0.90f)
-        val r = Color.red(tint) / 255f
-        val g = Color.green(tint) / 255f
-        val b = Color.blue(tint) / 255f
+        val glassAlpha = (0.88f - (blur / 50f) * 0.78f).coerceIn(0.10f, 0.92f)
+
+        // Si hay textura, la teñimos con el color sin oscurecer: lerp hacia tint
+        // usando un filtro que escala RGB hacia el tint y aplica alfa.
+        val tr = Color.red(tint) / 255f
+        val tg = Color.green(tint) / 255f
+        val tb = Color.blue(tint) / 255f
+        // Para blanco (1,1,1) la matriz es identidad en RGB → no oscurece.
         val cm = ColorMatrix(
             floatArrayOf(
-                r, 0f, 0f, 0f, 0f,
-                0f, g, 0f, 0f, 0f,
-                0f, 0f, b, 0f, 0f,
+                tr, 0f, 0f, 0f, 0f,
+                0f, tg, 0f, 0f, 0f,
+                0f, 0f, tb, 0f, 0f,
                 0f, 0f, 0f, glassAlpha, 0f
             )
         )

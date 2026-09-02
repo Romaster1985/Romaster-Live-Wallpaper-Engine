@@ -135,6 +135,37 @@ data class ClockSettings(
     var crystalBlur: Float = 12f,
 
     /** PNG de textura (en files/images/), opcional */
-    var crystalTextureFile: String? = null
+    var crystalTextureFile: String? = null,
+
+    /** Reflejo vertical debajo del texto, con degradado de desvanecimiento */
+    var reflectionEnabled: Boolean = false,
+
+    /** Intensidad del reflejo en el borde superior (0–100) */
+    var reflectionOpacity: Float = 45f,
+
+    /**
+     * Separación del reflejo (px).
+     * 0 = lo invertido queda superpuesto al derecho (eje en el centro del bloque).
+     * Valores altos empujan el reflejo hacia abajo (puede salir de pantalla).
+     */
+    var reflectionGap: Float = 0f,
+
+    /** Relieve: bordes claros/oscuros que dan sensación de profundidad */
+    var bevelEnabled: Boolean = false,
+
+    /** Ángulo de la luz del relieve en grados (0 = derecha, 90 = abajo, 180 = izquierda, 270 = arriba) */
+    var bevelAngle: Float = 315f,
+
+    /** Intensidad del relieve (0–100) */
+    var bevelStrength: Float = 40f,
+
+    /** Efecto brillo / resplandor (tipo glow aditivo) */
+    var glowEnabled: Boolean = false,
+
+    /** Intensidad del brillo (0–100) */
+    var glowIntensity: Float = 50f,
+
+    /** Radio del blur del resplandor (1–15) */
+    var glowRadius: Float = 6f
 )
 
