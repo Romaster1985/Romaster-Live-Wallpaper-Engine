@@ -2414,8 +2414,6 @@ class MainActivity : AppCompatActivity() {
         connectSlider(R.id.sliderClockReflectionGap, R.id.textClockReflectionGap, 0f)
         connectSlider(R.id.sliderClockBevelAngle, R.id.textClockBevelAngle, 315f)
         connectSlider(R.id.sliderClockBevelStrength, R.id.textClockBevelStrength, 40f)
-        connectSlider(R.id.sliderClockGlowIntensity, R.id.textClockGlowIntensity, 50f)
-        connectSlider(R.id.sliderClockGlowRadius, R.id.textClockGlowRadius, 6f)
         connectSlider(R.id.sliderDateBorderWidth, R.id.textDateBorderWidth, 0f)
         connectSlider(R.id.sliderFontWidth, R.id.textFontWidth, 100f)
         connectSlider(R.id.sliderFontWeight, R.id.textFontWeight, 400f)
@@ -2821,24 +2819,7 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         ).value = clock.bevelStrength.coerceIn(0f, 100f)
         findViewById<TextView>(R.id.textClockBevelStrength).text =
             clock.bevelStrength.toInt().toString()
-
-        findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
-            R.id.checkClockGlow
-        ).isChecked = clock.glowEnabled
-
-        findViewById<com.google.android.material.slider.Slider>(
-            R.id.sliderClockGlowIntensity
-        ).value = clock.glowIntensity.coerceIn(0f, 100f)
-        findViewById<TextView>(R.id.textClockGlowIntensity).text =
-            clock.glowIntensity.toInt().toString()
-
-        findViewById<com.google.android.material.slider.Slider>(
-            R.id.sliderClockGlowRadius
-        ).value = clock.glowRadius.coerceIn(1f, 15f)
-        findViewById<TextView>(R.id.textClockGlowRadius).text =
-            clock.glowRadius.toInt().toString()
-
-        findViewById<CheckBox>(
+findViewById<CheckBox>(
             R.id.checkClock
         ).isChecked =
             clock.enabled
@@ -3101,17 +3082,7 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
             editor.save()
             updatePreviewProject()
         }
-
-        findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
-            R.id.checkClockGlow
-        ).setOnCheckedChangeListener { _, checked ->
-            if (loadingUI) return@setOnCheckedChangeListener
-            ProjectManager.getProject().clock.glowEnabled = checked
-            editor.save()
-            updatePreviewProject()
-        }
-
-        findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListener {
+findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListener {
             val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
                 type = "image/png"
                 putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/png", "image/webp"))
@@ -4506,23 +4477,7 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
             findViewById<com.google.android.material.slider.Slider>(
                 R.id.sliderClockBevelStrength
             ).value
-
-        clock.glowEnabled =
-            findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
-                R.id.checkClockGlow
-            ).isChecked
-
-        clock.glowIntensity =
-            findViewById<com.google.android.material.slider.Slider>(
-                R.id.sliderClockGlowIntensity
-            ).value
-
-        clock.glowRadius =
-            findViewById<com.google.android.material.slider.Slider>(
-                R.id.sliderClockGlowRadius
-            ).value
-    
-        clock.enabled =
+clock.enabled =
             findViewById<CheckBox>(
                 R.id.checkClock
             ).isChecked

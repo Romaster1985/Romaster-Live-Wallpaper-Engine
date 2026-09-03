@@ -75,8 +75,11 @@ class GLQuadRenderer {
             GLES20.GL_BLEND
         )
         
+        // Bitmaps de Canvas (ARGB_8888) vienen con alfa PREMULTIPLICADO.
+        // SRC_ALPHA + ONE_MINUS_SRC_ALPHA vuelve a multiplicar el RGB y oscurece
+        // los colores translúcidos (rojo → marrón). El blend correcto es:
         GLES20.glBlendFunc(
-            GLES20.GL_SRC_ALPHA,
+            GLES20.GL_ONE,
             GLES20.GL_ONE_MINUS_SRC_ALPHA
         )
 

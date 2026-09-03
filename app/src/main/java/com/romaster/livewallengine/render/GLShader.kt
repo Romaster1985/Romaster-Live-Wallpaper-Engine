@@ -65,16 +65,10 @@ class GLShader {
         uniform float uAlpha;
 
         void main() {
-        
-            vec4 color =
-                texture2D(
-                    uTexture,
-                    vTexCoord
-                );
-        
-            color.a *= uAlpha;
-        
-            gl_FragColor = color;
+            vec4 color = texture2D(uTexture, vTexCoord);
+            // color ya viene premultiplicado desde Canvas; escalar RGB+A juntos
+            // para el soft-start sin volver a oscurecer el tono.
+            gl_FragColor = color * uAlpha;
         }
         """.trimIndent()
 

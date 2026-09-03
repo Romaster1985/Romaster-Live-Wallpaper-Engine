@@ -157,15 +157,6 @@ data class ClockSettings(
     var bevelAngle: Float = 315f,
 
     /** Intensidad del relieve (0–100) */
-    var bevelStrength: Float = 40f,
-
-    /** Efecto brillo / resplandor (tipo glow aditivo) */
-    var glowEnabled: Boolean = false,
-
-    /** Intensidad del brillo (0–100) */
-    var glowIntensity: Float = 50f,
-
-    /** Radio del blur del resplandor (1–15) */
-    var glowRadius: Float = 6f
+    var bevelStrength: Float = 40f
 )
 

@@ -348,34 +348,40 @@ class ClockRenderer {
             Color.WHITE
         }
 
-        // --- 1) Relieve clásico: luz + sombra por desplazamiento del glifo ---
-        if (bevel) {
-            val strength = ((currentSettings?.bevelStrength ?: 40f) / 100f).coerceIn(0f, 1f)
-            val amount = (textSize * 0.022f * (0.35f + strength)).coerceIn(1f, 6f)
-            val angleDeg = currentSettings?.bevelAngle ?: 315f
-            val rad = angleDeg / 180f * PI.toFloat()
-            val ox = cos(rad) * amount
-            val oy = sin(rad) * amount
-            paint.style = Paint.Style.FILL
-            // Luz
-            paint.color = Color.argb(
-                (130 + 90 * strength).toInt().coerceIn(0, 255),
-                (Color.red(fillColor) + (255 - Color.red(fillColor)) * 0.7f).toInt().coerceIn(0, 255),
-                (Color.green(fillColor) + (255 - Color.green(fillColor)) * 0.7f).toInt().coerceIn(0, 255),
-                (Color.blue(fillColor) + (255 - Color.blue(fillColor)) * 0.7f).toInt().coerceIn(0, 255)
-            )
-            canvas.drawText(text, x - ox, baselineY - oy, paint)
-            // Sombra
-            paint.color = Color.argb(
-                (80 + 80 * strength).toInt().coerceIn(0, 255),
-                (Color.red(fillColor) * 0.25f).toInt().coerceIn(0, 255),
-                (Color.green(fillColor) * 0.25f).toInt().coerceIn(0, 255),
-                (Color.blue(fillColor) * 0.25f).toInt().coerceIn(0, 255)
-            )
-            canvas.drawText(text, x + ox, baselineY + oy, paint)
+        // Alfa del cristal: SOLO cambia transparencia, nunca RGB (como PixelLab opacity).
+        // El bitmap del reloj es transparente; el brillo lo da el wallpaper de debajo vía GL.
+        val glassAlpha = if (crystal) {
+            val blur = (currentSettings?.crystalBlur ?: 12f).coerceIn(0f, 50f)
+            // 0 → casi opaco, 50 → muy transparente (RGB intacto)
+            ((0.92f - (blur / 50f) * 0.82f) * 255f).toInt().coerceIn(20, 240)
+        } else {
+            255
         }
 
-        // --- 2) Borde SOLO exterior (stroke offscreen + DST_OUT del glifo) ---
+        // --- 1) RELLENO primero (sólido o cristal) sobre transparente ---
+        // Importante: sin sombra debajo, para que el alfa no se “funda” con negro.
+        paint.style = Paint.Style.FILL
+        paint.strokeWidth = 0f
+        paint.maskFilter = null
+        paint.xfermode = null
+
+        if (crystal && hasCrystalTex) {
+            drawCrystalFill(canvas, text, x, baselineY, colorHex)
+        } else if (crystal) {
+            paint.color = Color.argb(
+                glassAlpha,
+                Color.red(fillColor),
+                Color.green(fillColor),
+                Color.blue(fillColor)
+            )
+            canvas.drawText(text, x, baselineY, paint)
+        } else {
+            paint.color = fillColor
+            paint.alpha = 255
+            canvas.drawText(text, x, baselineY, paint)
+        }
+
+        // --- 2) Borde SOLO exterior (después del relleno, no lo tapa el alfa) ---
         if (borderWidth > 0f) {
             drawExteriorOutline(
                 canvas = canvas,
@@ -388,28 +394,46 @@ class ClockRenderer {
             )
         }
 
-        // --- 3) Relleno ---
-        paint.style = Paint.Style.FILL
-        paint.strokeWidth = 0f
-        paint.maskFilter = null
-        paint.xfermode = null
+        // --- 3) Relieve DESPUÉS del cristal ---
+        // Con cristal: solo luz (sin sombra oscura), con el mismo alfa del vidrio,
+        // para no oscurecer el color al fundirse con negro.
+        // Sin cristal: relieve clásico luz + sombra.
+        if (bevel) {
+            val strength = ((currentSettings?.bevelStrength ?: 40f) / 100f).coerceIn(0f, 1f)
+            val amount = (textSize * 0.022f * (0.35f + strength)).coerceIn(1f, 6f)
+            val angleDeg = currentSettings?.bevelAngle ?: 315f
+            val rad = angleDeg / 180f * PI.toFloat()
+            val ox = cos(rad) * amount
+            val oy = sin(rad) * amount
+            paint.style = Paint.Style.FILL
 
-        if (crystal && hasCrystalTex) {
-            drawCrystalFill(canvas, text, x, baselineY, colorHex)
-        } else if (crystal) {
-            val blur = (currentSettings?.crystalBlur ?: 12f).coerceIn(0f, 50f)
-            val glassAlpha = ((0.88f - (blur / 50f) * 0.78f) * 255f).toInt().coerceIn(25, 230)
-            paint.color = Color.argb(
-                glassAlpha,
-                Color.red(fillColor),
-                Color.green(fillColor),
-                Color.blue(fillColor)
-            )
-            canvas.drawText(text, x, baselineY, paint)
-        } else {
-            paint.color = fillColor
-            paint.alpha = 255
-            canvas.drawText(text, x, baselineY, paint)
+            val lightA = if (crystal) {
+                // Luz semitransparente, RGB empujado a blanco (no a negro)
+                (glassAlpha * (0.35f + 0.45f * strength)).toInt().coerceIn(0, 200)
+            } else {
+                (130 + 90 * strength).toInt().coerceIn(0, 255)
+            }
+            val lr = (Color.red(fillColor) + (255 - Color.red(fillColor)) * 0.75f).toInt().coerceIn(0, 255)
+            val lg = (Color.green(fillColor) + (255 - Color.green(fillColor)) * 0.75f).toInt().coerceIn(0, 255)
+            val lb = (Color.blue(fillColor) + (255 - Color.blue(fillColor)) * 0.75f).toInt().coerceIn(0, 255)
+            paint.color = Color.argb(lightA, lr, lg, lb)
+            canvas.drawText(text, x - ox, baselineY - oy, paint)
+
+            if (!crystal) {
+                // Sombra solo sin modo cristal (sobre opaco no ensucia el vidrio)
+                paint.color = Color.argb(
+                    (80 + 80 * strength).toInt().coerceIn(0, 255),
+                    (Color.red(fillColor) * 0.25f).toInt().coerceIn(0, 255),
+                    (Color.green(fillColor) * 0.25f).toInt().coerceIn(0, 255),
+                    (Color.blue(fillColor) * 0.25f).toInt().coerceIn(0, 255)
+                )
+                canvas.drawText(text, x + ox, baselineY + oy, paint)
+            } else {
+                // Segunda “linterna” opuesta también de luz (sin oscurecer)
+                val lightA2 = (lightA * 0.55f).toInt().coerceIn(0, 160)
+                paint.color = Color.argb(lightA2, 255, 255, 255)
+                canvas.drawText(text, x + ox, baselineY + oy, paint)
+            }
         }
 
         paint.shader = null
@@ -425,10 +449,12 @@ class ClockRenderer {
 
 
     /**
-     * Dibuja un contorno que SOLO crece hacia afuera del glifo.
-     * Técnica: stroke (ancho 2×) en bitmap offscreen → DST_OUT con el relleno
-     * del texto → elimina todo lo interior al contorno original.
-     * soft=true aplica un leve blur al anillo (luz del relieve).
+     * Contorno que SOLO crece hacia afuera del glifo (nunca pinta el interior).
+     *
+     * Técnica:
+     * 1) "Estampa" el glifo en un anillo de offsets radiales (0…width) → corona exterior
+     * 2) DST_OUT con el glifo original → borra TODO lo que cae dentro del contorno
+     *    (así, con relleno cristal translúcido, adentro no queda rastro del borde)
      */
     private fun drawExteriorOutline(
         canvas: Canvas,
@@ -443,7 +469,7 @@ class ClockRenderer {
 
         val tw = paint.measureText(text)
         val fm = paint.fontMetrics
-        val pad = outlineWidth * 2f + if (soft) outlineWidth * 1.5f else 2f
+        val pad = outlineWidth + 4f + if (soft) outlineWidth else 0f
         val left = when (paint.textAlign) {
             Paint.Align.CENTER -> x - tw / 2f
             Paint.Align.RIGHT -> x - tw
@@ -468,36 +494,51 @@ class ClockRenderer {
             textSize = paint.textSize
             typeface = paint.typeface
             textAlign = paint.textAlign
+            style = Paint.Style.FILL
             isFilterBitmap = true
+            this.color = color
         }
 
-        // Stroke centrado con 2× el ancho pedido → la mitad exterior = outlineWidth
-        p.style = Paint.Style.STROKE
-        p.strokeWidth = outlineWidth * 2f
-        p.strokeJoin = Paint.Join.ROUND
-        p.color = color
-        lc.drawText(text, localX, localBaseline, p)
+        // Anillos concéntricos de estampas del glifo → relleno sólido del exterior
+        val rings = outlineWidth.coerceAtLeast(1f).toInt().coerceIn(1, 64)
+        val steps = (12 + outlineWidth * 0.5f).toInt().coerceIn(12, 40)
+        for (ring in 1..rings) {
+            val rad = outlineWidth * (ring.toFloat() / rings)
+            for (i in 0 until steps) {
+                val a = (i.toFloat() / steps) * (2f * PI.toFloat())
+                lc.drawText(
+                    text,
+                    localX + cos(a) * rad,
+                    localBaseline + sin(a) * rad,
+                    p
+                )
+            }
+        }
 
-        // Saca TODO lo que esté dentro del glifo original (incluye mitad interior del stroke)
-        p.style = Paint.Style.FILL
-        p.strokeWidth = 0f
+        // Borra el interior del glifo original (y cualquier solape hacia adentro)
         p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
         p.color = Color.WHITE
+        // Pasada fill
+        p.style = Paint.Style.FILL
+        lc.drawText(text, localX, localBaseline, p)
+        // Pasada stroke fina extra para limpiar el antialias interior
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = 2.5f
+        p.strokeJoin = Paint.Join.ROUND
         lc.drawText(text, localX, localBaseline, p)
         p.xfermode = null
+        p.style = Paint.Style.FILL
+        p.strokeWidth = 0f
 
         val out = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             isFilterBitmap = true
             if (soft) {
-                // Halo luminoso suave (solo afecta al anillo ya exterior)
                 try {
                     maskFilter = BlurMaskFilter(
-                        (outlineWidth * 0.65f).coerceAtLeast(1f),
+                        (outlineWidth * 0.5f).coerceAtLeast(1f),
                         BlurMaskFilter.Blur.NORMAL
                     )
-                } catch (_: Exception) {
-                    // algunos contextos GL/software pueden fallar
-                }
+                } catch (_: Exception) { }
             }
         }
         canvas.drawBitmap(layer, left - pad, top - pad, out)
