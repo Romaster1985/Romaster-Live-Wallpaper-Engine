@@ -348,36 +348,33 @@ class ClockRenderer {
             Color.WHITE
         }
 
-        // Alfa del cristal: SOLO cambia transparencia, nunca RGB (como PixelLab opacity).
-        // El bitmap del reloj es transparente; el brillo lo da el wallpaper de debajo vía GL.
-        val glassAlpha = if (crystal) {
+        // Alfa del color del picker (#AARRGGBB) × alfa del cristal (si aplica).
+        // Nunca forzamos alpha=255 ni tocamos el RGB (como PixelLab opacity).
+        val colorAlpha = Color.alpha(fillColor) // 0..255 del color picker
+        val glassFactor = if (crystal) {
             val blur = (currentSettings?.crystalBlur ?: 12f).coerceIn(0f, 50f)
-            // 0 → casi opaco, 50 → muy transparente (RGB intacto)
-            ((0.92f - (blur / 50f) * 0.82f) * 255f).toInt().coerceIn(20, 240)
+            (0.92f - (blur / 50f) * 0.82f).coerceIn(0.08f, 1f)
         } else {
-            255
+            1f
         }
+        val effectiveAlpha = (colorAlpha * glassFactor).toInt().coerceIn(0, 255)
 
         // --- 1) RELLENO primero (sólido o cristal) sobre transparente ---
-        // Importante: sin sombra debajo, para que el alfa no se “funda” con negro.
         paint.style = Paint.Style.FILL
         paint.strokeWidth = 0f
         paint.maskFilter = null
         paint.xfermode = null
 
         if (crystal && hasCrystalTex) {
-            drawCrystalFill(canvas, text, x, baselineY, colorHex)
-        } else if (crystal) {
+            drawCrystalFill(canvas, text, x, baselineY, colorHex, glassFactor)
+        } else {
+            // Con o sin cristal: RGB del picker + alfa efectivo
             paint.color = Color.argb(
-                glassAlpha,
+                effectiveAlpha,
                 Color.red(fillColor),
                 Color.green(fillColor),
                 Color.blue(fillColor)
             )
-            canvas.drawText(text, x, baselineY, paint)
-        } else {
-            paint.color = fillColor
-            paint.alpha = 255
             canvas.drawText(text, x, baselineY, paint)
         }
 
@@ -409,7 +406,7 @@ class ClockRenderer {
 
             val lightA = if (crystal) {
                 // Luz semitransparente, RGB empujado a blanco (no a negro)
-                (glassAlpha * (0.35f + 0.45f * strength)).toInt().coerceIn(0, 200)
+                (effectiveAlpha * (0.35f + 0.45f * strength)).toInt().coerceIn(0, 200)
             } else {
                 (130 + 90 * strength).toInt().coerceIn(0, 255)
             }
@@ -469,7 +466,8 @@ class ClockRenderer {
 
         val tw = paint.measureText(text)
         val fm = paint.fontMetrics
-        val pad = outlineWidth + 4f + if (soft) outlineWidth else 0f
+        // pad justo al ancho del borde (sin bucles caros)
+        val pad = outlineWidth * 2f + if (soft) outlineWidth else 2f
         val left = when (paint.textAlign) {
             Paint.Align.CENTER -> x - tw / 2f
             Paint.Align.RIGHT -> x - tw
@@ -494,41 +492,24 @@ class ClockRenderer {
             textSize = paint.textSize
             typeface = paint.typeface
             textAlign = paint.textAlign
-            style = Paint.Style.FILL
             isFilterBitmap = true
-            this.color = color
+            strokeJoin = Paint.Join.ROUND
+            strokeMiter = 10f
         }
 
-        // Anillos concéntricos de estampas del glifo → relleno sólido del exterior
-        val rings = outlineWidth.coerceAtLeast(1f).toInt().coerceIn(1, 64)
-        val steps = (12 + outlineWidth * 0.5f).toInt().coerceIn(12, 40)
-        for (ring in 1..rings) {
-            val rad = outlineWidth * (ring.toFloat() / rings)
-            for (i in 0 until steps) {
-                val a = (i.toFloat() / steps) * (2f * PI.toFloat())
-                lc.drawText(
-                    text,
-                    localX + cos(a) * rad,
-                    localBaseline + sin(a) * rad,
-                    p
-                )
-            }
-        }
-
-        // Borra el interior del glifo original (y cualquier solape hacia adentro)
-        p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
-        p.color = Color.WHITE
-        // Pasada fill
-        p.style = Paint.Style.FILL
-        lc.drawText(text, localX, localBaseline, p)
-        // Pasada stroke fina extra para limpiar el antialias interior
+        // 2 drawText: stroke centrado 2× → DST_OUT del glifo = solo anillo exterior
+        // (coste O(1), no crece con el grosor como el estampado radial)
         p.style = Paint.Style.STROKE
-        p.strokeWidth = 2.5f
-        p.strokeJoin = Paint.Join.ROUND
+        p.strokeWidth = outlineWidth * 2f
+        p.color = color // respeta alfa del color picker del borde
         lc.drawText(text, localX, localBaseline, p)
-        p.xfermode = null
+
         p.style = Paint.Style.FILL
         p.strokeWidth = 0f
+        p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+        p.color = Color.WHITE
+        lc.drawText(text, localX, localBaseline, p)
+        p.xfermode = null
 
         val out = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             isFilterBitmap = true
@@ -544,6 +525,7 @@ class ClockRenderer {
         canvas.drawBitmap(layer, left - pad, top - pad, out)
         layer.recycle()
     }
+
 
     private fun verticalScale(textSize: Float, deformPx: Float): Float {
         if (textSize <= 0f) return 1f
@@ -579,7 +561,8 @@ class ClockRenderer {
         text: String,
         x: Float,
         baselineY: Float,
-        colorHex: String
+        colorHex: String,
+        glassFactor: Float = 1f
     ) {
         val tw = paint.measureText(text)
         val fm = paint.fontMetrics
@@ -643,21 +626,17 @@ class ClockRenderer {
         } catch (_: Exception) {
             Color.WHITE
         }
-        val blur = (currentSettings?.crystalBlur ?: 12f).coerceIn(0f, 50f)
-        val glassAlpha = (0.88f - (blur / 50f) * 0.78f).coerceIn(0.10f, 0.92f)
-
-        // Si hay textura, la teñimos con el color sin oscurecer: lerp hacia tint
-        // usando un filtro que escala RGB hacia el tint y aplica alfa.
+        // Alfa del picker × factor cristal (RGB intacto)
+        val combinedAlpha = ((Color.alpha(tint) / 255f) * glassFactor).coerceIn(0.05f, 1f)
         val tr = Color.red(tint) / 255f
         val tg = Color.green(tint) / 255f
         val tb = Color.blue(tint) / 255f
-        // Para blanco (1,1,1) la matriz es identidad en RGB → no oscurece.
         val cm = ColorMatrix(
             floatArrayOf(
                 tr, 0f, 0f, 0f, 0f,
                 0f, tg, 0f, 0f, 0f,
                 0f, 0f, tb, 0f, 0f,
-                0f, 0f, 0f, glassAlpha, 0f
+                0f, 0f, 0f, combinedAlpha, 0f
             )
         )
         val outPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
