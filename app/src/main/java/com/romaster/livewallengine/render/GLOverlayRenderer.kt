@@ -19,22 +19,45 @@
 package com.romaster.livewallengine.render
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.SystemClock
+import com.romaster.livewallengine.model.ClockSettings
 import com.romaster.livewallengine.project.ProjectManager
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Textura del reloj a pantalla completa.
  *
- * Política de actualización (no bloquea el FPS del video):
- * - Con el tiempo (dígitos): 1 vez por segundo.
- * - Si cambian ajustes (posición, tamaño, cristal, color…): como máximo ~60 veces/s.
- * - Si no cambió nada: no se regenera el bitmap.
+ * El bitmap se genera en un hilo worker (CPU/Canvas). El hilo GL solo:
+ *  - toma el bitmap listo
+ *  - lo sube a textura
+ *  - dibuja el quad
+ *
+ * Así el render de video no se bloquea con Canvas/bordes/texturas del reloj.
  */
 class GLOverlayRenderer {
 
+    private lateinit var appContext: Context
     private lateinit var bitmapGenerator: ClockBitmapGenerator
     private lateinit var texture: GLTexture
     private lateinit var quadRenderer: GLQuadRenderer
+
+    private var worker: ExecutorService? = null
+    private val lock = Any()
+
+    /** Bitmap listo para subir en el hilo GL (producido por el worker). */
+    private var pendingBitmap: Bitmap? = null
+    private var pendingSettingsKey: String = ""
+    private var pendingSecondBucket: Long = -1L
+
+    private var buildInFlight = false
+    private var dirty = false
+    private var reqWidth = 0
+    private var reqHeight = 0
+    private var reqSettingsKey: String = ""
+    private var reqSecondBucket: Long = -1L
 
     private val fadeDurationMs: Long
         get() = ProjectManager.getProject().clockFadeDurationMs
@@ -45,54 +68,149 @@ class GLOverlayRenderer {
 
     private var lastSettingsKey: String = ""
     private var lastSecondBucket: Long = -1L
-    private var lastBuildElapsed: Long = 0L
     private var hasTexture = false
 
+    private val released = AtomicBoolean(false)
+
     fun initialize(context: Context) {
-        bitmapGenerator = ClockBitmapGenerator(context)
+        appContext = context.applicationContext
+        bitmapGenerator = ClockBitmapGenerator(appContext)
         texture = GLTexture()
         quadRenderer = GLQuadRenderer()
         quadRenderer.initialize()
         clockAlpha = 1f
         hasTexture = false
+        released.set(false)
+        worker = Executors.newSingleThreadExecutor { r ->
+            Thread(r, "ClockBitmapWorker").apply {
+                priority = Thread.NORM_PRIORITY - 1
+            }
+        }
     }
 
     fun draw(width: Int, height: Int) {
-        if (width <= 0 || height <= 0) return
+        if (width <= 0 || height <= 0 || released.get()) return
 
-        val project = ProjectManager.getProject()
-        val settings = project.clock
-        val nowWall = System.currentTimeMillis()
-        val nowElapsed = SystemClock.elapsedRealtime()
-        val secondBucket = nowWall / 1000L
+        // 1) Consumir bitmap listo en el hilo GL (upload rápido)
+        consumePendingTexture()
 
+        val settings = ProjectManager.getProject().clock
+        val secondBucket = System.currentTimeMillis() / 1000L
         val settingsKey = buildSettingsKey(settings)
         val settingsChanged = settingsKey != lastSettingsKey
         val timeChanged = secondBucket != lastSecondBucket
 
-        // Máx. 60 regeneraciones/s para no matar el hilo GL (sobre todo con cristal)
-        val minIntervalMs = 16L
-        val canBuild = (nowElapsed - lastBuildElapsed) >= minIntervalMs
-
-        val needBuild = !hasTexture ||
-            ((settingsChanged || timeChanged) && canBuild)
-
-        if (needBuild) {
-            updateTexture(width, height)
-            lastSettingsKey = settingsKey
-            lastSecondBucket = secondBucket
-            lastBuildElapsed = nowElapsed
-            hasTexture = true
+        // 2) Pedir regeneración en background si hace falta
+        if (!hasTexture || settingsChanged || timeChanged) {
+            requestBuild(width, height, settingsKey, secondBucket)
         }
 
+        // 3) Dibujar la textura actual (puede ser la del segundo anterior un frame)
         updateFade()
         if (clockAlpha > 0f && hasTexture) {
             quadRenderer.draw(texture, clockAlpha)
         }
     }
 
-    private fun buildSettingsKey(settings: com.romaster.livewallengine.model.ClockSettings): String {
-        // Todo lo que afecta al bitmap (excepto el texto de la hora, que va por secondBucket)
+    private fun consumePendingTexture() {
+        val ready: Bitmap
+        val key: String
+        val second: Long
+        synchronized(lock) {
+            val pending = pendingBitmap ?: return
+            pendingBitmap = null
+            ready = pending
+            key = pendingSettingsKey
+            second = pendingSecondBucket
+        }
+        if (ready.isRecycled) return
+        try {
+            texture.upload(ready)
+            hasTexture = true
+            lastSettingsKey = key
+            lastSecondBucket = second
+        } finally {
+            ready.recycle()
+        }
+    }
+
+    private fun requestBuild(
+        width: Int,
+        height: Int,
+        settingsKey: String,
+        secondBucket: Long
+    ) {
+        val exec = worker ?: return
+        synchronized(lock) {
+            reqWidth = width
+            reqHeight = height
+            reqSettingsKey = settingsKey
+            reqSecondBucket = secondBucket
+            if (buildInFlight) {
+                dirty = true
+                return
+            }
+            buildInFlight = true
+            dirty = false
+        }
+        exec.execute { runBuildLoop() }
+    }
+
+    private fun runBuildLoop() {
+        while (!released.get()) {
+            val w: Int
+            val h: Int
+            val key: String
+            val second: Long
+            synchronized(lock) {
+                w = reqWidth
+                h = reqHeight
+                key = reqSettingsKey
+                second = reqSecondBucket
+                dirty = false
+            }
+            if (w <= 0 || h <= 0) {
+                synchronized(lock) { buildInFlight = false }
+                return
+            }
+
+            val bitmap: Bitmap = try {
+                val settings = ProjectManager.getProject().clock
+                bitmapGenerator.generate(w, h, settings)
+            } catch (_: Exception) {
+                synchronized(lock) {
+                    if (dirty && !released.get()) {
+                        // reintentar con el pedido más reciente
+                    } else {
+                        buildInFlight = false
+                        return
+                    }
+                }
+                continue
+            }
+
+            synchronized(lock) {
+                if (released.get()) {
+                    bitmap.recycle()
+                    buildInFlight = false
+                    return
+                }
+                pendingBitmap?.recycle()
+                pendingBitmap = bitmap
+                pendingSettingsKey = key
+                pendingSecondBucket = second
+                if (dirty) {
+                    // Hay un pedido más nuevo: seguir en el loop
+                } else {
+                    buildInFlight = false
+                    return
+                }
+            }
+        }
+        synchronized(lock) { buildInFlight = false }
+    }
+
+    private fun buildSettingsKey(settings: ClockSettings): String {
         return buildString {
             append(settings.enabled).append('|')
             append(settings.showDate).append('|')
@@ -141,13 +259,6 @@ class GLOverlayRenderer {
         }
     }
 
-    private fun updateTexture(width: Int, height: Int) {
-        val settings = ProjectManager.getProject().clock
-        val bitmap = bitmapGenerator.generate(width, height, settings)
-        texture.upload(bitmap)
-        bitmap.recycle()
-    }
-
     fun setLockScreenVisible(visible: Boolean, fadeIn: Boolean) {
         if (visible) {
             if (fadeIn) {
@@ -185,11 +296,22 @@ class GLOverlayRenderer {
     fun forceTextureRefresh() {
         lastSettingsKey = ""
         lastSecondBucket = -1L
-        lastBuildElapsed = 0L
         hasTexture = false
+        synchronized(lock) {
+            dirty = true
+        }
     }
 
     fun release() {
+        released.set(true)
+        worker?.shutdownNow()
+        worker = null
+        synchronized(lock) {
+            pendingBitmap?.recycle()
+            pendingBitmap = null
+            buildInFlight = false
+            dirty = false
+        }
         quadRenderer.release()
         texture.release()
         hasTexture = false
