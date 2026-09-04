@@ -21,8 +21,22 @@ package com.romaster.livewallengine.render
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.RectF
 
 import com.romaster.livewallengine.model.ClockSettings
+
+/**
+ * Bitmap del reloj + rectángulo de destino en píxeles de pantalla.
+ */
+class ClockFrame(
+    val bitmap: Bitmap,
+    val left: Float,
+    val top: Float,
+    val right: Float,
+    val bottom: Float,
+    val screenWidth: Int,
+    val screenHeight: Int
+)
 
 class ClockBitmapGenerator(
 
@@ -41,30 +55,50 @@ class ClockBitmapGenerator(
 
         settings: ClockSettings
 
-    ): Bitmap {
+    ): ClockFrame {
+        val screenW = width.coerceAtLeast(1)
+        val screenH = height.coerceAtLeast(1)
 
-        val bitmap =
-            Bitmap.createBitmap(
+        val bounds = clockRenderer.measureBounds(context, screenW, screenH, settings)
+        val cropped = clampBounds(bounds, screenW, screenH)
 
-                width,
+        val bw = cropped.width().toInt().coerceAtLeast(1)
+        val bh = cropped.height().toInt().coerceAtLeast(1)
 
-                height,
-
-                Bitmap.Config.ARGB_8888
-            )
-
-        val canvas =
-            Canvas(bitmap)
-
+        val bitmap = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
         clockRenderer.draw(
-
             context,
-
             canvas,
-
-            settings
+            settings,
+            layoutWidth = screenW,
+            layoutHeight = screenH,
+            cropLeft = cropped.left,
+            cropTop = cropped.top
         )
 
-        return bitmap
+        return ClockFrame(
+            bitmap = bitmap,
+            left = cropped.left,
+            top = cropped.top,
+            right = cropped.right,
+            bottom = cropped.bottom,
+            screenWidth = screenW,
+            screenHeight = screenH
+        )
+    }
+
+    private fun clampBounds(src: RectF, screenW: Int, screenH: Int): RectF {
+        // Permitimos un poco fuera de pantalla (borde/reflejo) pero no bitmaps gigantes
+        val margin = 64f
+        val minL = -margin
+        val minT = -margin
+        val maxR = screenW + margin
+        val maxB = screenH + margin
+        val left = src.left.coerceIn(minL, maxR - 1f)
+        val top = src.top.coerceIn(minT, maxB - 1f)
+        val right = src.right.coerceAtLeast(left + 1f).coerceAtMost(maxR)
+        val bottom = src.bottom.coerceAtLeast(top + 1f).coerceAtMost(maxB)
+        return RectF(left, top, right, bottom)
     }
 }

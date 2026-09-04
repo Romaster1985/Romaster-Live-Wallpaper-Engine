@@ -70,7 +70,34 @@ class GLQuadRenderer {
         texture: GLTexture,
         alpha: Float
     ) {
-        
+        draw(texture, alpha, -1f, 1f, 1f, -1f)
+    }
+
+    /**
+     * Dibuja la textura en un rectángulo NDC.
+     * [left]/[right] en X clip (-1…1), [top]/[bottom] en Y clip (1 arriba, -1 abajo).
+     */
+    fun draw(
+        texture: GLTexture,
+        alpha: Float,
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float
+    ) {
+        vertexBuffer.clear()
+        vertexBuffer.put(
+            floatArrayOf(
+                left, bottom, 0f, 1f,
+                right, bottom, 1f, 1f,
+                left, top, 0f, 0f,
+                left, top, 0f, 0f,
+                right, bottom, 1f, 1f,
+                right, top, 1f, 0f
+            )
+        )
+        vertexBuffer.position(0)
+
         GLES20.glEnable(
             GLES20.GL_BLEND
         )

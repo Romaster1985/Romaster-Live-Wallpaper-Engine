@@ -47,10 +47,15 @@ class GLOverlayRenderer {
     private var worker: ExecutorService? = null
     private val lock = Any()
 
-    /** Bitmap listo para subir en el hilo GL (producido por el worker). */
-    private var pendingBitmap: Bitmap? = null
+    /** Frame listo para subir en el hilo GL (producido por el worker). */
+    private var pendingFrame: ClockFrame? = null
     private var pendingSettingsKey: String = ""
     private var pendingSecondBucket: Long = -1L
+
+    private var destLeftNdc = -1f
+    private var destTopNdc = 1f
+    private var destRightNdc = 1f
+    private var destBottomNdc = -1f
 
     private var buildInFlight = false
     private var dirty = false
@@ -65,6 +70,12 @@ class GLOverlayRenderer {
     private var fadeStartTime = 0L
     private var clockAlpha = 1f
     private var softStartOverrideMs: Long? = null
+
+    /**
+     * Si true, el soft start está pedido pero aún no hay textura lista:
+     * se arranca el timer recién al subir el primer bitmap.
+     */
+    private var awaitTextureForSoftStart = false
 
     private var lastSettingsKey: String = ""
     private var lastSecondBucket: Long = -1L
@@ -108,27 +119,42 @@ class GLOverlayRenderer {
         // 3) Dibujar la textura actual (puede ser la del segundo anterior un frame)
         updateFade()
         if (clockAlpha > 0f && hasTexture) {
-            quadRenderer.draw(texture, clockAlpha)
+            quadRenderer.draw(
+                texture,
+                clockAlpha,
+                destLeftNdc,
+                destTopNdc,
+                destRightNdc,
+                destBottomNdc
+            )
         }
     }
 
     private fun consumePendingTexture() {
-        val ready: Bitmap
         val key: String
         val second: Long
+        val frame: ClockFrame
         synchronized(lock) {
-            val pending = pendingBitmap ?: return
-            pendingBitmap = null
-            ready = pending
+            val pending = pendingFrame ?: return
+            pendingFrame = null
+            frame = pending
             key = pendingSettingsKey
             second = pendingSecondBucket
         }
+        val ready = frame.bitmap
         if (ready.isRecycled) return
         try {
             texture.upload(ready)
             hasTexture = true
             lastSettingsKey = key
             lastSecondBucket = second
+            applyDestRect(frame)
+            // Soft start: la rampa de alpha empieza acá, no cuando se pidió el fade
+            if (awaitTextureForSoftStart) {
+                clockAlpha = 0f
+                fadeStartTime = SystemClock.elapsedRealtime()
+                awaitTextureForSoftStart = false
+            }
         } finally {
             ready.recycle()
         }
@@ -174,7 +200,7 @@ class GLOverlayRenderer {
                 return
             }
 
-            val bitmap: Bitmap = try {
+            val frame: ClockFrame = try {
                 val settings = ProjectManager.getProject().clock
                 bitmapGenerator.generate(w, h, settings)
             } catch (_: Exception) {
@@ -191,12 +217,12 @@ class GLOverlayRenderer {
 
             synchronized(lock) {
                 if (released.get()) {
-                    bitmap.recycle()
+                    frame.bitmap.recycle()
                     buildInFlight = false
                     return
                 }
-                pendingBitmap?.recycle()
-                pendingBitmap = bitmap
+                pendingFrame?.bitmap?.recycle()
+                pendingFrame = frame
                 pendingSettingsKey = key
                 pendingSecondBucket = second
                 if (dirty) {
@@ -259,26 +285,52 @@ class GLOverlayRenderer {
         }
     }
 
+    private fun applyDestRect(frame: ClockFrame) {
+        val sw = frame.screenWidth.coerceAtLeast(1).toFloat()
+        val sh = frame.screenHeight.coerceAtLeast(1).toFloat()
+        destLeftNdc = (frame.left / sw) * 2f - 1f
+        destRightNdc = (frame.right / sw) * 2f - 1f
+        destTopNdc = 1f - (frame.top / sh) * 2f
+        destBottomNdc = 1f - (frame.bottom / sh) * 2f
+    }
+
     fun setLockScreenVisible(visible: Boolean, fadeIn: Boolean) {
         if (visible) {
             if (fadeIn) {
-                clockAlpha = 0f
-                fadeStartTime = SystemClock.elapsedRealtime()
+                beginSoftStart(null)
             } else {
                 clockAlpha = 1f
                 fadeStartTime = 0L
+                awaitTextureForSoftStart = false
+                softStartOverrideMs = null
             }
         } else {
             clockAlpha = 0f
             fadeStartTime = 0L
+            awaitTextureForSoftStart = false
+            softStartOverrideMs = null
         }
     }
 
     fun startSoftStart(durationMs: Long? = null) {
+        beginSoftStart(durationMs)
+    }
+
+    /**
+     * Prepara el fade-in. Si la textura ya está, arranca ya;
+     * si no, espera a [consumePendingTexture] para no "comerse" el inicio del soft start.
+     */
+    private fun beginSoftStart(durationMs: Long?) {
         clockAlpha = 0f
-        fadeStartTime = SystemClock.elapsedRealtime()
         softStartOverrideMs =
             if (durationMs != null && durationMs > 0L) durationMs else null
+        if (hasTexture) {
+            fadeStartTime = SystemClock.elapsedRealtime()
+            awaitTextureForSoftStart = false
+        } else {
+            fadeStartTime = 0L
+            awaitTextureForSoftStart = true
+        }
     }
 
     private fun updateFade() {
@@ -307,8 +359,8 @@ class GLOverlayRenderer {
         worker?.shutdownNow()
         worker = null
         synchronized(lock) {
-            pendingBitmap?.recycle()
-            pendingBitmap = null
+            pendingFrame?.bitmap?.recycle()
+            pendingFrame = null
             buildInFlight = false
             dirty = false
         }

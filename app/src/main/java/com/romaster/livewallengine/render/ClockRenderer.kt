@@ -56,10 +56,21 @@ class ClockRenderer {
     private var crystalTextureName: String? = null
     private var currentSettings: ClockSettings? = null
 
+    /** Tamaño lógico de pantalla (no el del bitmap recortado). */
+    private var layoutW: Int = 1
+    private var layoutH: Int = 1
+    /** Origen del bitmap recortado en coords de pantalla. */
+    private var originX: Float = 0f
+    private var originY: Float = 0f
+
     fun draw(
         context: android.content.Context,
         canvas: Canvas,
-        settings: ClockSettings
+        settings: ClockSettings,
+        layoutWidth: Int = canvas.width,
+        layoutHeight: Int = canvas.height,
+        cropLeft: Float = 0f,
+        cropTop: Float = 0f
     ) {
 
         val drawClock = settings.enabled
@@ -69,6 +80,10 @@ class ClockRenderer {
             return
         }
 
+        layoutW = layoutWidth.coerceAtLeast(1)
+        layoutH = layoutHeight.coerceAtLeast(1)
+        originX = cropLeft
+        originY = cropTop
         currentSettings = settings
         ensureCrystalTexture(context, settings)
 
@@ -79,6 +94,148 @@ class ClockRenderer {
         if (settings.reflectionEnabled && bounds != null) {
             drawGroupReflection(context, canvas, settings, bounds.first, bounds.second)
         }
+    }
+
+    /**
+     * Rectángulo en píxeles de pantalla que cubre hora, fecha, bordes, relieve y reflejo.
+     */
+    fun measureBounds(
+        context: android.content.Context,
+        layoutWidth: Int,
+        layoutHeight: Int,
+        settings: ClockSettings
+    ): RectF {
+        layoutW = layoutWidth.coerceAtLeast(1)
+        layoutH = layoutHeight.coerceAtLeast(1)
+        originX = 0f
+        originY = 0f
+        currentSettings = settings
+
+        if (!settings.enabled && !settings.showDate) {
+            return RectF(0f, 0f, 1f, 1f)
+        }
+
+        val baseX = layoutW * settings.x
+        val baseY = layoutH * settings.y
+        val spacing = settings.dateSpacing
+        val variation = variationOf(settings)
+
+        data class LineInfo(
+            val text: String,
+            val baseline: Float,
+            val textSize: Float,
+            val fontFile: String?,
+            val deform: Float,
+            val border: Float
+        )
+
+        val lines = ArrayList<LineInfo>(2)
+
+        fun addTime(baseline: Float) {
+            if (!settings.enabled) return
+            lines.add(
+                LineInfo(
+                    buildTime(settings), baseline, settings.clockSize,
+                    settings.clockFont, settings.clockVerticalDeform, settings.clockBorderWidth
+                )
+            )
+        }
+        fun addDate(baseline: Float) {
+            if (!settings.showDate) return
+            lines.add(
+                LineInfo(
+                    buildDate(settings), baseline, settings.dateSize,
+                    settings.dateFont, settings.dateVerticalDeform, settings.dateBorderWidth
+                )
+            )
+        }
+
+        if (settings.allowOverlap && settings.enabled && settings.showDate) {
+            if (settings.swapTimeAndDate) {
+                addDate(baseY)
+                addTime(baseY + spacing)
+            } else {
+                addTime(baseY)
+                addDate(baseY + spacing)
+            }
+        } else if (settings.swapTimeAndDate) {
+            var bottom = baseY
+            if (settings.showDate) {
+                addDate(baseY)
+                preparePaint(context, settings.dateSize, "#FFFFFF", settings.dateFont, settings.alignment, variation)
+                val scaleY = verticalScale(settings.dateSize, settings.dateVerticalDeform)
+                bottom = baseY + paint.fontMetrics.descent * scaleY
+            }
+            if (settings.enabled) {
+                preparePaint(context, settings.clockSize, "#FFFFFF", settings.clockFont, settings.alignment, variation)
+                val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
+                val metrics = paint.fontMetrics
+                val baseline = if (settings.showDate) bottom + spacing - metrics.ascent * scaleY else baseY
+                addTime(baseline)
+            }
+        } else {
+            var bottom = baseY
+            if (settings.enabled) {
+                addTime(baseY)
+                preparePaint(context, settings.clockSize, "#FFFFFF", settings.clockFont, settings.alignment, variation)
+                val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
+                bottom = baseY + paint.fontMetrics.descent * scaleY
+            }
+            if (settings.showDate) {
+                preparePaint(context, settings.dateSize, "#FFFFFF", settings.dateFont, settings.alignment, variation)
+                val scaleY = verticalScale(settings.dateSize, settings.dateVerticalDeform)
+                val metrics = paint.fontMetrics
+                val baseline = if (settings.enabled) bottom + spacing - metrics.ascent * scaleY else baseY
+                addDate(baseline)
+            }
+        }
+
+        var left = Float.POSITIVE_INFINITY
+        var top = Float.POSITIVE_INFINITY
+        var right = Float.NEGATIVE_INFINITY
+        var bottom = Float.NEGATIVE_INFINITY
+
+        for (line in lines) {
+            preparePaint(context, line.textSize, "#FFFFFF", line.fontFile, settings.alignment, variation)
+            val tw = paint.measureText(line.text)
+            val scaleY = verticalScale(line.textSize, line.deform)
+            val fm = paint.fontMetrics
+            val lineLeft = when (settings.alignment) {
+                TextAlignment.CENTER -> baseX - tw / 2f
+                TextAlignment.RIGHT -> baseX - tw
+                else -> baseX
+            }
+            val lineRight = lineLeft + tw
+            val lineTop = line.baseline + fm.ascent * scaleY
+            val lineBot = line.baseline + fm.descent * scaleY
+            val pad = line.border + 6f
+            if (lineLeft - pad < left) left = lineLeft - pad
+            if (lineRight + pad > right) right = lineRight + pad
+            if (lineTop - pad < top) top = lineTop - pad
+            if (lineBot + pad > bottom) bottom = lineBot + pad
+        }
+
+        if (left == Float.POSITIVE_INFINITY) {
+            return RectF(0f, 0f, 1f, 1f)
+        }
+
+        if (settings.reflectionEnabled) {
+            val gap = settings.reflectionGap.coerceAtLeast(0f)
+            val center = (top + bottom) / 2f
+            val pivotY = center + gap
+            val reflTop = 2f * pivotY - bottom
+            val reflBottom = 2f * pivotY - top
+            if (reflTop < top) top = reflTop
+            if (reflBottom > bottom) bottom = reflBottom
+        }
+
+        // Un poco de aire extra (relieve / antialias)
+        left -= 8f
+        top -= 8f
+        right += 8f
+        bottom += 8f
+
+        return RectF(left, top, right, bottom)
     }
 
     /**
@@ -94,8 +251,8 @@ class ClockRenderer {
         val drawDate = settings.showDate
         if (!drawClock && !drawDate) return null
 
-        val baseX = canvas.width * settings.x
-        val baseY = canvas.height * settings.y
+        val baseX = layoutW * settings.x - originX
+        val baseY = layoutH * settings.y - originY
         val spacing = settings.dateSpacing
         var groupTop = Float.POSITIVE_INFINITY
         var groupBottom = Float.NEGATIVE_INFINITY
@@ -245,11 +402,15 @@ class ClockRenderer {
         // Tras el flip, el bloque queda en [2P - groupBottom, 2P - groupTop]
         val reflTop = 2f * pivotY - groupBottom
         val reflBottom = 2f * pivotY - groupTop
-        val w = canvas.width.toFloat()
         val layerTop = minOf(reflTop, reflBottom) - 2f
         val layerBottom = maxOf(reflTop, reflBottom) + 2f
+        val layerLeft = 0f
+        val layerRight = canvas.width.toFloat()
 
-        val count = canvas.saveLayer(0f, layerTop, w, layerBottom, Paint(Paint.ANTI_ALIAS_FLAG))
+        val count = canvas.saveLayer(
+            layerLeft, layerTop, layerRight, layerBottom,
+            Paint(Paint.ANTI_ALIAS_FLAG)
+        )
         canvas.save()
         canvas.scale(1f, -1f, 0f, pivotY)
         drawClockContent(context, canvas, settings)
@@ -266,7 +427,7 @@ class ClockRenderer {
             )
             xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
         }
-        canvas.drawRect(0f, layerTop, w, layerBottom, fade)
+        canvas.drawRect(layerLeft, layerTop, layerRight, layerBottom, fade)
         canvas.restoreToCount(count)
     }
 
