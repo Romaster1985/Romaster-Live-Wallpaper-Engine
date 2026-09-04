@@ -360,6 +360,8 @@ class GLImageLayersRenderer {
         }
     }
 
+    fun isFadeComplete(): Boolean = fadeStartTimes.isEmpty()
+
     private fun layerFadeAlpha(layer: ImageLayer): Float {
         val start = fadeStartTimes[layer.id] ?: return 1f
         val dur = layer.fadeDurationMs.coerceAtLeast(1L)

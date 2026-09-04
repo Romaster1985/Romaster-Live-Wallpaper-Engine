@@ -2788,6 +2788,16 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         findViewById<TextView>(R.id.textClockCrystalBlur).text =
             clock.crystalBlur.toInt().toString()
 
+        val defocusLevel = clock.crystalDefocusLevel.coerceIn(0, 3)
+        val defocusRadioId = when (defocusLevel) {
+            1 -> R.id.radioClockDefocusLow
+            2 -> R.id.radioClockDefocusMid
+            3 -> R.id.radioClockDefocusHigh
+            else -> R.id.radioClockDefocusNone
+        }
+        findViewById<android.widget.RadioGroup>(R.id.radioClockCrystalDefocus)
+            .check(defocusRadioId)
+
         findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
             R.id.checkClockReflection
         ).isChecked = clock.reflectionEnabled
@@ -3061,6 +3071,22 @@ findViewById<CheckBox>(
         ).setOnCheckedChangeListener { _, checked ->
             if (loadingUI) return@setOnCheckedChangeListener
             ProjectManager.getProject().clock.crystalMode = checked
+            editor.save()
+            updatePreviewProject()
+        }
+
+        findViewById<android.widget.RadioGroup>(
+            R.id.radioClockCrystalDefocus
+        ).setOnCheckedChangeListener { _, checkedId ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            val level = when (checkedId) {
+                R.id.radioClockDefocusLow -> 1
+                R.id.radioClockDefocusMid -> 2
+                R.id.radioClockDefocusHigh -> 3
+                else -> 0
+            }
+            ProjectManager.getProject().clock.crystalDefocusLevel = level
+            FileLogger.log(this, "CrystalBlur UI: radio level=$level")
             editor.save()
             updatePreviewProject()
         }
@@ -4444,6 +4470,15 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             findViewById<com.google.android.material.slider.Slider>(
                 R.id.sliderClockCrystalBlur
             ).value
+        clock.crystalDefocusLevel = when (
+            findViewById<android.widget.RadioGroup>(R.id.radioClockCrystalDefocus)
+                .checkedRadioButtonId
+        ) {
+            R.id.radioClockDefocusLow -> 1
+            R.id.radioClockDefocusMid -> 2
+            R.id.radioClockDefocusHigh -> 3
+            else -> 0
+        }
         // crystalTextureFile se gestiona al cargar/quitar textura
         clock.crystalTextureFile =
             ProjectManager.getProject().clock.crystalTextureFile

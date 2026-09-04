@@ -27,7 +27,8 @@ import java.util.Locale
 
 object FileLogger {
 
-    private const val DEBUG_LOG = false
+    // Activado temporalmente para diagnosticar CrystalBlur / desenfoque
+    private const val DEBUG_LOG = true
 
     private const val DIR_NAME =
         "Romaster_LiveWall_Engine"

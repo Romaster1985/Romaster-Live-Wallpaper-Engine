@@ -1211,7 +1211,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Relleno translúcido solo dentro de la letra, con textura PNG opcional. El slider regula qué tan “de vidrio” se ve (más valor = más transparente). Se combina con color y borde."
+                    android:text="Relleno translúcido solo dentro de la letra, con textura PNG opcional. La transparencia controla el alfa del relleno; el desenfoque difumina el fondo detrás de los glifos. Se combina con color y borde."
                     android:textSize="12sp"
                     android:layout_marginBottom="8dp"/>
 
@@ -1249,6 +1249,49 @@
                     android:valueTo="50"
                     android:stepSize="1"
                     android:value="12"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Desenfoque del fondo"/>
+
+                <RadioGroup
+                    android:id="@+id/radioClockCrystalDefocus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp">
+
+                    <RadioButton
+                        android:id="@+id/radioClockDefocusNone"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Ninguno"
+                        android:checked="true"/>
+
+                    <RadioButton
+                        android:id="@+id/radioClockDefocusLow"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Bajo"/>
+
+                    <RadioButton
+                        android:id="@+id/radioClockDefocusMid"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Medio"/>
+
+                    <RadioButton
+                        android:id="@+id/radioClockDefocusHigh"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Alto"/>
+                </RadioGroup>
 
                 <TextView
                     android:id="@+id/textClockCrystalTexture"

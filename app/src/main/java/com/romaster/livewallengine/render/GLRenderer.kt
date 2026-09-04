@@ -217,6 +217,14 @@ class GLRenderer(
         FileLogger.log(context, "GLRenderer -> Fade-in iniciado")
     }
 
+    fun areBackgroundFadesComplete(): Boolean {
+        updateFade()
+        if (fadeAlpha < 0.999f) return false
+        if (videoOverlayRenderer?.isFadeComplete() == false) return false
+        if (imageLayersRenderer?.isFadeComplete() == false) return false
+        return true
+    }
+
     private fun updateFade() {
         if (fadeStartTime <= 0L) {
             fadeAlpha = 1f
@@ -269,6 +277,13 @@ class GLRenderer(
         val vw = if (virtualWidth > 0) virtualWidth else width
         val vh = if (virtualHeight > 0) virtualHeight else height
 
+        // Blur del reloj: capturar solo cuando BG/OL/Pics terminaron soft start
+        updateFade()
+        val volOk = videoOverlayRenderer?.isFadeComplete() != false
+        val imgOk = imageLayersRenderer?.isFadeComplete() != false
+        val settled = fadeAlpha >= 0.999f && volOk && imgOk
+        overlayRenderer?.setBackgroundsSettled(settled)
+
         // Orden global de atrás → adelante (cada capa aislada de fallos)
         for (id in project.layerStack) {
             try {
@@ -278,7 +293,7 @@ class GLRenderer(
                         videoOverlayRenderer?.update()
                         videoOverlayRenderer?.draw()
                     }
-                    LayerStack.ID_CLOCK -> overlayRenderer?.draw(vw, vh)
+                    LayerStack.ID_CLOCK -> overlayRenderer?.draw(vw, vh, width, height)
                     else -> imageLayersRenderer?.drawById(id)
                 }
             } catch (_: Exception) {

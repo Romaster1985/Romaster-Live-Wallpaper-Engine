@@ -128,11 +128,18 @@ data class ClockSettings(
     /** Figure height (YTFI) 560–788 — útil en relojes */
     var fontYtfi: Float = 738f,
 
-    /** Modo cristal: relleno translúcido + blur del fondo + textura opcional */
+    /** Modo cristal: relleno translúcido + textura opcional */
     var crystalMode: Boolean = false,
 
-    /** Intensidad del difuminado del fondo detrás del reloj (0–50) */
+    /** Transparencia del relleno del cristal (0–50; más alto = más transparente) */
     var crystalBlur: Float = 12f,
+
+    /**
+     * Nivel de desenfoque del fondo detrás de los glifos.
+     * 0 = Ninguno, 1 = Bajo, 2 = Medio, 3 = Alto.
+     * Independiente de la transparencia.
+     */
+    var crystalDefocusLevel: Int = 0,
 
     /** PNG de textura (en files/images/), opcional */
     var crystalTextureFile: String? = null,

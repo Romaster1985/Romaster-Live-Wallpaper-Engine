@@ -167,6 +167,14 @@ class GLVideoOverlayRenderer(
 
     fun isForceHidden(): Boolean = forceHidden
 
+    /** true si no hay soft start en curso (oculto o fade terminado). */
+    fun isFadeComplete(): Boolean {
+        if (forceHidden) return true
+        if (fadeStartTime < 0L) return false
+        if (fadeStartTime == 0L) return true
+        return fadeAlpha >= 0.999f
+    }
+
     fun startOverlayFadeIn(durationMs: Long = -1L) {
         startSoftStart(durationMs)
     }
