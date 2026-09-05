@@ -98,6 +98,9 @@ class GLOverlayRenderer {
     /** true = reloj oculto a propósito (p.ej. no habilitado en pantalla de bloqueo) */
     private var forceHidden = false
 
+    /** Delay Start del reloj (timestamp hasta el cual alpha=0). */
+    private var clockDelayUntil = 0L
+
     /** true cuando BG/OL/Pics ya terminaron soft start (captura de blur válida). */
     @Volatile private var backgroundsSettled = true
 
@@ -216,9 +219,17 @@ class GLOverlayRenderer {
         }
         if (awaitBackdropForSoftStart && hasBackdrop) {
             clockAlpha = 0f
-            fadeStartTime = SystemClock.elapsedRealtime()
             awaitBackdropForSoftStart = false
             awaitTextureForSoftStart = false
+            startClockFadeOrDelay()
+        }
+        // Delay Start del reloj en curso
+        if (clockDelayUntil > 0L) {
+            clockAlpha = 0f
+            if (SystemClock.elapsedRealtime() >= clockDelayUntil) {
+                clockDelayUntil = 0L
+                fadeStartTime = SystemClock.elapsedRealtime()
+            }
         }
 
         // 6) Blur opaco (forma del glifo) + reloj coloreado encima (con transparencia cristal)
@@ -282,9 +293,9 @@ class GLOverlayRenderer {
             // Soft start esperaba el blur: arrancar fade ahora (solo si debe verse)
             if (awaitBackdropForSoftStart && backdropReady && !forceHidden) {
                 clockAlpha = 0f
-                fadeStartTime = SystemClock.elapsedRealtime()
                 awaitBackdropForSoftStart = false
                 awaitTextureForSoftStart = false
+                startClockFadeOrDelay()
             }
         } catch (e: Exception) {
             FileLogger.logException(appContext, "CrystalBlur.upload", e)
@@ -414,9 +425,8 @@ class GLOverlayRenderer {
                     clockAlpha = 0f
                     fadeStartTime = 0L
                 } else {
-                    clockAlpha = 0f
-                    fadeStartTime = SystemClock.elapsedRealtime()
                     awaitTextureForSoftStart = false
+                    startClockFadeOrDelay()
                 }
             }
         } finally {
@@ -591,6 +601,7 @@ class GLOverlayRenderer {
             forceHidden = true
             clockAlpha = 0f
             fadeStartTime = 0L
+            clockDelayUntil = 0L
             awaitTextureForSoftStart = false
             awaitBackdropForSoftStart = false
             softStartOverrideMs = null
@@ -635,7 +646,26 @@ class GLOverlayRenderer {
 
         when {
             !hasTexture -> awaitTextureForSoftStart = true
-            else -> fadeStartTime = SystemClock.elapsedRealtime()
+            else -> startClockFadeOrDelay()
+        }
+    }
+
+    /**
+     * Con desenfoque: se llama cuando el blur ya está listo (otros módulos terminaron).
+     * Sin desenfoque: al iniciar soft start con textura lista.
+     * Aplica clockDelayStartMs y luego el fade.
+     */
+    private fun startClockFadeOrDelay() {
+        val delay = try {
+            ProjectManager.getProject().clockDelayStartMs.coerceAtLeast(0L)
+        } catch (_: Exception) { 0L }
+        clockAlpha = 0f
+        if (delay > 0L) {
+            clockDelayUntil = SystemClock.elapsedRealtime() + delay
+            fadeStartTime = 0L
+        } else {
+            clockDelayUntil = 0L
+            fadeStartTime = SystemClock.elapsedRealtime()
         }
     }
 

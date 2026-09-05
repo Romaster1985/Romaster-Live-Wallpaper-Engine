@@ -44,6 +44,7 @@ class GLVideoOverlayRenderer(
             ProjectManager.getProject().overlayFadeDurationMs
         }
 
+    private var fadeDelayUntil = 0L
     private var fadeStartTime = 0L
     private var fadeAlpha = 0f
 
@@ -97,6 +98,16 @@ class GLVideoOverlayRenderer(
     }
     
     private fun updateFade() {
+        val now = SystemClock.elapsedRealtime()
+        // Delay Start pendiente
+        if (fadeDelayUntil > 0L) {
+            fadeAlpha = 0f
+            if (now >= fadeDelayUntil) {
+                fadeDelayUntil = 0L
+                fadeStartTime = now
+            }
+            return
+        }
         // Esperando primer frame / soft start
         if (fadeStartTime < 0L) {
             fadeAlpha = 0f
@@ -108,7 +119,7 @@ class GLVideoOverlayRenderer(
             return
         }
     
-        val elapsed = SystemClock.elapsedRealtime() - fadeStartTime
+        val elapsed = now - fadeStartTime
         val dur = fadeDurationMs.toFloat().coerceAtLeast(1f)
         fadeAlpha = (elapsed.toFloat() / dur).coerceIn(0f, 1f)
     
@@ -126,8 +137,18 @@ class GLVideoOverlayRenderer(
         forceHidden = false
         fadeDurationOverrideMs =
             if (durationMs > 0L) durationMs else -1L
-        fadeStartTime = SystemClock.elapsedRealtime()
         fadeAlpha = 0f
+        val delay = try {
+            ProjectManager.getProject().overlayDelayStartMs.coerceAtLeast(0L)
+        } catch (_: Exception) { 0L }
+        val now = SystemClock.elapsedRealtime()
+        if (delay > 0L) {
+            fadeDelayUntil = now + delay
+            fadeStartTime = -1L // sigue esperando (alpha 0) hasta post-delay
+        } else {
+            fadeDelayUntil = 0L
+            fadeStartTime = now
+        }
     }
 
     fun update() {
@@ -170,6 +191,7 @@ class GLVideoOverlayRenderer(
     /** true si no hay soft start en curso (oculto o fade terminado). */
     fun isFadeComplete(): Boolean {
         if (forceHidden) return true
+        if (fadeDelayUntil > 0L) return false
         if (fadeStartTime < 0L) return false
         if (fadeStartTime == 0L) return true
         return fadeAlpha >= 0.999f

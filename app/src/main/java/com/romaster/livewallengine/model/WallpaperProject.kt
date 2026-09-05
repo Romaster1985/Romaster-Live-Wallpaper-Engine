@@ -79,5 +79,12 @@ data class WallpaperProject(
 
     var overlayFadeDurationMs: Long = 3000L,
     
-    var clockFadeDurationMs: Long = 1000L
+    var clockFadeDurationMs: Long = 1000L,
+
+    /** Delay antes del Soft Start (ms). 0 = sin espera. */
+    var videoDelayStartMs: Long = 0L,
+
+    var overlayDelayStartMs: Long = 0L,
+
+    var clockDelayStartMs: Long = 0L
 )

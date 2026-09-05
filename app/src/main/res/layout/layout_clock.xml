@@ -1268,7 +1268,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Ninguno"
+                        android:text="Off"
                         android:checked="true"/>
 
                     <RadioButton
@@ -1276,21 +1276,21 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Bajo"/>
+                        android:text="Soft"/>
 
                     <RadioButton
                         android:id="@+id/radioClockDefocusMid"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Medio"/>
+                        android:text="Med"/>
 
                     <RadioButton
                         android:id="@+id/radioClockDefocusHigh"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Alto"/>
+                        android:text="Strong"/>
                 </RadioGroup>
 
                 <TextView

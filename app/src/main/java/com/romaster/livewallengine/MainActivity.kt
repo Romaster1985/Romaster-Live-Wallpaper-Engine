@@ -1041,6 +1041,23 @@ class MainActivity : AppCompatActivity() {
                     FadeTarget.CLOCK
             )
         }
+
+        // =====================================================
+        // CONFIGURACIÓN DE DELAY START
+        // =====================================================
+
+        findViewById<MaterialButton>(R.id.buttonVideoDelayStart).setOnClickListener {
+            val project = ProjectManager.getProject()
+            showDelayStartDialog("Delay Video principal", project.videoDelayStartMs, DelayTarget.VIDEO)
+        }
+        findViewById<MaterialButton>(R.id.buttonOverlayDelayStart).setOnClickListener {
+            val project = ProjectManager.getProject()
+            showDelayStartDialog("Delay Video Overlay", project.overlayDelayStartMs, DelayTarget.OVERLAY)
+        }
+        findViewById<MaterialButton>(R.id.buttonClockDelayStart).setOnClickListener {
+            val project = ProjectManager.getProject()
+            showDelayStartDialog("Delay Reloj", project.clockDelayStartMs, DelayTarget.CLOCK)
+        }
     
     }
     
@@ -1363,12 +1380,59 @@ class MainActivity : AppCompatActivity() {
             R.id.textClockFadeDuration
         ).text =
             "${project.clockFadeDurationMs} ms"
+
+        findViewById<TextView>(R.id.textVideoDelayStart)?.text =
+            "${project.videoDelayStartMs} ms"
+        findViewById<TextView>(R.id.textOverlayDelayStart)?.text =
+            "${project.overlayDelayStartMs} ms"
+        findViewById<TextView>(R.id.textClockDelayStart)?.text =
+            "${project.clockDelayStartMs} ms"
     }
     
     private enum class FadeTarget {
         VIDEO,
         OVERLAY,
         CLOCK
+    }
+
+    private enum class DelayTarget {
+        VIDEO,
+        OVERLAY,
+        CLOCK
+    }
+
+    private fun showDelayStartDialog(title: String, currentValue: Long, target: DelayTarget) {
+        val input = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(currentValue.toString())
+            selectAll()
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 0, 48, 0)
+            addView(input)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage("Tiempo de espera en milisegundos antes de iniciar el Soft Start.")
+            .setView(container)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val value = input.text.toString().toLongOrNull()
+                if (value == null || value < 0L) {
+                    Toast.makeText(this, "Ingresá un valor válido.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val project = ProjectManager.getProject()
+                when (target) {
+                    DelayTarget.VIDEO -> project.videoDelayStartMs = value
+                    DelayTarget.OVERLAY -> project.overlayDelayStartMs = value
+                    DelayTarget.CLOCK -> project.clockDelayStartMs = value
+                }
+                ProjectManager.saveProject(project)
+                updateSoftStartUI()
+            }
+            .show()
     }
     
     private fun showFadeDurationDialog(
@@ -1767,6 +1831,7 @@ class MainActivity : AppCompatActivity() {
             container.addView(card)
         }
         rebuildImageSoftStartRows()
+        rebuildImageDelayStartRows()
     }
 
     private fun rebuildImageSoftStartRows() {
@@ -1833,6 +1898,75 @@ class MainActivity : AppCompatActivity() {
                     return@setPositiveButton
                 }
                 layer.fadeDurationMs = value
+                valueTv.text = "$value ms"
+                editor.save()
+                notifyImageLayersChanged()
+            }
+            .show()
+    }
+
+    private fun rebuildImageDelayStartRows() {
+        val container = findViewById<LinearLayout>(R.id.containerImageDelayStarts) ?: return
+        container.removeAllViews()
+        val project = ProjectManager.getProject()
+        val density = resources.displayMetrics.density
+        project.imageLayers.forEachIndexed { index, layer ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (16 * density).toInt(), 0, 0)
+            }
+            val texts = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            texts.addView(TextView(this).apply {
+                text = "Capa de Imagen ${index + 1}"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            val valueTv = TextView(this).apply {
+                text = "${layer.delayStartMs} ms"
+                textSize = 14f
+                setPadding(0, (2 * density).toInt(), 0, 0)
+            }
+            texts.addView(valueTv)
+            row.addView(texts)
+            row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = "Editar..."
+                setOnClickListener {
+                    showImageLayerDelayDialog(layer.id, valueTv)
+                }
+            })
+            container.addView(row)
+        }
+    }
+
+    private fun showImageLayerDelayDialog(layerId: String, valueTv: TextView) {
+        val project = ProjectManager.getProject()
+        val layer = project.imageLayers.find { it.id == layerId } ?: return
+        val input = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(layer.delayStartMs.toString())
+            selectAll()
+        }
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 0, 48, 0)
+            addView(input)
+        }
+        val idx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
+        AlertDialog.Builder(this)
+            .setTitle("Delay Start — Capa de Imagen $idx")
+            .setMessage("Tiempo de espera en milisegundos antes del Soft Start.")
+            .setView(box)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val value = input.text.toString().toLongOrNull()
+                if (value == null || value < 0L) {
+                    Toast.makeText(this, "Ingresá un valor válido.", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                layer.delayStartMs = value
                 valueTv.text = "$value ms"
                 editor.save()
                 notifyImageLayersChanged()

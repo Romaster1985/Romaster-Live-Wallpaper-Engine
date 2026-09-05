@@ -21,41 +21,53 @@ package com.romaster.livewallengine.render
 import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.opengl.GLUtils
+import android.os.SystemClock
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 /**
- * Capa de fondo difuminado bajo el reloj.
- *
- * El blur se dibuja OPACO dentro de la forma de los glifos (máscara reconstruida
- * sin la transparencia del cristal). El reloj coloreado va encima y, al subir
- * la transparencia del cristal, deja ver este blur sin que el blur se desvanezca.
+ * Fondo difuminado bajo el reloj con crossfade entre actualizaciones.
+ * Dos texturas en ping-pong: al llegar un blur nuevo se mezcla con el anterior.
  */
 class ClockBackdropBlur {
 
-    private var texId = 0
+    private var texA = 0
+    private var texB = 0
+    /** Índice de la textura "actual" (0 = A, 1 = B). */
+    private var currentSlot = 0
+    private var hasA = false
+    private var hasB = false
+
     private var program = 0
     private var posHandle = 0
     private var uvHandle = 0
-    private var blurSampler = 0
+    private var blurOldSampler = 0
+    private var blurNewSampler = 0
     private var maskSampler = 0
     private var alphaHandle = 0
     private var glassFactorHandle = 0
+    private var crossHandle = 0
     private var quadBuf: FloatBuffer? = null
-    private var hasTexture = false
     private var initialized = false
+
+    private var crossStartMs = 0L
+    private var crossfading = false
 
     fun initialize() {
         if (initialized) return
-        val ids = IntArray(1)
-        GLES20.glGenTextures(1, ids, 0)
-        texId = ids[0]
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+        val ids = IntArray(2)
+        GLES20.glGenTextures(2, ids, 0)
+        texA = ids[0]
+        texB = ids[1]
+        for (id in ids) {
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, id)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+        }
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
 
         program = link(
             """
@@ -70,58 +82,102 @@ class ClockBackdropBlur {
             """
             precision mediump float;
             varying vec2 vUv;
-            uniform sampler2D uBlur;
+            uniform sampler2D uBlurOld;
+            uniform sampler2D uBlurNew;
             uniform sampler2D uMask;
             uniform float uAlpha;
             uniform float uGlassFactor;
+            uniform float uCross;
             void main() {
               float ca = texture2D(uMask, vUv).a;
-              // Reconstruir cobertura del glifo SIN la transparencia del cristal:
-              // en el bitmap, a ≈ coverage * glassFactor
               float coverage = clamp(ca / max(uGlassFactor, 0.04), 0.0, 1.0);
               float a = coverage * uAlpha;
               if (a < 0.004) {
                 gl_FragColor = vec4(0.0);
                 return;
               }
-              vec3 rgb = texture2D(uBlur, vUv).rgb;
-              // Premultiplicado, opaco en el interior del glifo
+              vec3 oldC = texture2D(uBlurOld, vUv).rgb;
+              vec3 newC = texture2D(uBlurNew, vUv).rgb;
+              vec3 rgb = mix(oldC, newC, clamp(uCross, 0.0, 1.0));
               gl_FragColor = vec4(rgb * a, a);
             }
             """.trimIndent()
         )
         posHandle = GLES20.glGetAttribLocation(program, "aPos")
         uvHandle = GLES20.glGetAttribLocation(program, "aUv")
-        blurSampler = GLES20.glGetUniformLocation(program, "uBlur")
+        blurOldSampler = GLES20.glGetUniformLocation(program, "uBlurOld")
+        blurNewSampler = GLES20.glGetUniformLocation(program, "uBlurNew")
         maskSampler = GLES20.glGetUniformLocation(program, "uMask")
         alphaHandle = GLES20.glGetUniformLocation(program, "uAlpha")
         glassFactorHandle = GLES20.glGetUniformLocation(program, "uGlassFactor")
+        crossHandle = GLES20.glGetUniformLocation(program, "uCross")
         quadBuf = ByteBuffer.allocateDirect(24 * 4)
             .order(ByteOrder.nativeOrder())
             .asFloatBuffer()
         initialized = true
     }
 
+    /**
+     * Sube un blur nuevo. Si ya había uno, inicia crossfade hacia el nuevo.
+     */
     fun upload(bitmap: Bitmap) {
         if (!initialized) initialize()
-        if (bitmap.isRecycled || texId == 0) return
+        if (bitmap.isRecycled) return
+
+        val hadContent = hasContent()
+        val targetSlot = if (!hadContent) {
+            currentSlot
+        } else {
+            1 - currentSlot
+        }
+        val texId = if (targetSlot == 0) texA else texB
+        if (texId == 0) return
+
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId)
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
-        hasTexture = true
+
+        if (targetSlot == 0) hasA = true else hasB = true
+
+        if (!hadContent) {
+            currentSlot = targetSlot
+            crossfading = false
+            crossStartMs = 0L
+        } else {
+            // currentSlot sigue siendo el viejo; target es el nuevo
+            // al terminar el cross, currentSlot = targetSlot
+            crossStartMs = SystemClock.elapsedRealtime()
+            crossfading = true
+            // Guardamos el slot nuevo en "pending" vía invertir al completar
+            // Mientras crossfade: old = currentSlot, new = 1-currentSlot
+            // Al completar: currentSlot = 1 - currentSlot
+        }
     }
 
     fun clear() {
-        hasTexture = false
+        hasA = false
+        hasB = false
+        crossfading = false
+        crossStartMs = 0L
+        currentSlot = 0
     }
 
-    fun hasContent(): Boolean = hasTexture && texId != 0
+    fun hasContent(): Boolean = (hasA || hasB) && (texA != 0 || texB != 0)
 
-    /**
-     * Capa de blur opaca en la forma del reloj.
-     * @param glassFactor mismo factor que usa ClockRenderer (0.08…0.92)
-     * @param alpha solo soft-start del reloj (NO la transparencia del cristal)
-     */
+    /** 0 = solo textura actual; 1 = solo la nueva (tras el fundido). */
+    private fun crossAmount(): Float {
+        if (!crossfading) return 1f
+        val elapsed = SystemClock.elapsedRealtime() - crossStartMs
+        return (elapsed.toFloat() / CROSSFADE_MS).coerceIn(0f, 1f)
+    }
+
+    private fun finishCrossfadeIfNeeded(cross: Float) {
+        if (crossfading && cross >= 1f) {
+            crossfading = false
+            currentSlot = 1 - currentSlot
+        }
+    }
+
     fun drawUnderlay(
         maskTexId: Int,
         leftNdc: Float,
@@ -133,6 +189,17 @@ class ClockBackdropBlur {
     ) {
         if (!hasContent() || maskTexId == 0 || alpha <= 0.01f) return
         if (!initialized) initialize()
+
+        val cross = crossAmount()
+        // Durante el fade: old = current, new = el otro. Al terminar, current pasa a ser el nuevo.
+        val oldSlot = currentSlot
+        val newSlot = if (crossfading) 1 - currentSlot else currentSlot
+        val oldTex = if (oldSlot == 0) texA else texB
+        val newTex = if (newSlot == 0) texA else texB
+        val oldOk = if (oldSlot == 0) hasA else hasB
+        val newOk = if (newSlot == 0) hasA else hasB
+        if (!oldOk && !newOk) return
+        finishCrossfadeIfNeeded(cross)
 
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA)
@@ -156,20 +223,32 @@ class ClockBackdropBlur {
         GLES20.glEnableVertexAttribArray(uvHandle)
         GLES20.glVertexAttribPointer(uvHandle, 2, GLES20.GL_FLOAT, false, 16, buf)
 
+        // Si solo hay una textura válida, usar la misma en old y new
+        val bindOld = if (oldOk) oldTex else newTex
+        val bindNew = if (newOk) newTex else oldTex
+        val uCross = if (oldOk && newOk && bindOld != bindNew) cross else 1f
+
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId)
-        GLES20.glUniform1i(blurSampler, 0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, bindOld)
+        GLES20.glUniform1i(blurOldSampler, 0)
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE1)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, bindNew)
+        GLES20.glUniform1i(blurNewSampler, 1)
+
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE2)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, maskTexId)
-        GLES20.glUniform1i(maskSampler, 1)
+        GLES20.glUniform1i(maskSampler, 2)
 
         GLES20.glUniform1f(alphaHandle, alpha.coerceIn(0f, 1f))
         GLES20.glUniform1f(glassFactorHandle, glassFactor.coerceIn(0.04f, 1f))
+        GLES20.glUniform1f(crossHandle, uCross)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)
 
         GLES20.glDisableVertexAttribArray(posHandle)
         GLES20.glDisableVertexAttribArray(uvHandle)
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE2)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE1)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
@@ -198,16 +277,22 @@ class ClockBackdropBlur {
 
     fun release() {
         if (!initialized) return
-        if (texId != 0) GLES20.glDeleteTextures(1, intArrayOf(texId), 0)
+        val ids = intArrayOf(texA, texB).filter { it != 0 }.toIntArray()
+        if (ids.isNotEmpty()) GLES20.glDeleteTextures(ids.size, ids, 0)
         if (program != 0) GLES20.glDeleteProgram(program)
-        texId = 0
+        texA = 0
+        texB = 0
         program = 0
-        hasTexture = false
+        hasA = false
+        hasB = false
+        crossfading = false
         initialized = false
     }
 
     companion object {
-        /** Radios suaves tipo cristal esmerilado (no exagerados). */
+        /** Duración del fundido entre un blur y el siguiente. */
+        const val CROSSFADE_MS = 600f
+
         fun radiusForLevel(level: Int): Int = when (level) {
             1 -> 1
             2 -> 2
@@ -215,7 +300,6 @@ class ClockBackdropBlur {
             else -> 0
         }
 
-        /** Mismo cálculo que ClockRenderer para el alfa del cristal. */
         fun glassFactorFromSettings(crystalBlur: Float): Float {
             val blur = crystalBlur.coerceIn(0f, 50f)
             return (0.92f - (blur / 50f) * 0.82f).coerceIn(0.08f, 1f)
@@ -226,7 +310,6 @@ class ClockBackdropBlur {
             val radius = radiusForLevel(level)
             if (radius <= 0) return null
 
-            // Baja resolución: menos CPU y efecto de vidrio suave al estirar
             val maxSide = 96
             val scale = minOf(1f, maxSide.toFloat() / maxOf(src.width, src.height).coerceAtLeast(1))
             val w = (src.width * scale).toInt().coerceAtLeast(8)
@@ -246,7 +329,6 @@ class ClockBackdropBlur {
             src.getPixels(pixels, 0, w, 0, 0, w, h)
             val tmp = IntArray(w * h)
             val r = radius.coerceIn(1, 24)
-            // Una sola pasada H+V: cristal suave, menos CPU
             blurPassH(pixels, tmp, w, h, r)
             blurPassV(tmp, pixels, w, h, r)
             val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)

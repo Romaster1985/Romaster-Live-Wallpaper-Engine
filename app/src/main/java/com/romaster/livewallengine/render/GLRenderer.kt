@@ -75,6 +75,7 @@ class GLRenderer(
         get() = ProjectManager.getProject().videoFadeDurationMs
 
     private var fadeStartTime = 0L
+    private var fadeDelayUntil = 0L
     private var fadeAlpha = 0f
     private var alphaHandle = 0
 
@@ -212,9 +213,18 @@ class GLRenderer(
     }
 
     fun startFadeIn() {
-        fadeStartTime = SystemClock.elapsedRealtime()
         fadeAlpha = 0f
-        FileLogger.log(context, "GLRenderer -> Fade-in iniciado")
+        val delay = ProjectManager.getProject().videoDelayStartMs.coerceAtLeast(0L)
+        val now = SystemClock.elapsedRealtime()
+        if (delay > 0L) {
+            fadeDelayUntil = now + delay
+            fadeStartTime = 0L // aún no arrancó el fade
+            FileLogger.log(context, "GLRenderer -> Fade-in delay ${delay}ms")
+        } else {
+            fadeDelayUntil = 0L
+            fadeStartTime = now
+            FileLogger.log(context, "GLRenderer -> Fade-in iniciado")
+        }
     }
 
     fun areBackgroundFadesComplete(): Boolean {
@@ -226,11 +236,22 @@ class GLRenderer(
     }
 
     private fun updateFade() {
+        val now = SystemClock.elapsedRealtime()
+        // Esperando Delay Start
+        if (fadeDelayUntil > 0L) {
+            fadeAlpha = 0f
+            if (now >= fadeDelayUntil) {
+                fadeDelayUntil = 0L
+                fadeStartTime = now
+                FileLogger.log(context, "GLRenderer -> Fade-in iniciado (post delay)")
+            }
+            return
+        }
         if (fadeStartTime <= 0L) {
             fadeAlpha = 1f
             return
         }
-        val elapsed = SystemClock.elapsedRealtime() - fadeStartTime
+        val elapsed = now - fadeStartTime
         fadeAlpha = (elapsed.toFloat() / fadeDurationMs.toFloat()).coerceIn(0f, 1f)
         if (fadeAlpha >= 1f) {
             fadeStartTime = 0L

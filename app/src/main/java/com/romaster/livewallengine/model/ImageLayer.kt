@@ -58,5 +58,8 @@ data class ImageLayer(
     var disableOnLockScreen: Boolean = false,
 
     /** Soft Start propio en ms */
-    var fadeDurationMs: Long = 1000L
+    var fadeDurationMs: Long = 1000L,
+
+    /** Delay antes del Soft Start (ms). 0 = sin espera. */
+    var delayStartMs: Long = 0L
 )

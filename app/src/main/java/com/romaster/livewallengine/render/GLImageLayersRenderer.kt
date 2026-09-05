@@ -200,13 +200,15 @@ class GLImageLayersRenderer {
         val now = android.os.SystemClock.elapsedRealtime()
         for (layer in layers) {
             if (forceHidden[layer.id] == true) continue
-            fadeStartTimes[layer.id] = now
+            fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
         }
     }
 
     fun startSoftStart(id: String) {
         if (forceHidden[id] == true) return
-        fadeStartTimes[id] = android.os.SystemClock.elapsedRealtime()
+        val layer = ProjectManager.getProject().imageLayers.find { it.id == id }
+        val delay = layer?.delayStartMs?.coerceAtLeast(0L) ?: 0L
+        fadeStartTimes[id] = android.os.SystemClock.elapsedRealtime() + delay
     }
 
     /**
@@ -230,7 +232,7 @@ class GLImageLayersRenderer {
         for (layer in layers) {
             if (!layer.disableOnLockScreen) {
                 forceHidden[layer.id] = false
-                fadeStartTimes[layer.id] = now
+                fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
             } else {
                 forceHidden[layer.id] = true
                 fadeStartTimes.remove(layer.id)
@@ -249,7 +251,7 @@ class GLImageLayersRenderer {
         for (layer in layers) {
             forceHidden[layer.id] = false
             if (layer.disableOnLockScreen) {
-                fadeStartTimes[layer.id] = now // estaba oculto
+                fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
             } else {
                 fadeStartTimes.remove(layer.id) // ya visible
             }
@@ -364,8 +366,11 @@ class GLImageLayersRenderer {
 
     private fun layerFadeAlpha(layer: ImageLayer): Float {
         val start = fadeStartTimes[layer.id] ?: return 1f
+        val now = android.os.SystemClock.elapsedRealtime()
+        // Delay Start: start guarda el instante en que debe comenzar el fade
+        if (now < start) return 0f
         val dur = layer.fadeDurationMs.coerceAtLeast(1L)
-        val elapsed = android.os.SystemClock.elapsedRealtime() - start
+        val elapsed = now - start
         val a = (elapsed.toFloat() / dur.toFloat()).coerceIn(0f, 1f)
         if (a >= 1f) fadeStartTimes.remove(layer.id)
         return a
