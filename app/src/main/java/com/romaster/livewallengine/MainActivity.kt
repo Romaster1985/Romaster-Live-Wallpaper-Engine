@@ -2565,6 +2565,7 @@ class MainActivity : AppCompatActivity() {
         connectSlider(R.id.sliderClockReflectionOpacity, R.id.textClockReflectionOpacity, 45f)
         connectSlider(R.id.sliderClockReflectionGap, R.id.textClockReflectionGap, 0f)
         connectSlider(R.id.sliderClockReflectionAmount, R.id.textClockReflectionAmount, 100f)
+        connectSlider(R.id.sliderVerticalHhMmGap, R.id.textVerticalHhMmGap, 400f)
         connectSlider(R.id.sliderClockBevelAngle, R.id.textClockBevelAngle, 315f)
         connectSlider(R.id.sliderClockBevelStrength, R.id.textClockBevelStrength, 40f)
         connectSlider(R.id.sliderDateBorderWidth, R.id.textDateBorderWidth, 0f)
@@ -2596,6 +2597,13 @@ class MainActivity : AppCompatActivity() {
         bindExpandToggle(R.id.buttonExpandTimeFormat, R.id.contentTimeFormat)
         bindExpandToggle(R.id.buttonExpandDateFormat, R.id.contentDateFormat)
         bindExpandToggle(R.id.buttonExpandFontVariations, R.id.contentFontVariations)
+    }
+
+    private fun updateVerticalHhMmGapVisibility() {
+        val vertical = findViewById<RadioGroup>(R.id.radioTimeFormat)
+            .checkedRadioButtonId == R.id.radioHHMMVertical
+        findViewById<android.view.View>(R.id.rowVerticalHhMmGap).visibility =
+            if (vertical) android.view.View.VISIBLE else android.view.View.GONE
     }
 
     private fun bindExpandToggle(buttonId: Int, contentId: Int) {
@@ -3034,6 +3042,13 @@ findViewById<CheckBox>(
                     R.id.radioHHMM
                 )
 
+            TimeFormat.HH_MM_VERTICAL ->
+                findViewById<RadioGroup>(
+                    R.id.radioTimeFormat
+                ).check(
+                    R.id.radioHHMMVertical
+                )
+
             TimeFormat.HH_MM_SS ->
                 findViewById<RadioGroup>(
                     R.id.radioTimeFormat
@@ -3048,6 +3063,13 @@ findViewById<CheckBox>(
                     R.id.radioAMPM
                 )
         }
+
+        findViewById<com.google.android.material.slider.Slider>(
+            R.id.sliderVerticalHhMmGap
+        ).value = clock.verticalHhMmGap.coerceIn(0f, 800f)
+        findViewById<TextView>(R.id.textVerticalHhMmGap).text =
+            clock.verticalHhMmGap.toInt().toString()
+        updateVerticalHhMmGapVisibility()
 
         when (
             clock.dateFormat
@@ -3371,7 +3393,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         findViewById<RadioGroup>(
             R.id.radioTimeFormat
         ).setOnCheckedChangeListener { _, _ ->
-        
+            updateVerticalHhMmGapVisibility()
             if (loadingUI)
                 return@setOnCheckedChangeListener
         
@@ -4840,6 +4862,9 @@ clock.enabled =
     
                 R.id.radioHHMMSS ->
                     TimeFormat.HH_MM_SS
+
+                R.id.radioHHMMVertical ->
+                    TimeFormat.HH_MM_VERTICAL
     
                 R.id.radioAMPM ->
                     TimeFormat.HH_MM_AM_PM
@@ -4847,6 +4872,11 @@ clock.enabled =
                 else ->
                     TimeFormat.HH_MM
             }
+
+        clock.verticalHhMmGap =
+            findViewById<com.google.android.material.slider.Slider>(
+                R.id.sliderVerticalHhMmGap
+            ).value
     
         clock.dateFormat =
             when (

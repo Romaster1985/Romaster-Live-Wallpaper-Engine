@@ -131,14 +131,33 @@ class ClockRenderer {
 
         val lines = ArrayList<LineInfo>(2)
 
-        fun addTime(baseline: Float) {
-            if (!settings.enabled) return
-            lines.add(
-                LineInfo(
-                    buildTime(settings), baseline, settings.clockSize,
-                    settings.clockFont, settings.clockVerticalDeform, settings.clockBorderWidth
-                )
+        /** Agrega 1 o 2 líneas de hora; devuelve el bottom del bloque. */
+        fun addTimeBlock(startBaseline: Float): Float {
+            if (!settings.enabled) return startBaseline
+            val parts = timeParts(settings)
+            preparePaint(
+                context, settings.clockSize, "#FFFFFF",
+                settings.clockFont, settings.alignment, variation
             )
+            val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
+            val fm = paint.fontMetrics
+            // Separación HH/MM controlada por slider (0 = misma línea / superpuestos)
+            val gapPx = settings.verticalHhMmGap.coerceAtLeast(0f)
+            var baseline = startBaseline
+            var bot = startBaseline
+            for ((i, part) in parts.withIndex()) {
+                if (i > 0) {
+                    baseline = startBaseline + gapPx
+                }
+                lines.add(
+                    LineInfo(
+                        part, baseline, settings.clockSize,
+                        settings.clockFont, settings.clockVerticalDeform, settings.clockBorderWidth
+                    )
+                )
+                bot = baseline + fm.descent * scaleY
+            }
+            return bot
         }
         fun addDate(baseline: Float) {
             if (!settings.showDate) return
@@ -153,9 +172,9 @@ class ClockRenderer {
         if (settings.allowOverlap && settings.enabled && settings.showDate) {
             if (settings.swapTimeAndDate) {
                 addDate(baseY)
-                addTime(baseY + spacing)
+                addTimeBlock(baseY + spacing)
             } else {
-                addTime(baseY)
+                addTimeBlock(baseY)
                 addDate(baseY + spacing)
             }
         } else if (settings.swapTimeAndDate) {
@@ -171,15 +190,12 @@ class ClockRenderer {
                 val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
                 val metrics = paint.fontMetrics
                 val baseline = if (settings.showDate) bottom + spacing - metrics.ascent * scaleY else baseY
-                addTime(baseline)
+                addTimeBlock(baseline)
             }
         } else {
             var bottom = baseY
             if (settings.enabled) {
-                addTime(baseY)
-                preparePaint(context, settings.clockSize, "#FFFFFF", settings.clockFont, settings.alignment, variation)
-                val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
-                bottom = baseY + paint.fontMetrics.descent * scaleY
+                bottom = addTimeBlock(baseY)
             }
             if (settings.showDate) {
                 preparePaint(context, settings.dateSize, "#FFFFFF", settings.dateFont, settings.alignment, variation)
@@ -305,26 +321,50 @@ class ClockRenderer {
             )
         }
 
-        if (settings.allowOverlap && drawClock && drawDate) {
-            val timeBaseline: Float
-            val dateBaseline: Float
-            if (settings.swapTimeAndDate) {
-                dateBaseline = baseY
-                timeBaseline = baseY + spacing
-            } else {
-                timeBaseline = baseY
-                dateBaseline = baseY + spacing
+        /** Dibuja hora (1 o 2 líneas verticales); devuelve bottom del bloque. */
+        fun drawTimeBlock(startBaseline: Float): Float {
+            if (!drawClock) return startBaseline
+            val parts = timeParts(settings)
+            preparePaint(
+                context, settings.clockSize, settings.clockColor,
+                settings.clockFont, settings.alignment, variationOf(settings)
+            )
+            val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
+            val fm = paint.fontMetrics
+            // Separación HH/MM controlada por slider (0 = misma línea / superpuestos)
+            val gapPx = settings.verticalHhMmGap.coerceAtLeast(0f)
+            var baseline = startBaseline
+            var bot = startBaseline
+            for ((i, part) in parts.withIndex()) {
+                if (i > 0) {
+                    baseline = startBaseline + gapPx
+                }
+                line(
+                    part, baseline, settings.clockSize,
+                    settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
+                    settings.clockBorderWidth, settings.clockBorderColor
+                )
+                bot = baseline + fm.descent * scaleY
             }
-            line(
-                buildTime(settings), timeBaseline, settings.clockSize,
-                settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
-                settings.clockBorderWidth, settings.clockBorderColor
-            )
-            line(
-                buildDate(settings), dateBaseline, settings.dateSize,
-                settings.dateColor, settings.dateFont, settings.dateVerticalDeform,
-                settings.dateBorderWidth, settings.dateBorderColor
-            )
+            return bot
+        }
+
+        if (settings.allowOverlap && drawClock && drawDate) {
+            if (settings.swapTimeAndDate) {
+                line(
+                    buildDate(settings), baseY, settings.dateSize,
+                    settings.dateColor, settings.dateFont, settings.dateVerticalDeform,
+                    settings.dateBorderWidth, settings.dateBorderColor
+                )
+                drawTimeBlock(baseY + spacing)
+            } else {
+                drawTimeBlock(baseY)
+                line(
+                    buildDate(settings), baseY + spacing, settings.dateSize,
+                    settings.dateColor, settings.dateFont, settings.dateVerticalDeform,
+                    settings.dateBorderWidth, settings.dateBorderColor
+                )
+            }
         } else if (settings.swapTimeAndDate) {
             var bottom = baseY
             if (drawDate) {
@@ -346,23 +386,12 @@ class ClockRenderer {
                 val metrics = paint.fontMetrics
                 val baseline =
                     if (drawDate) bottom + spacing - metrics.ascent * scaleY else baseY
-                line(
-                    buildTime(settings), baseline, settings.clockSize,
-                    settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
-                    settings.clockBorderWidth, settings.clockBorderColor
-                )
+                drawTimeBlock(baseline)
             }
         } else {
             var bottom = baseY
             if (drawClock) {
-                line(
-                    buildTime(settings), baseY, settings.clockSize,
-                    settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
-                    settings.clockBorderWidth, settings.clockBorderColor
-                )
-                paint.textSize = settings.clockSize
-                val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
-                bottom = baseY + paint.fontMetrics.descent * scaleY
+                bottom = drawTimeBlock(baseY)
             }
             if (drawDate) {
                 preparePaint(
@@ -833,10 +862,24 @@ class ClockRenderer {
     private fun buildTime(settings: ClockSettings): String {
         val pattern = when (settings.timeFormat) {
             TimeFormat.HH_MM -> "HH:mm"
+            TimeFormat.HH_MM_VERTICAL -> "HH:mm"
             TimeFormat.HH_MM_SS -> "HH:mm:ss"
             TimeFormat.HH_MM_AM_PM -> "hh:mm a"
         }
         return SimpleDateFormat(pattern, Locale.getDefault()).format(Date())
+    }
+
+    /** Una o dos líneas de hora (vertical = HH arriba, mm abajo). */
+    private fun timeParts(settings: ClockSettings): List<String> {
+        if (settings.timeFormat == TimeFormat.HH_MM_VERTICAL) {
+            val now = Date()
+            val loc = Locale.getDefault()
+            return listOf(
+                SimpleDateFormat("HH", loc).format(now),
+                SimpleDateFormat("mm", loc).format(now)
+            )
+        }
+        return listOf(buildTime(settings))
     }
 
     private fun buildDate(settings: ClockSettings): String {

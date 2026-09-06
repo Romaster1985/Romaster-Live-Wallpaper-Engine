@@ -32,6 +32,12 @@ data class ClockSettings(
     var timeFormat: TimeFormat =
         TimeFormat.HH_MM,
 
+    /**
+     * Separación vertical entre HH y MM en formato HH_MM_VERTICAL (px).
+     * 0 = misma línea (superpuestos); valores altos bajan los minutos.
+     */
+    var verticalHhMmGap: Float = 400f,
+
     var dateFormat: DateFormat =
         DateFormat.DOW_DD_MON,
 

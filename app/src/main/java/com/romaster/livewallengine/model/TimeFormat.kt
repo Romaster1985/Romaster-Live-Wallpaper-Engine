@@ -25,6 +25,9 @@ enum class TimeFormat {
 
     HH_MM,
 
+    /** Hora arriba, minutos abajo (estilo lockscreen vertical). */
+    HH_MM_VERTICAL,
+
     HH_MM_SS,
 
     HH_MM_AM_PM

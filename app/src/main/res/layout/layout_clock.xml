@@ -145,6 +145,12 @@
                             android:text="HH:MM"/>
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioHHMMVertical"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="HH/MM (Vertical)"/>
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/radioHHMMSS"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -156,6 +162,43 @@
                             android:layout_height="wrap_content"
                             android:text="HH:MM AM/PM"/>
                     </RadioGroup>
+
+                    <LinearLayout
+                        android:id="@+id/rowVerticalHhMmGap"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginTop="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Separación HH/MM"/>
+
+                            <TextView
+                                android:id="@+id/textVerticalHhMmGap"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="400"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/sliderVerticalHhMmGap"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:valueFrom="0"
+                            android:valueTo="800"
+                            android:stepSize="1"
+                            android:value="400"/>
+                    </LinearLayout>
                 </LinearLayout>
         
             </LinearLayout>
@@ -950,7 +993,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Espacio entre ho y fecha"
+                    android:text="Espacio entre hora y fecha"
                     android:textSize="18sp"
                     android:textStyle="bold" />
         

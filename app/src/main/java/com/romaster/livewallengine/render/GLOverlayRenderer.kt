@@ -523,6 +523,7 @@ class GLOverlayRenderer {
             append(settings.x).append('|')
             append(settings.y).append('|')
             append(settings.dateSpacing).append('|')
+            append(settings.verticalHhMmGap).append('|')
             append(settings.alignment).append('|')
             append(settings.clockFont).append('|')
             append(settings.dateFont).append('|')
