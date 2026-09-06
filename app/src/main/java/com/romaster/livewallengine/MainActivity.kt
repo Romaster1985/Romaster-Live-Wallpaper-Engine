@@ -4926,37 +4926,36 @@ clock.enabled =
             findViewById<MaterialCardView>(
                 R.id.cardPreview
             )
-    
-        val metrics =
-            DisplayMetrics()
-    
-        windowManager.defaultDisplay.getRealMetrics(
-            metrics
-        )
-    
-        val screenWidth =
-            metrics.widthPixels
-    
-        val screenHeight =
-            metrics.heightPixels
-    
-        // El preview ocupará aproximadamente el 75% del alto.
+
+        // Misma fuente de tamaño que el wallpaper y el virtual size del preview.
+        val (screenWidth, screenHeight) = realScreenSizePx()
+
+        // ~65% del alto, manteniendo aspect ratio EXACTO de la pantalla real.
         val previewHeight =
             (screenHeight * 0.65f).toInt()
-    
-        // Mantener la relación de aspecto REAL del teléfono.
+
         val previewWidth =
             (previewHeight.toFloat() *
                     screenWidth /
                     screenHeight).toInt()
-    
+
         previewCard.layoutParams =
             previewCard.layoutParams.apply {
-    
                 width = previewWidth
-    
                 height = previewHeight
             }
+    }
+
+    private fun realScreenSizePx(): Pair<Int, Int> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.maximumWindowMetrics.bounds
+            bounds.width() to bounds.height()
+        } else {
+            val metrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(metrics)
+            metrics.widthPixels to metrics.heightPixels
+        }
     }
     
     private fun loadDeviceInformation() {

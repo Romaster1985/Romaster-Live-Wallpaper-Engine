@@ -149,6 +149,22 @@ class WallpaperPreviewView @JvmOverloads constructor(
         holderRef = null
     }
 
+
+    /** Ancho/alto físicos de pantalla (igual que el surface del live wallpaper). */
+    private fun realScreenSize(): Pair<Int, Int> {
+        val wm = context.getSystemService(android.content.Context.WINDOW_SERVICE)
+            as android.view.WindowManager
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val bounds = wm.maximumWindowMetrics.bounds
+            bounds.width() to bounds.height()
+        } else {
+            val metrics = android.util.DisplayMetrics()
+            @Suppress("DEPRECATION")
+            wm.defaultDisplay.getRealMetrics(metrics)
+            metrics.widthPixels to metrics.heightPixels
+        }
+    }
+
     private fun startRendering() {
 
         if (renderThread?.isAlive == true) {
@@ -178,13 +194,10 @@ class WallpaperPreviewView @JvmOverloads constructor(
 
                 renderer!!.initialize()
                 
-                val metrics =
-                    resources.displayMetrics
-                
-                renderer!!.setVirtualScreenSize(
-                    metrics.widthPixels,
-                    metrics.heightPixels
-                )
+                // Misma resolución REAL que el wallpaper (no displayMetrics,
+                // que a veces excluye barras y cambia el aspect ratio).
+                val (vw, vh) = realScreenSize()
+                renderer!!.setVirtualScreenSize(vw, vh)
 
                 renderer!!.onSurfaceChanged(
                     holder.surfaceFrame.width(),
