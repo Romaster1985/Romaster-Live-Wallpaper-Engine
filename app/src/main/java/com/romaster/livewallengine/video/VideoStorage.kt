@@ -63,6 +63,26 @@ object VideoStorage {
         )
     }
 
+    /**
+     * Copia un recurso de res/raw al archivo fijo de wallpaper u overlay.
+     * @return nombre del archivo destino (WALLPAPER_VIDEO / OVERLAY_VIDEO)
+     */
+    fun copyFromRaw(
+        context: Context,
+        rawResId: Int,
+        isOverlay: Boolean
+    ): String {
+        val fileName = if (isOverlay) OVERLAY_VIDEO else WALLPAPER_VIDEO
+        val destination = File(AppDirectories.videos(context), fileName)
+        destination.parentFile?.mkdirs()
+        context.resources.openRawResource(rawResId).use { input ->
+            destination.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        return fileName
+    }
+
     private fun importVideo(
         context: Context,
         uri: Uri,

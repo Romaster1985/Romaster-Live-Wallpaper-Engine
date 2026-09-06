@@ -144,4 +144,20 @@ object FontStorage {
         }
         return fileName
     }
+
+    /**
+     * Borra todas las fuentes instaladas excepto las de [keep]
+     * (p. ej. las seleccionadas para hora y fecha).
+     * @return cantidad de archivos eliminados
+     */
+    fun clearUnusedFonts(context: Context, keep: Set<String>): Int {
+        val keepNames = keep.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        var deleted = 0
+        getFontsDir(context).listFiles()?.forEach { file ->
+            if (file.isFile && file.name !in keepNames) {
+                if (file.delete()) deleted++
+            }
+        }
+        return deleted
+    }
 }

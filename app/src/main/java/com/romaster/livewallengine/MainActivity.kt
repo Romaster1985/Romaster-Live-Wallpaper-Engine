@@ -334,6 +334,13 @@ class MainActivity : AppCompatActivity() {
                 VideoPicker.REQUEST_WALLPAPER_GIF
             )
         }
+
+        findViewById<MaterialButton>(R.id.buttonBlackScreenWallpaper).setOnClickListener {
+            loadRawVideoSlot(isOverlay = false, blackScreen = true)
+        }
+        findViewById<MaterialButton>(R.id.buttonResetWallpaperVideo).setOnClickListener {
+            loadRawVideoSlot(isOverlay = false, blackScreen = false)
+        }
         
         findViewById<MaterialButtonToggleGroup>(
             R.id.toggleVideoMode
@@ -398,6 +405,13 @@ class MainActivity : AppCompatActivity() {
                 this,
                 VideoPicker.REQUEST_OVERLAY_GIF
             )
+        }
+
+        findViewById<MaterialButton>(R.id.buttonBlackScreenOverlay).setOnClickListener {
+            loadRawVideoSlot(isOverlay = true, blackScreen = true)
+        }
+        findViewById<MaterialButton>(R.id.buttonResetOverlayVideo).setOnClickListener {
+            loadRawVideoSlot(isOverlay = true, blackScreen = false)
         }
         
         findViewById<MaterialCheckBox>(
@@ -1772,6 +1786,10 @@ class MainActivity : AppCompatActivity() {
         ).setOnClickListener {
     
             FontPicker.open(this)
+        }
+
+        findViewById<MaterialButton>(R.id.buttonClearFonts).setOnClickListener {
+            confirmClearUnusedFonts()
         }
     
         // ---------------------------------
@@ -4192,7 +4210,36 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         return overlay
     }
     
+    private fun confirmClearUnusedFonts() {
+        val clock = ProjectManager.getProject().clock
+        val keep = setOfNotNull(
+            clock.clockFont?.takeIf { it.isNotBlank() },
+            clock.dateFont?.takeIf { it.isNotBlank() }
+        )
+        AlertDialog.Builder(this)
+            .setTitle("Limpiar Fuentes")
+            .setMessage(
+                "Se eliminarán las fuentes importadas o descargadas que no estén " +
+                    "seleccionadas como Fuente de la Hora o Fuente de la Fecha.\n\n" +
+                    "Se conservarán: ${keep.joinToString(", ").ifEmpty { "(ninguna)" }}\n\n" +
+                    "¿Continuar?"
+            )
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Eliminar") { _, _ ->
+                val deleted = FontStorage.clearUnusedFonts(this, keep)
+                setupFontDropdowns()
+                Toast.makeText(
+                    this,
+                    if (deleted == 0) "No había fuentes para eliminar"
+                    else "Se eliminaron $deleted fuente(s)",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .show()
+    }
+
     private fun setupFontDropdowns() {
+
 
         setupFontDropdown(
             R.id.dropClockFont
@@ -4463,6 +4510,31 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         editor.save()
         refreshPreview()
         findViewById<WallpaperPreviewView>(R.id.previewView).reloadPlayers()
+    }
+
+    /**
+     * Carga un video embebido en res/raw hacia wallpaper_video.mp4 u overlay_video.mp4.
+     * @param blackScreen true → black_screen.mp4; false → test.mp4 (reset por defecto)
+     */
+    private fun loadRawVideoSlot(isOverlay: Boolean, blackScreen: Boolean) {
+        try {
+            val resId = if (blackScreen) R.raw.black_screen else R.raw.test
+            val path = VideoStorage.copyFromRaw(this, resId, isOverlay)
+            applyImportedVideo(path, isOverlay)
+            val msg = when {
+                blackScreen && isOverlay -> "Overlay: pantalla negra"
+                blackScreen -> "Fondo: pantalla negra"
+                isOverlay -> "Overlay restaurado (video por defecto)"
+                else -> "Fondo restaurado (video por defecto)"
+            }
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                "Error: ${e.message ?: e.javaClass.simpleName}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     /**
