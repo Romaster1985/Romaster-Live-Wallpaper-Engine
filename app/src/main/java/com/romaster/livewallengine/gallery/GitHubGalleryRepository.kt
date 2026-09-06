@@ -25,15 +25,18 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Lista y descarga proyectos desde:
- * https://github.com/Romaster1985/Romaster-Live-Wallpaper-Engine/tree/main/LiveWallpapers
+ * Lista y descarga proyectos y fuentes desde el repo público de temas:
+ * https://github.com/Romaster1985/Romaster-Live-Wallpaper-Themes
  *
- * Convención: cada proyecto tiene Nombre.zip + Nombre.png con el mismo basename.
+ * - LiveWallpapers/: Nombre.zip + Nombre.png (mismo basename)
+ * - Fonts/: archivos .ttf / .otf
+ *
+ * El código de la app puede vivir en un repo privado; los temas quedan públicos acá.
  */
 object GitHubGalleryRepository {
 
     private const val OWNER = "Romaster1985"
-    private const val REPO = "Romaster-Live-Wallpaper-Engine"
+    private const val REPO = "Romaster-Live-Wallpaper-Themes"
     private const val BRANCH = "main"
     private const val FOLDER = "LiveWallpapers"
     private const val FONTS_FOLDER = "Fonts"
