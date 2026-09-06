@@ -86,7 +86,7 @@
                     android:layout_marginTop="8dp"
                     android:text="Eliminar Video (Reset)"
                     android:textColor="@android:color/white"
-                    app:backgroundTint="?attr/colorError"/>
+                    app:backgroundTint="#B00020"/>
 
             </LinearLayout>
 

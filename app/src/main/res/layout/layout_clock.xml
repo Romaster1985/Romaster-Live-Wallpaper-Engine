@@ -303,7 +303,7 @@
                     android:layout_marginTop="8dp"
                     android:text="Limpiar Fuentes"
                     android:textColor="@android:color/white"
-                    app:backgroundTint="?attr/colorError"/>
+                    app:backgroundTint="#B00020"/>
                 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutClockFont"

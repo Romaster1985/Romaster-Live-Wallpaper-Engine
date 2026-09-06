@@ -336,10 +336,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<MaterialButton>(R.id.buttonBlackScreenWallpaper).setOnClickListener {
-            loadRawVideoSlot(isOverlay = false, blackScreen = true)
+            loadBlackScreenVideo(isOverlay = false)
         }
         findViewById<MaterialButton>(R.id.buttonResetWallpaperVideo).setOnClickListener {
-            loadRawVideoSlot(isOverlay = false, blackScreen = false)
+            resetVideoSlot(isOverlay = false)
         }
         
         findViewById<MaterialButtonToggleGroup>(
@@ -408,10 +408,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<MaterialButton>(R.id.buttonBlackScreenOverlay).setOnClickListener {
-            loadRawVideoSlot(isOverlay = true, blackScreen = true)
+            loadBlackScreenVideo(isOverlay = true)
         }
         findViewById<MaterialButton>(R.id.buttonResetOverlayVideo).setOnClickListener {
-            loadRawVideoSlot(isOverlay = true, blackScreen = false)
+            resetVideoSlot(isOverlay = true)
         }
         
         findViewById<MaterialCheckBox>(
@@ -4513,21 +4513,87 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
     }
 
     /**
-     * Carga un video embebido en res/raw hacia wallpaper_video.mp4 u overlay_video.mp4.
-     * @param blackScreen true → black_screen.mp4; false → test.mp4 (reset por defecto)
+     * Carga black_screen.mp4 desde res/raw como video de usuario
+     * (sí se exporta en el zip, a diferencia del test por defecto).
      */
-    private fun loadRawVideoSlot(isOverlay: Boolean, blackScreen: Boolean) {
+    private fun loadBlackScreenVideo(isOverlay: Boolean) {
         try {
-            val resId = if (blackScreen) R.raw.black_screen else R.raw.test
-            val path = VideoStorage.copyFromRaw(this, resId, isOverlay)
+            val path = VideoStorage.copyFromRaw(this, R.raw.black_screen, isOverlay)
             applyImportedVideo(path, isOverlay)
-            val msg = when {
-                blackScreen && isOverlay -> "Overlay: pantalla negra"
-                blackScreen -> "Fondo: pantalla negra"
-                isOverlay -> "Overlay restaurado (video por defecto)"
-                else -> "Fondo restaurado (video por defecto)"
+            Toast.makeText(
+                this,
+                if (isOverlay) "Overlay: pantalla negra" else "Fondo: pantalla negra",
+                Toast.LENGTH_SHORT
+            ).show()
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                "Error: ${e.message ?: e.javaClass.simpleName}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    /**
+     * Reset de fábrica de la tab Video-BG o Video-OL:
+     * - borra el video en disco y deja la ruta en null (player → res/raw/test.mp4)
+     * - restaura todos los settings de esa tab a DefaultProject
+     * - refresca la UI de esa tab
+     */
+    private fun resetVideoSlot(isOverlay: Boolean) {
+        try {
+            val fileName = if (isOverlay) {
+                VideoStorage.OVERLAY_VIDEO
+            } else {
+                VideoStorage.WALLPAPER_VIDEO
             }
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            val file = VideoStorage.getVideoFile(this, fileName)
+            if (file.exists()) {
+                file.delete()
+            }
+
+            val defaults = DefaultProject.create()
+            val project = ProjectManager.getProject()
+
+            if (isOverlay) {
+                project.overlayVideo = null
+                project.overlay = defaults.overlay.copy()
+                clearPingPong(locked = true)
+                clearPingPong(locked = false)
+            } else {
+                project.wallpaperVideo = null
+                val defaultLayer = defaults.layers.firstOrNull()?.copy()
+                    ?: com.romaster.livewallengine.model.VideoLayer()
+                if (project.layers.isEmpty()) {
+                    project.layers.add(defaultLayer)
+                } else {
+                    project.layers[0] = defaultLayer
+                }
+            }
+
+            editor.save()
+
+            loadingUI = true
+            try {
+                if (isOverlay) {
+                    loadOverlaySettings()
+                    findViewById<CheckBox>(R.id.checkCueLockedPingPong)?.isChecked = false
+                    findViewById<CheckBox>(R.id.checkCueUnlockedPingPong)?.isChecked = false
+                } else {
+                    loadVideoLayerSettings()
+                }
+            } finally {
+                loadingUI = false
+            }
+
+            refreshPreview()
+            findViewById<WallpaperPreviewView>(R.id.previewView).reloadPlayers()
+            Toast.makeText(
+                this,
+                if (isOverlay) "Video-OL restaurado a valores de fábrica"
+                else "Video-BG restaurado a valores de fábrica",
+                Toast.LENGTH_SHORT
+            ).show()
         } catch (e: Exception) {
             Toast.makeText(
                 this,
