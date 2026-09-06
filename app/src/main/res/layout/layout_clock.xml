@@ -93,44 +93,70 @@
                 android:orientation="vertical"
                 android:padding="16dp">
         
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Formato de Hora"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:layout_marginBottom="8dp"/>
-        
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/checkClock"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Mostrar reloj"/>
-        
-                <RadioGroup
-                    android:id="@+id/radioTimeFormat"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-        
-                    <com.google.android.material.radiobutton.MaterialRadioButton
-                        android:id="@+id/radioHHMM"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Formato de Hora"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonExpandTimeFormat"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:minWidth="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="mostrar [+]"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/contentTimeFormat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="8dp">
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/checkClock"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="HH:MM"/>
-        
-                    <com.google.android.material.radiobutton.MaterialRadioButton
-                        android:id="@+id/radioHHMMSS"
-                        android:layout_width="wrap_content"
+                        android:text="Mostrar Hora"/>
+
+                    <RadioGroup
+                        android:id="@+id/radioTimeFormat"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="HH:MM:SS"/>
-        
-                    <com.google.android.material.radiobutton.MaterialRadioButton
-                        android:id="@+id/radioAMPM"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="HH:MM AM/PM"/>
-        
-                </RadioGroup>
+                        android:orientation="vertical">
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioHHMM"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="HH:MM"/>
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioHHMMSS"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="HH:MM:SS"/>
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioAMPM"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="HH:MM AM/PM"/>
+                    </RadioGroup>
+                </LinearLayout>
         
             </LinearLayout>
         
@@ -157,44 +183,70 @@
                 android:orientation="vertical"
                 android:padding="16dp">
         
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Formato de Fecha"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:layout_marginBottom="8dp"/>
-        
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/checkDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Mostrar fecha"/>
-        
-                <RadioGroup
-                    android:id="@+id/radioDateFormat"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-        
-                    <com.google.android.material.radiobutton.MaterialRadioButton
-                        android:id="@+id/radioDateShort"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Formato de Fecha"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonExpandDateFormat"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:minWidth="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="mostrar [+]"
+                        android:textSize="12sp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/contentDateFormat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="8dp">
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/checkDate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Dom, 21 Jun"/>
-        
-                    <com.google.android.material.radiobutton.MaterialRadioButton
-                        android:id="@+id/radioDateNumeric"
-                        android:layout_width="wrap_content"
+                        android:text="Mostrar Fecha"/>
+
+                    <RadioGroup
+                        android:id="@+id/radioDateFormat"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="21/06/2026"/>
-        
-                    <com.google.android.material.radiobutton.MaterialRadioButton
-                        android:id="@+id/radioDateLong"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Dom, 21 Jun 2026"/>
-        
-                </RadioGroup>
+                        android:orientation="vertical">
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioDateShort"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dom, 21 jun"/>
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioDateNumeric"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="21/06/2026"/>
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/radioDateLong"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dom, 21 jun 2026"/>
+                    </RadioGroup>
+                </LinearLayout>
         
             </LinearLayout>
         
@@ -249,7 +301,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:hint="Fuente del reloj">
+                    android:hint="Fuente de la Hora">
                 
                     <AutoCompleteTextView
                         android:id="@+id/dropClockFont"
@@ -326,7 +378,26 @@
                         android:text="ⓘ"
                         android:textSize="16sp"
                         android:contentDescription="Información de ejes"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonExpandFontVariations"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:minWidth="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:layout_marginStart="4dp"
+                        android:text="mostrar [+]"
+                        android:textSize="12sp"/>
                 </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/contentFontVariations"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
                 <TextView
                     android:layout_width="match_parent"
@@ -662,6 +733,8 @@
                     android:stepSize="1"
                     android:value="738"/>
 
+                            </LinearLayout>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
         
@@ -867,7 +940,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Espacio entre reloj y fecha"
+                    android:text="Espacio entre ho y fecha"
                     android:textSize="18sp"
                     android:textStyle="bold" />
         
@@ -1073,7 +1146,7 @@
         </com.google.android.material.card.MaterialCardView>
         
         <!-- ===================================== -->
-        <!-- COLOR DE RELOJ (HORA/FECHA) -->
+        <!-- COLOR DEL RELOJ (HORA/FECHA) -->
         <!-- ===================================== -->
         
         <com.google.android.material.card.MaterialCardView
@@ -1096,14 +1169,19 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Color de Hora"
+                    android:text="Colores del Reloj (Hora/Fecha)"
                     android:textAppearance="?attr/textAppearanceTitleMedium"/>
+                    
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Color de Hora"
+                    android:layout_marginTop="12dp"/>
                 
                 <LinearLayout
                     android:id="@+id/layoutClockColor"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
                 
@@ -1129,18 +1207,17 @@
                         android:text="Cambiar"/>
                     
                 </LinearLayout>
-                
+                    
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Color de Fecha"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"/>
-                
+                    android:layout_marginTop="8dp"/>
+                    
                 <LinearLayout
                     android:id="@+id/layoutDateColor"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
                 
@@ -1208,7 +1285,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Borde de Reloj"/>
+                        android:text="Borde de Hora"/>
 
                     <TextView
                         android:id="@+id/textClockBorderWidth"

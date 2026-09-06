@@ -2567,6 +2567,31 @@ class MainActivity : AppCompatActivity() {
         connectSlider(R.id.sliderY, R.id.textYValue, 50f)
 
         setupFontVariationsInfoButton()
+        setupExpandableClockCards()
+    }
+
+    /**
+     * Cards colapsables del tab Clock-OL.
+     * Estado inicial: oculto → botón "mostrar [+]".
+     */
+    private fun setupExpandableClockCards() {
+        bindExpandToggle(R.id.buttonExpandTimeFormat, R.id.contentTimeFormat)
+        bindExpandToggle(R.id.buttonExpandDateFormat, R.id.contentDateFormat)
+        bindExpandToggle(R.id.buttonExpandFontVariations, R.id.contentFontVariations)
+    }
+
+    private fun bindExpandToggle(buttonId: Int, contentId: Int) {
+        val button = findViewById<MaterialButton>(buttonId) ?: return
+        val content = findViewById<android.view.View>(contentId) ?: return
+        fun apply(expanded: Boolean) {
+            content.visibility = if (expanded) android.view.View.VISIBLE else android.view.View.GONE
+            button.text = if (expanded) "ocultar [-]" else "mostrar [+]"
+        }
+        // Respetar visibility del XML (por defecto gone)
+        apply(content.visibility == android.view.View.VISIBLE)
+        button.setOnClickListener {
+            apply(content.visibility != android.view.View.VISIBLE)
+        }
     }
 
     private fun setupFontVariationsInfoButton() {
