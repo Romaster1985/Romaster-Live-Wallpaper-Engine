@@ -221,12 +221,19 @@ class ClockRenderer {
 
         if (settings.reflectionEnabled) {
             val gap = settings.reflectionGap.coerceAtLeast(0f)
-            val center = (top + bottom) / 2f
-            val pivotY = center + gap
-            val reflTop = 2f * pivotY - bottom
-            val reflBottom = 2f * pivotY - top
-            if (reflTop < top) top = reflTop
-            if (reflBottom > bottom) bottom = reflBottom
+            val amount = (settings.reflectionAmount / 100f).coerceIn(0f, 1f)
+            if (amount > 0.01f) {
+                val center = (top + bottom) / 2f
+                val pivotY = center + gap
+                val reflTop = 2f * pivotY - bottom
+                val reflBottom = 2f * pivotY - top
+                // Solo la porción visible del degradado (amount)
+                val near = minOf(reflTop, reflBottom)
+                val far = maxOf(reflTop, reflBottom)
+                val fadeEnd = near + (far - near) * amount
+                if (near < top) top = near
+                if (fadeEnd > bottom) bottom = fadeEnd
+            }
         }
 
         // Un poco de aire extra (relieve / antialias)
@@ -392,6 +399,8 @@ class ClockRenderer {
     ) {
         val opacity = (settings.reflectionOpacity / 100f).coerceIn(0f, 1f)
         if (opacity <= 0.01f) return
+        val amount = (settings.reflectionAmount / 100f).coerceIn(0f, 1f)
+        if (amount <= 0.01f) return
         val height = groupBottom - groupTop
         if (height <= 1f) return
 
@@ -404,6 +413,8 @@ class ClockRenderer {
         val reflBottom = 2f * pivotY - groupTop
         val layerTop = minOf(reflTop, reflBottom) - 2f
         val layerBottom = maxOf(reflTop, reflBottom) + 2f
+        // amount=100 → degradado en toda la altura; amount=50 → a mitad ya es invisible
+        val fadeEnd = layerTop + (layerBottom - layerTop) * amount
         val layerLeft = 0f
         val layerRight = canvas.width.toFloat()
 
@@ -420,13 +431,14 @@ class ClockRenderer {
         val fade = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = LinearGradient(
                 0f, layerTop,
-                0f, layerBottom,
+                0f, fadeEnd,
                 Color.argb(topAlpha, 255, 255, 255),
                 Color.TRANSPARENT,
                 Shader.TileMode.CLAMP
             )
             xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
         }
+        // CLAMP: por debajo de fadeEnd queda 100% transparente
         canvas.drawRect(layerLeft, layerTop, layerRight, layerBottom, fade)
         canvas.restoreToCount(count)
     }

@@ -157,6 +157,14 @@ data class ClockSettings(
      */
     var reflectionGap: Float = 0f,
 
+    /**
+     * Cantidad de reflejo (0–100): longitud del degradado de desvanecimiento.
+     * 100 = altura completa del bloque espejado (comportamiento actual).
+     * 50 ≈ a mitad de altura ya es totalmente invisible.
+     * 0 = sin reflejo visible.
+     */
+    var reflectionAmount: Float = 100f,
+
     /** Relieve: bordes claros/oscuros que dan sensación de profundidad */
     var bevelEnabled: Boolean = false,
 

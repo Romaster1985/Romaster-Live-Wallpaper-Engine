@@ -541,6 +541,7 @@ class GLOverlayRenderer {
             append(settings.reflectionEnabled).append('|')
             append(settings.reflectionOpacity).append('|')
             append(settings.reflectionGap).append('|')
+            append(settings.reflectionAmount).append('|')
             append(settings.bevelEnabled).append('|')
             append(settings.bevelAngle).append('|')
             append(settings.bevelStrength).append('|')

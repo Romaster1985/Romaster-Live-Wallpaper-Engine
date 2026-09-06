@@ -2546,6 +2546,7 @@ class MainActivity : AppCompatActivity() {
         connectSlider(R.id.sliderClockCrystalBlur, R.id.textClockCrystalBlur, 12f)
         connectSlider(R.id.sliderClockReflectionOpacity, R.id.textClockReflectionOpacity, 45f)
         connectSlider(R.id.sliderClockReflectionGap, R.id.textClockReflectionGap, 0f)
+        connectSlider(R.id.sliderClockReflectionAmount, R.id.textClockReflectionAmount, 100f)
         connectSlider(R.id.sliderClockBevelAngle, R.id.textClockBevelAngle, 315f)
         connectSlider(R.id.sliderClockBevelStrength, R.id.textClockBevelStrength, 40f)
         connectSlider(R.id.sliderDateBorderWidth, R.id.textDateBorderWidth, 0f)
@@ -2951,6 +2952,12 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         ).value = clock.reflectionGap.coerceIn(0f, 2000f)
         findViewById<TextView>(R.id.textClockReflectionGap).text =
             clock.reflectionGap.toInt().toString()
+
+        findViewById<Slider>(
+            R.id.sliderClockReflectionAmount
+        ).value = clock.reflectionAmount.coerceIn(0f, 100f)
+        findViewById<TextView>(R.id.textClockReflectionAmount).text =
+            clock.reflectionAmount.toInt().toString()
 
         findViewById<com.google.android.material.slider.Slider>(
             R.id.sliderClockBevelAngle
@@ -4635,6 +4642,11 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         clock.reflectionGap =
             findViewById<com.google.android.material.slider.Slider>(
                 R.id.sliderClockReflectionGap
+            ).value
+
+        clock.reflectionAmount =
+            findViewById<com.google.android.material.slider.Slider>(
+                R.id.sliderClockReflectionAmount
             ).value
 
         clock.bevelAngle =
