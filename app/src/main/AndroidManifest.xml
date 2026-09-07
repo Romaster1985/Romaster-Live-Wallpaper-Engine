@@ -33,8 +33,10 @@
         android:usesCleartextTraffic="false">
 
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.RomasterLiveWall.Splash"
+            android:noHistory="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -43,6 +45,12 @@
             </intent-filter>
 
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.RomasterLiveWall" />
+
 
         <activity
             android:name=".gallery.ProjectGalleryActivity"
