@@ -2419,6 +2419,10 @@ class MainActivity : AppCompatActivity() {
             ).reloadPlayers()
         
         }
+
+        findViewById<MaterialButton>(R.id.buttonAbout).setOnClickListener {
+            startActivity(Intent(this, AboutActivity::class.java))
+        }
     }
     
     private fun setupButtons() {

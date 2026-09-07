@@ -51,6 +51,12 @@
             android:exported="true"
             android:theme="@style/Theme.RomasterLiveWall" />
 
+        <activity
+            android:name=".AboutActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RomasterLiveWall"
+            android:parentActivityName=".MainActivity" />
+
 
         <activity
             android:name=".gallery.ProjectGalleryActivity"
