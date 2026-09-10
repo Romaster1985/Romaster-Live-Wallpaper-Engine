@@ -864,15 +864,26 @@ class GLWallpaperService : WallpaperService() {
                                         CueMode.LOOP
                                     ) {
 
+                                        // Si el crossfade dual-decoder ya gestiona el loop, no interferir
+                                        if (currentProject.cueUnlockedSmoothTransition &&
+                                            overlay.isLoopCrossfading()
+                                        ) {
+                                            FileLogger.log(
+                                                this@GLWallpaperService,
+                                                "CueUnlocked -> completion ignored (crossfade activo)"
+                                            )
+                                            return@setOnCompletionListener
+                                        }
+
                                         FileLogger.log(
                                             this@GLWallpaperService,
                                             "CueUnlocked -> completion -> seekTo(${currentProject.cueUnlockedMs})"
                                         )
 
+                                        overlay.resetLoopBlend()
                                         overlay.seekTo(
                                             currentProject.cueUnlockedMs
                                         )
-
                                         overlay.play()
 
                                     } else {
@@ -1168,9 +1179,29 @@ class GLWallpaperService : WallpaperService() {
                                                 }
 
                                             } else if (
+                                                project.cueLockedMode ==
+                                                CueMode.LOOP &&
+                                                project.cueLockedSmoothTransition
+                                            ) {
+                                                overlay.tickSmoothLoop(
+                                                    enabled = true,
+                                                    positionMs = position,
+                                                    loopEndMs = overlayCueController.cueLockedMs,
+                                                    loopStartMs = 0,
+                                                    crossfadeMs = project.cueLockedCrossfadeMs,
+                                                    onSeekToStart = {
+                                                        FileLogger.log(
+                                                            this@GLWallpaperService,
+                                                            "CueLocked -> crossfade swap"
+                                                        )
+                                                    }
+                                                )
+                                            } else if (
                                                 position >=
                                                 overlayCueController.cueLockedMs
                                             ) {
+
+                                                overlay.resetLoopBlend()
 
                                                 if (
                                                     project.cueLockedMode ==
@@ -1204,10 +1235,34 @@ class GLWallpaperService : WallpaperService() {
 
                                             // Ping-pong unlocked: el final del original
                                             // y del clip invertido se manejan en onCompletion.
-                                            /*
-                                             * Sin ping-pong, el final natural
-                                             * sigue siendo onCompletion().
-                                             */
+                                            // Transición suave del loop: fundido cerca del fin.
+                                            if (
+                                                !project.cueUnlockedPingPong &&
+                                                project.cueUnlockedMode == CueMode.LOOP &&
+                                                project.cueUnlockedSmoothTransition &&
+                                                !overlay.isPlayingReverseClip()
+                                            ) {
+                                                val dur = overlay.getDuration()
+                                                if (dur > 0) {
+                                                    overlay.tickSmoothLoop(
+                                                        enabled = true,
+                                                        positionMs = position,
+                                                        loopEndMs = dur,
+                                                        loopStartMs = project.cueUnlockedMs,
+                                                        crossfadeMs = project.cueUnlockedCrossfadeMs,
+                                                        onSeekToStart = {
+                                                            FileLogger.log(
+                                                                this@GLWallpaperService,
+                                                                "CueUnlocked -> crossfade swap"
+                                                            )
+                                                        }
+                                                    )
+                                                }
+                                            } else if (
+                                                !project.cueUnlockedSmoothTransition
+                                            ) {
+                                                // no-op: onCompletion maneja el loop duro
+                                            }
                                         }
                                     }
                                 }

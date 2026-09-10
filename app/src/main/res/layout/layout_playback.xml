@@ -196,6 +196,44 @@
                     android:text="Reproduce hasta el cue, vuelve en reversa al inicio y repite (0 ↔ cue)."
                     android:textSize="12sp"/>
 
+                <CheckBox
+                    android:id="@+id/checkCueLockedSmoothTransition"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Transición suave"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Crossfade al reiniciar el bucle para suavizar el salto entre el final y el inicio."
+                    android:textSize="12sp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/textCueLockedCrossfade"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="500 ms"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonCueLockedCrossfade"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Crossfade Time"/>
+                </LinearLayout>
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
@@ -292,6 +330,44 @@
                     android:layout_marginTop="4dp"
                     android:text="Reproduce hasta el final, vuelve en reversa al cue unlocked y repite (cue ↔ final)."
                     android:textSize="12sp"/>
+
+                <CheckBox
+                    android:id="@+id/checkCueUnlockedSmoothTransition"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Transición suave"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Crossfade al reiniciar el bucle para suavizar el salto entre el final y el inicio."
+                    android:textSize="12sp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/textCueUnlockedCrossfade"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="500 ms"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonCueUnlockedCrossfade"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Crossfade Time"/>
+                </LinearLayout>
 
             </LinearLayout>
 

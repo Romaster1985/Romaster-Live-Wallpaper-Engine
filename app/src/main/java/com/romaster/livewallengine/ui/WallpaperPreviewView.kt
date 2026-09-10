@@ -329,15 +329,21 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                         CueMode.LOOP
                                 ) {
                 
+                                    if (currentProject.cueUnlockedSmoothTransition &&
+                                        overlay.isLoopCrossfading()
+                                    ) {
+                                        return@setOnCompletionListener
+                                    }
+
                                     FileLogger.log(
                                         context,
                                         "CueUnlocked -> completion -> seekTo(${currentProject.cueUnlockedMs})"
                                     )
-                
+
+                                    overlay.resetLoopBlend()
                                     overlay.seekTo(
                                         currentProject.cueUnlockedMs
                                     )
-                
                                     overlay.play()
                 
                                 } else if (!currentProject.previewLocked) {
@@ -663,9 +669,20 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                         }
 
                                     } else if (
+                                        project.cueLockedMode == CueMode.LOOP &&
+                                        project.cueLockedSmoothTransition
+                                    ) {
+                                        overlay.tickSmoothLoop(
+                                            enabled = true,
+                                            positionMs = position,
+                                            loopEndMs = overlayCueController.cueLockedMs,
+                                            loopStartMs = 0,
+                                            crossfadeMs = project.cueLockedCrossfadeMs
+                                        )
+                                    } else if (
                                         position >= overlayCueController.cueLockedMs
                                     ) {
-                                    
+                                        overlay.resetLoopBlend()
                                         if (project.cueLockedMode == CueMode.LOOP) {
                                             overlay.seekTo(0)
                                         } else {
@@ -676,7 +693,24 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                 } else {
 
                                     // Unlocked: el fin de video / reverse lo maneja onCompletion
-                                    // (igual que el service)
+                                    // (igual que el service). Transición suave cerca del fin.
+                                    if (
+                                        !project.cueUnlockedPingPong &&
+                                        project.cueUnlockedMode == CueMode.LOOP &&
+                                        project.cueUnlockedSmoothTransition &&
+                                        !overlay.isPlayingReverseClip()
+                                    ) {
+                                        val dur = overlay.getDuration()
+                                        if (dur > 0) {
+                                            overlay.tickSmoothLoop(
+                                                enabled = true,
+                                                positionMs = position,
+                                                loopEndMs = dur,
+                                                loopStartMs = project.cueUnlockedMs,
+                                                crossfadeMs = project.cueUnlockedCrossfadeMs
+                                            )
+                                        }
+                                    }
                                 }
                 
                             }

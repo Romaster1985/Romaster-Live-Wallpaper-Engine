@@ -65,6 +65,18 @@ data class WallpaperProject(
     /** Ping-pong desbloqueado: cue → final → reversa → cue → … */
     var cueUnlockedPingPong: Boolean = false,
 
+    /** Fundido al reiniciar el loop del cue locked (0 ↔ cue). */
+    var cueLockedSmoothTransition: Boolean = false,
+
+    /** Fundido al reiniciar el loop del cue unlocked (cue ↔ fin). */
+    var cueUnlockedSmoothTransition: Boolean = false,
+
+    /** Duración del crossfade del cue locked (ms). */
+    var cueLockedCrossfadeMs: Long = 500L,
+
+    /** Duración del crossfade del cue unlocked (ms). */
+    var cueUnlockedCrossfadeMs: Long = 500L,
+
     /** Nombre de archivo del clip invertido (locked), dentro de pingpong/ */
     var cueLockedReverseFile: String? = null,
 

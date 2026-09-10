@@ -791,6 +791,29 @@ class MainActivity : AppCompatActivity() {
                 updatePreviewProject()
             }
         }
+
+        findViewById<CheckBox>(
+            R.id.checkCueLockedSmoothTransition
+        ).setOnCheckedChangeListener { _, _ ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            updatePreviewProject()
+        }
+
+        findViewById<CheckBox>(
+            R.id.checkCueUnlockedSmoothTransition
+        ).setOnCheckedChangeListener { _, _ ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            updatePreviewProject()
+        }
+
+        findViewById<MaterialButton>(R.id.buttonCueLockedCrossfade).setOnClickListener {
+            if (loadingUI) return@setOnClickListener
+            showCrossfadeTimeDialog(locked = true)
+        }
+        findViewById<MaterialButton>(R.id.buttonCueUnlockedCrossfade).setOnClickListener {
+            if (loadingUI) return@setOnClickListener
+            showCrossfadeTimeDialog(locked = false)
+        }
     
     
         // =====================================================
@@ -1100,6 +1123,21 @@ class MainActivity : AppCompatActivity() {
             R.id.checkCueUnlockedPingPong
         ).isChecked =
             project.cueUnlockedPingPong
+
+        findViewById<CheckBox>(
+            R.id.checkCueLockedSmoothTransition
+        ).isChecked =
+            project.cueLockedSmoothTransition
+
+        findViewById<CheckBox>(
+            R.id.checkCueUnlockedSmoothTransition
+        ).isChecked =
+            project.cueUnlockedSmoothTransition
+
+        findViewById<TextView>(R.id.textCueLockedCrossfade).text =
+            "${project.cueLockedCrossfadeMs} ms"
+        findViewById<TextView>(R.id.textCueUnlockedCrossfade).text =
+            "${project.cueUnlockedCrossfadeMs} ms"
     
     
         // =====================================================
@@ -1449,7 +1487,70 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
     
-    private fun showFadeDurationDialog(
+    
+    /**
+     * Edita la duración del crossfade de un cue.
+     * Se acota al largo del tramo del loop correspondiente.
+     */
+    private fun showCrossfadeTimeDialog(locked: Boolean) {
+        val project = ProjectManager.getProject()
+        val duration = project.overlayDurationMs.coerceAtLeast(0L)
+        val maxMs = if (locked) {
+            project.cueLockedMs.toLong().coerceAtLeast(50L)
+        } else {
+            // tramo unlocked: desde cueUnlocked hasta el final
+            (duration - project.cueUnlockedMs.toLong()).coerceAtLeast(50L)
+        }
+        val current = if (locked) project.cueLockedCrossfadeMs
+        else project.cueUnlockedCrossfadeMs
+
+        val input = android.widget.EditText(this).apply {
+            setText(current.toString())
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setSelection(text.length)
+        }
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(if (locked) "Crossfade Time (Cue Locked)" else "Crossfade Time (Cue Unlocked)")
+            .setMessage(
+                "Duración del crossfade en milisegundos.\n" +
+                "Máximo permitido para este loop: ${maxMs} ms."
+            )
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val value = input.text.toString().toLongOrNull()
+                if (value == null || value < 50L) {
+                    Toast.makeText(
+                        this,
+                        "Ingresá un valor de al menos 50 ms.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@setPositiveButton
+                }
+                val clamped = value.coerceAtMost(maxMs)
+                if (locked) {
+                    project.cueLockedCrossfadeMs = clamped
+                    findViewById<TextView>(R.id.textCueLockedCrossfade).text =
+                        "$clamped ms"
+                } else {
+                    project.cueUnlockedCrossfadeMs = clamped
+                    findViewById<TextView>(R.id.textCueUnlockedCrossfade).text =
+                        "$clamped ms"
+                }
+                if (clamped != value) {
+                    Toast.makeText(
+                        this,
+                        "Se limitó a ${clamped} ms (máximo del loop).",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                updatePreviewProject()
+            }
+            .show()
+    }
+
+private fun showFadeDurationDialog(
         title: String,
         currentValue: Long,
         target: FadeTarget
@@ -1727,6 +1828,16 @@ class MainActivity : AppCompatActivity() {
         project.cueUnlockedPingPong =
             findViewById<CheckBox>(
                 R.id.checkCueUnlockedPingPong
+            ).isChecked
+
+        project.cueLockedSmoothTransition =
+            findViewById<CheckBox>(
+                R.id.checkCueLockedSmoothTransition
+            ).isChecked
+
+        project.cueUnlockedSmoothTransition =
+            findViewById<CheckBox>(
+                R.id.checkCueUnlockedSmoothTransition
             ).isChecked
     
     
