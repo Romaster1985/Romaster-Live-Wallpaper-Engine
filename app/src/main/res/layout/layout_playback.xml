@@ -315,7 +315,10 @@
                     android:layout_marginTop="12dp"
                     android:valueFrom="0"
                     android:valueTo="1"
-                    android:value="0.99"/>
+                    android:value="0.99"
+                    app:trackColorActive="@color/md_theme_outline"
+                    app:trackColorInactive="@color/md_theme_primary"
+                    app:thumbColor="@color/md_theme_primary"/>
 
                 <CheckBox
                     android:id="@+id/checkCueUnlockedPingPong"
