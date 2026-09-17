@@ -89,6 +89,7 @@ import com.romaster.livewallengine.video.VideoTranscoder
 import com.romaster.livewallengine.model.ImageLayer
 import com.romaster.livewallengine.model.WidgetLayer
 import com.romaster.livewallengine.formula.FormulaEngine
+import com.romaster.livewallengine.weather.WeatherProvider
 import com.romaster.livewallengine.model.LayerStack
 import com.romaster.livewallengine.image.ImageStorage
 import com.romaster.livewallengine.video.VideoStorage
@@ -208,6 +209,7 @@ class MainActivity : AppCompatActivity() {
             setupChromaKey()
     
             FileLogger.log(this, "9 - reloadProjectUI")
+            WeatherProvider.ensureFresh(this)
             reloadProjectUI()
     
         } catch (e: Exception) {
@@ -1984,12 +1986,16 @@ private fun showFadeDurationDialog(
         editor.save()
     }
 
+
     private fun buildWidgetLayerCard(layer: WidgetLayer, displayIndex: Int): View {
         val density = resources.displayMetrics.density
         val pad = (12 * density).toInt()
         val layerId = layer.id
         fun live(): WidgetLayer? =
             ProjectManager.getProject().widgetLayers.find { it.id == layerId }
+
+        fun colorToHex(color: Int): String =
+            String.format("#%08X", color)
 
         val card = com.google.android.material.card.MaterialCardView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -1999,10 +2005,12 @@ private fun showFadeDurationDialog(
             radius = 16 * density
             cardElevation = 4 * density
         }
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad, pad, pad)
         }
+
         root.addView(TextView(this).apply {
             text = "Widget $displayIndex"
             textSize = 16f
@@ -2010,101 +2018,218 @@ private fun showFadeDurationDialog(
         })
 
         val previewTv = TextView(this).apply {
-            text = try { FormulaEngine.evaluate(layer.formula, this@MainActivity) } catch (_: Exception) { layer.formula }
+            text = try {
+                FormulaEngine.evaluate(layer.formula, this@MainActivity)
+            } catch (_: Exception) {
+                layer.formula
+            }
             textSize = 14f
             setPadding(0, (6 * density).toInt(), 0, (6 * density).toInt())
+            setSingleLine(false)
         }
         root.addView(previewTv)
 
-        root.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = "Fórmula / Texto"
+        root.addView(
+            MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = "Fórmula / Texto"
+                isAllCaps = false
+                setOnClickListener {
+                    val cur = live() ?: return@setOnClickListener
+                    showWidgetFormulaDialog(cur, previewTv)
+                }
+            }
+        )
+
+        root.addView(
+            MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = "Fuente: " + (layer.fontName ?: "Sistema")
+                isAllCaps = false
+                setOnClickListener { btn ->
+                    showWidgetFontPicker(layerId) { name ->
+                        live()?.fontName = name
+                        (btn as MaterialButton).text = "Fuente: " + (name ?: "Sistema")
+                        notifyWidgetLayersChanged()
+                    }
+                }
+            }
+        )
+
+        root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = "Usar fuente de íconos"
+            isChecked = layer.useIconFont
+            setOnCheckedChangeListener { _, checked ->
+                live()?.useIconFont = checked
+                notifyWidgetLayersChanged()
+            }
+        })
+
+        root.addView(
+            MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = "Íconos: " + (layer.iconFontName ?: "Ninguna")
+                isAllCaps = false
+                setOnClickListener { btn ->
+                    showWidgetIconFontPicker(layerId) { name ->
+                        live()?.iconFontName = name
+                        if (name != null) live()?.useIconFont = true
+                        (btn as MaterialButton).text = "Íconos: " + (name ?: "Ninguna")
+                        notifyWidgetLayersChanged()
+                    }
+                }
+            }
+        )
+
+        // Colores (texto + borde) — mismo diálogo que Clock-OL
+        val colorRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, (8 * density).toInt(), 0, 0)
+        }
+        val btnTextColor = MaterialButton(
+            this,
+            null,
+            com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = "Color texto"
+            isAllCaps = false
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginEnd = (6 * density).toInt()
+            }
             setOnClickListener {
                 val cur = live() ?: return@setOnClickListener
-                showWidgetFormulaDialog(cur, previewTv)
-            }
-        })
-
-        // Opacidad
-        root.addView(TextView(this).apply {
-            text = "Opacidad"
-            setPadding(0, pad, 0, 0)
-        })
-        val opacityValue = TextView(this).apply {
-            text = "${(layer.opacity * 100).toInt()}%"
-        }
-        root.addView(opacityValue)
-        root.addView(com.google.android.material.slider.Slider(this).apply {
-            valueFrom = 0f
-            valueTo = 100f
-            value = (layer.opacity * 100f).coerceIn(0f, 100f)
-            addOnChangeListener { _, v, fromUser ->
-                if (!fromUser) return@addOnChangeListener
-                live()?.opacity = v / 100f
-                opacityValue.text = "${v.toInt()}%"
-                notifyWidgetLayersChanged()
-            }
-        })
-
-        // Tamaño
-        root.addView(TextView(this).apply {
-            text = "Tamaño de texto"
-            setPadding(0, pad, 0, 0)
-        })
-        val sizeValue = TextView(this).apply { text = "${layer.textSize.toInt()} px" }
-        root.addView(sizeValue)
-        root.addView(com.google.android.material.slider.Slider(this).apply {
-            valueFrom = 12f
-            valueTo = 256f
-            value = layer.textSize.coerceIn(12f, 256f)
-            addOnChangeListener { _, v, fromUser ->
-                if (!fromUser) return@addOnChangeListener
-                live()?.textSize = v
-                sizeValue.text = "${v.toInt()} px"
-                notifyWidgetLayersChanged()
-            }
-        })
-
-        // Posición X / Y
-        fun axisSlider(label: String, initial: Float, onChange: (Float) -> Unit) {
-            root.addView(TextView(this).apply {
-                text = label
-                setPadding(0, pad, 0, 0)
-            })
-            val tv = TextView(this).apply { text = String.format("%.2f", initial) }
-            root.addView(tv)
-            root.addView(com.google.android.material.slider.Slider(this).apply {
-                valueFrom = 0f
-                valueTo = 1f
-                value = initial.coerceIn(0f, 1f)
-                addOnChangeListener { _, v, fromUser ->
-                    if (!fromUser) return@addOnChangeListener
-                    onChange(v)
-                    tv.text = String.format("%.2f", v)
-                    notifyWidgetLayersChanged()
+                ColorPickerDialog.show(this@MainActivity, colorToHex(cur.textColor)) { hex ->
+                    try {
+                        live()?.textColor = android.graphics.Color.parseColor(hex)
+                        notifyWidgetLayersChanged()
+                    } catch (_: Exception) {
+                    }
                 }
-            })
+            }
         }
-        axisSlider("Posición X", layer.x) { live()?.x = it }
-        axisSlider("Posición Y", layer.y) { live()?.y = it }
+        val btnBorderColor = MaterialButton(
+            this,
+            null,
+            com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = "Color borde"
+            isAllCaps = false
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                marginStart = (6 * density).toInt()
+            }
+            setOnClickListener {
+                val cur = live() ?: return@setOnClickListener
+                ColorPickerDialog.show(this@MainActivity, colorToHex(cur.borderColor)) { hex ->
+                    try {
+                        live()?.borderColor = android.graphics.Color.parseColor(hex)
+                        notifyWidgetLayersChanged()
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        }
+        colorRow.addView(btnTextColor)
+        colorRow.addView(btnBorderColor)
+        root.addView(colorRow)
 
-        // Zoom
-        root.addView(TextView(this).apply {
-            text = "Zoom"
-            setPadding(0, pad, 0, 0)
-        })
-        val zoomTv = TextView(this).apply { text = String.format("%.2f", layer.zoom) }
-        root.addView(zoomTv)
-        root.addView(com.google.android.material.slider.Slider(this).apply {
-            valueFrom = 0.1f
-            valueTo = 5f
-            value = layer.zoom.coerceIn(0.1f, 5f)
-            addOnChangeListener { _, v, fromUser ->
-                if (!fromUser) return@addOnChangeListener
-                live()?.zoom = v
-                zoomTv.text = String.format("%.2f", v)
+        fun addSliderRow(
+            title: String,
+            valueFrom: Float,
+            valueTo: Float,
+            value: Float,
+            defaultValue: Float,
+            format: (Float) -> String,
+            onChange: (Float) -> Unit
+        ) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (10 * density).toInt(), 0, 0)
+            }
+            row.addView(TextView(this).apply {
+                text = title
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            val valueTv = TextView(this).apply { text = format(value) }
+            row.addView(valueTv)
+            root.addView(row)
+            val slider = com.google.android.material.slider.Slider(this).apply {
+                this.valueFrom = valueFrom
+                this.valueTo = valueTo
+                stepSize = 1f
+                this.value = value.coerceIn(valueFrom, valueTo)
+                addOnChangeListener { _, v, fromUser ->
+                    valueTv.text = format(v)
+                    if (fromUser && !loadingUI) {
+                        onChange(v)
+                        notifyWidgetLayersChanged()
+                    }
+                }
+            }
+            root.addView(slider)
+            attachSliderResetButton(slider, valueTv, defaultValue) { v ->
+                valueTv.text = format(v)
+                onChange(v)
                 notifyWidgetLayersChanged()
             }
-        })
+        }
+
+        addSliderRow(
+            "Tamaño de texto",
+            0f, 800f,
+            layer.textSize.coerceIn(0f, 800f),
+            64f,
+            { "${it.toInt()} px" }
+        ) { live()?.textSize = it }
+
+        addSliderRow(
+            "Borde",
+            0f, 50f,
+            layer.borderWidth.coerceIn(0f, 50f),
+            0f,
+            { "${it.toInt()} px" }
+        ) { live()?.borderWidth = it }
+
+        addSliderRow(
+            "Opacidad",
+            0f, 100f,
+            (layer.opacity * 100f).coerceIn(0f, 100f),
+            100f,
+            { "${it.toInt()} %" }
+        ) { live()?.opacity = it / 100f }
+
+        addSliderRow(
+            "Posición X",
+            0f, 100f,
+            (layer.x * 100f).coerceIn(0f, 100f),
+            50f,
+            { it.toInt().toString() }
+        ) { live()?.x = it / 100f }
+
+        addSliderRow(
+            "Posición Y",
+            0f, 100f,
+            (layer.y * 100f).coerceIn(0f, 100f),
+            35f,
+            { it.toInt().toString() }
+        ) { live()?.y = it / 100f }
+
+        addSliderRow(
+            "Rotación",
+            -180f, 180f,
+            layer.rotation.coerceIn(-180f, 180f),
+            0f,
+            { "${it.toInt()}°" }
+        ) { live()?.rotation = it }
 
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
             text = "Deshabilitar en pantalla de bloqueo"
@@ -2115,10 +2240,23 @@ private fun showFadeDurationDialog(
             }
         })
 
+        root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = "Deshabilitar en Launcher (Desbloqueado)"
+            isChecked = layer.disableOnLauncher
+            setOnCheckedChangeListener { _, checked ->
+                live()?.disableOnLauncher = checked
+                notifyWidgetLayersChanged()
+            }
+        })
+
         root.addView(MaterialButton(this).apply {
             text = "Eliminar capa"
             setBackgroundColor(0xFFB00020.toInt())
             setTextColor(0xFFFFFFFF.toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = pad }
             setOnClickListener { removeWidgetLayer(layerId) }
         })
 
@@ -2128,14 +2266,46 @@ private fun showFadeDurationDialog(
 
     private fun showWidgetFormulaDialog(layer: WidgetLayer, previewTv: TextView) {
         val density = resources.displayMetrics.density
+        // Cursor recordado: al tocar un preset el EditText pierde el foco.
+        var savedSelStart = layer.formula.length
+        var savedSelEnd = layer.formula.length
+
         val input = EditText(this).apply {
             setText(layer.formula)
             setSelection(text.length)
-            minLines = 3
+            minLines = 4
             gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            setHorizontallyScrolling(false)
+            setOnClickListener {
+                savedSelStart = selectionStart.coerceAtLeast(0)
+                savedSelEnd = selectionEnd.coerceAtLeast(0)
+            }
+            setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) {
+                    post {
+                        savedSelStart = selectionStart.coerceAtLeast(0)
+                        savedSelEnd = selectionEnd.coerceAtLeast(0)
+                    }
+                }
+            }
         }
+
+        fun captureCursor() {
+            try {
+                savedSelStart = input.selectionStart.coerceAtLeast(0)
+                savedSelEnd = input.selectionEnd.coerceAtLeast(0)
+            } catch (_: Exception) {
+            }
+        }
+
         val livePreview = TextView(this).apply {
-            text = try { FormulaEngine.evaluate(layer.formula, this@MainActivity) } catch (_: Exception) { "" }
+            text = try {
+                FormulaEngine.evaluate(layer.formula, this@MainActivity)
+            } catch (_: Exception) {
+                ""
+            }
             setPadding(0, (8 * density).toInt(), 0, 0)
             textSize = 16f
         }
@@ -2145,59 +2315,350 @@ private fun showFadeDurationDialog(
             override fun afterTextChanged(s: android.text.Editable?) {
                 livePreview.text = try {
                     FormulaEngine.evaluate(s?.toString() ?: "", this@MainActivity)
-                } catch (_: Exception) { "…" }
+                } catch (_: Exception) {
+                    "…"
+                }
+                input.post { captureCursor() }
             }
         })
 
-        val presets = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(0, (8 * density).toInt(), 0, 0)
-        }
-        fun addPreset(title: String, formula: String) {
-            presets.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = title
-                isAllCaps = false
-                setOnClickListener {
-                    input.setText(formula)
-                    input.setSelection(formula.length)
-                }
-            })
-        }
-        addPreset("Hora HH:MM", "\$df(hh:mm)\$")
-        addPreset("Hora HH:MM:SS", "\$df(hh:mm:ss)\$")
-        addPreset("Fecha completa", "\$df(EEEE), \$df(dd)\$ \$df(MMM)\$ \$df(yyyy)\$")
-        addPreset("Batería %", "\$bi(level)\$%")
-        addPreset("Hora + batería", "\$df(hh:mm)\$  ·  \$bi(level)\$%")
+        data class PresetItem(val title: String, val formula: String, val desc: String = "")
+        data class PresetSection(val title: String, val items: List<PresetItem>)
 
+        val sections = listOf(
+            PresetSection(
+                "Fecha y hora",
+                listOf(
+                    PresetItem("Hora HH:MM", "\$df(hh:mm)\$", "12:30"),
+                    PresetItem("Hora HH:MM:SS", "\$df(hh:mm:ss)\$", "12:30:45"),
+                    PresetItem(
+                        "Fecha completa (1 línea)",
+                        "\$df(EEEE), df(dd) df(MMM) df(yyyy)\$",
+                        "jueves, 17 sep. 2026"
+                    ),
+                    PresetItem(
+                        "Fecha en columnas",
+                        "\$df(EEEE)\$\n\$df(dd)\$\n\$df(MMM)\$\n\$df(yyyy)\$",
+                        "Una línea por campo"
+                    ),
+                    PresetItem("Día de la semana", "\$df(EEEE)\$"),
+                    PresetItem("Día del mes", "\$df(dd)\$"),
+                    PresetItem("Mes corto", "\$df(MMM)\$"),
+                    PresetItem("Año", "\$df(yyyy)\$"),
+                    PresetItem("Año + 4", "\$df(yyyy)+4\$", "Ej. 2030")
+                )
+            ),
+            PresetSection(
+                "Batería",
+                listOf(
+                    PresetItem("Nivel %", "\$bi(level)\$%", "90%"),
+                    PresetItem("Nivel (número)", "\$bi(level)\$"),
+                    PresetItem("Cargando (0/1)", "\$bi(charging)\$"),
+                    PresetItem("Temperatura °C", "\$bi(temp)\$"),
+                    PresetItem("Voltaje mV", "\$bi(volt)\$"),
+                    PresetItem(
+                        "Hora + batería",
+                        "\$df(hh:mm)\$  ·  \$bi(level)\$%",
+                        "12:30  ·  90%"
+                    )
+                )
+            ),
+            PresetSection(
+                "Condicionales",
+                listOf(
+                    PresetItem(
+                        "Batería baja",
+                        "\$if(bi(level)<20, LOW, OK)\$",
+                        "Si nivel < 20 → LOW"
+                    ),
+                    PresetItem(
+                        "Cargando",
+                        "\$if(bi(charging)=1, CHG, )\$",
+                        "Texto si está cargando"
+                    ),
+                    PresetItem(
+                        "AM / PM",
+                        "\$if(df(H)<12, AM, PM)\$"
+                    ),
+                    PresetItem(
+                        "AND (batería y hora)",
+                        "\$if(bi(level)<20 & df(H)>=22, LOW NIGHT, OK)\$",
+                        "level<20 AND hora>=22"
+                    ),
+                    PresetItem(
+                        "OR (cargando o baja)",
+                        "\$if(bi(charging)=1 | bi(level)<15, ALERT, )\$",
+                        "charging OR level<15"
+                    )
+                )
+            ),
+            PresetSection(
+                "Clima (Open-Meteo)",
+                listOf(
+                    PresetItem("Temperatura °C", "\$wi(temp)\$°", "21°"),
+                    PresetItem("Temperatura °F", "\$wi(tempf)\$°F"),
+                    PresetItem("Condición", "\$wi(cond)\$", "Rain"),
+                    PresetItem("Humedad %", "\$wi(humidity)\$%"),
+                    PresetItem("Viento km/h", "\$wi(wind)\$"),
+                    PresetItem("Código WMO", "\$wi(code)\$"),
+                    PresetItem("Clave ícono", "\$wi(icon)\$", "rain / clear / …"),
+                    PresetItem(
+                        "Temp + condición",
+                        "\$wi(temp)\$° \$wi(cond)\$"
+                    )
+                )
+            )
+        )
+
+        val scroll = android.widget.ScrollView(this)
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding((24 * density).toInt(), 0, (24 * density).toInt(), 0)
-            addView(TextView(this@MainActivity).apply { text = "Vista previa"; setTypeface(typeface, android.graphics.Typeface.BOLD) })
-            addView(livePreview)
-            addView(TextView(this@MainActivity).apply {
-                text = "Editor de fórmula"
-                setPadding(0, (12 * density).toInt(), 0, 0)
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-            })
-            addView(input)
-            addView(TextView(this@MainActivity).apply {
-                text = "Ejemplos (tocar para insertar)"
-                setPadding(0, (12 * density).toInt(), 0, 0)
-            })
-            addView(presets)
+            setPadding(
+                (24 * density).toInt(), 0,
+                (24 * density).toInt(),
+                (8 * density).toInt()
+            )
+        }
+        scroll.addView(box)
+
+        box.addView(TextView(this).apply {
+            text = "Vista previa"
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+        box.addView(livePreview)
+        box.addView(TextView(this).apply {
+            text = "Editor de fórmula"
+            setPadding(0, (12 * density).toInt(), 0, 0)
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+        box.addView(input)
+        box.addView(TextView(this).apply {
+            text = "Ejemplos (tocar para insertar en el cursor)"
+            setPadding(0, (12 * density).toInt(), 0, (4 * density).toInt())
+            textSize = 12f
+        })
+
+        val sectionList = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        val itemsList = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+        }
+        box.addView(sectionList)
+        box.addView(itemsList)
+
+        fun showSections() {
+            sectionList.visibility = View.VISIBLE
+            itemsList.visibility = View.GONE
+            itemsList.removeAllViews()
+        }
+
+        fun insertAtCursor(formula: String) {
+            val editable = input.text ?: return
+            val len = editable.length
+            var start = savedSelStart.coerceIn(0, len)
+            var end = savedSelEnd.coerceIn(0, len)
+            if (start > end) {
+                val tmp = start
+                start = end
+                end = tmp
+            }
+            editable.replace(start, end, formula)
+            val newPos = (start + formula.length).coerceIn(0, input.text.length)
+            try {
+                input.setSelection(newPos)
+            } catch (_: Exception) {
+            }
+            savedSelStart = newPos
+            savedSelEnd = newPos
+            input.requestFocus()
+        }
+
+        fun showSection(section: PresetSection) {
+            sectionList.visibility = View.GONE
+            itemsList.visibility = View.VISIBLE
+            itemsList.removeAllViews()
+            itemsList.addView(
+                MaterialButton(
+                    this,
+                    null,
+                    com.google.android.material.R.attr.materialButtonOutlinedStyle
+                ).apply {
+                    text = "← Volver a categorías"
+                    isAllCaps = false
+                    setOnClickListener { showSections() }
+                }
+            )
+            section.items.forEach { item ->
+                itemsList.addView(
+                    MaterialButton(
+                        this,
+                        null,
+                        com.google.android.material.R.attr.materialButtonOutlinedStyle
+                    ).apply {
+                        isAllCaps = false
+                        text = buildString {
+                            append(item.title)
+                            if (item.desc.isNotEmpty()) {
+                                append('\n')
+                                append(item.desc)
+                            }
+                            append('\n')
+                            append(item.formula)
+                        }
+                        textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+                        setOnClickListener { insertAtCursor(item.formula) }
+                    }
+                )
+            }
+        }
+
+        sections.forEach { section ->
+            sectionList.addView(
+                MaterialButton(
+                    this,
+                    null,
+                    com.google.android.material.R.attr.materialButtonOutlinedStyle
+                ).apply {
+                    text = section.title
+                    isAllCaps = false
+                    setOnClickListener { showSection(section) }
+                }
+            )
         }
 
         AlertDialog.Builder(this)
             .setTitle("Fórmula / Texto")
-            .setView(box)
+            .setView(scroll)
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Aceptar") { _, _ ->
                 layer.formula = input.text.toString()
                 previewTv.text = try {
                     FormulaEngine.evaluate(layer.formula, this)
-                } catch (_: Exception) { layer.formula }
+                } catch (_: Exception) {
+                    layer.formula
+                }
                 notifyWidgetLayersChanged()
             }
+            .show()
+    }
+
+
+
+
+    private fun showWidgetIconFontPicker(layerId: String, onPicked: (String?) -> Unit) {
+        val installed = try {
+            com.romaster.livewallengine.font.IconFontStorage.listInstalled(this)
+        } catch (_: Exception) {
+            emptyList()
+        }
+        val labels = mutableListOf("Ninguna", "Galería de íconos 🌎📲…")
+        val values = mutableListOf<String?>(null, "__GALLERY__")
+        installed.forEach { n ->
+            labels.add(n)
+            values.add(n)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Fuente de íconos")
+            .setItems(labels.toTypedArray()) { _, which ->
+                when (val v = values[which]) {
+                    "__GALLERY__" -> openIconFontGallery(onPicked)
+                    else -> onPicked(v)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun openIconFontGallery(onPicked: (String?) -> Unit) {
+        val progress = android.app.ProgressDialog(this).apply {
+            setMessage("Cargando galería de íconos…")
+            setCancelable(true)
+            show()
+        }
+        lifecycleScope.launch {
+            try {
+                val list = withContext(Dispatchers.IO) {
+                    com.romaster.livewallengine.gallery.GitHubGalleryRepository.listIconFonts()
+                }
+                progress.dismiss()
+                if (list.isEmpty()) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "No hay pares TTF+JSON en Icons/",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+                val names = list.map { it.name }.toTypedArray()
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Galería de íconos")
+                    .setItems(names) { _, which ->
+                        val item = list[which]
+                        val dlg = android.app.ProgressDialog(this@MainActivity).apply {
+                            setMessage("Descargando ${item.name}…")
+                            setCancelable(false)
+                            show()
+                        }
+                        lifecycleScope.launch {
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    com.romaster.livewallengine.font.IconFontStorage.downloadPair(
+                                        this@MainActivity,
+                                        item.name,
+                                        item.ttfUrl,
+                                        item.jsonUrl
+                                    )
+                                }
+                                dlg.dismiss()
+                                onPicked(item.name)
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Íconos instalados: ${item.name}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } catch (e: Exception) {
+                                dlg.dismiss()
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Error: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            } catch (e: Exception) {
+                progress.dismiss()
+                Toast.makeText(
+                    this@MainActivity,
+                    "Error galería: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun showWidgetFontPicker(layerId: String, onPicked: (String?) -> Unit) {
+        val fonts = try {
+            com.romaster.livewallengine.font.FontStorage.getInstalledFonts(this)
+        } catch (_: Exception) {
+            emptyList()
+        }
+        val labels = mutableListOf("Sistema (default)")
+        val values = mutableListOf<String?>(null)
+        fonts.forEach { f ->
+            labels.add(f)
+            values.add(f)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Fuente del widget")
+            .setItems(labels.toTypedArray()) { _, which ->
+                onPicked(values[which])
+            }
+            .setNegativeButton("Cancelar", null)
             .show()
     }
 
@@ -5159,6 +5620,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 
         reloadFontLibrary()
         rebuildImageLayerCards()
+        rebuildWidgetLayerCards()
         
         loadVideoLayerSettings()
         
@@ -5175,6 +5637,10 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         //updatePreviewProject()
         
         refreshPreview()
+        try {
+            findViewById<WallpaperPreviewView>(R.id.previewView).reloadWidgetLayers()
+        } catch (_: Exception) {
+        }
         
     }
     

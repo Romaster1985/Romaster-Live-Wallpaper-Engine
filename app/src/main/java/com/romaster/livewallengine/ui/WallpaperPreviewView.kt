@@ -437,6 +437,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                         val projRev = ProjectManager.getProject()
                         if (projRev.previewLocked) {
                             renderer?.setImageLayersLockState(true)
+                            renderer?.setWidgetLayersLockState(true)
                             if (!projRev.clock.enabledOnLockScreen) {
                                 renderer?.setClockLockScreenState(
                                     visible = false,
@@ -445,6 +446,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                             }
                         } else {
                             renderer?.setImageLayersLockState(false)
+                            renderer?.setWidgetLayersLockState(false)
                         }
                     
                         initializeAudioConfiguration()
@@ -612,6 +614,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                         )
                                     }
                                     renderer?.startImageLayersSoftStartOnLock()
+                                    renderer?.startWidgetLayersSoftStartOnLock()
                                 } else {
                                     FileLogger.log(
                                         context,
@@ -636,6 +639,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                         fadeIn = !project.clock.enabledOnLockScreen
                                     )
                                     renderer?.revealImageLayersAfterUnlock()
+                                    renderer?.revealWidgetLayersAfterUnlock()
                                 }
                             }
 

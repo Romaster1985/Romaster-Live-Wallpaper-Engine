@@ -47,7 +47,13 @@ data class WidgetLayer(
     /** Color ARGB del texto */
     var textColor: Int = 0xFFFFFFFF.toInt(),
 
-    /** Tamaño base en px lógicos (antes de zoom) */
+    /** Color ARGB del borde */
+    var borderColor: Int = 0xFF000000.toInt(),
+
+    /** Grosor del borde en px de diseño (0 = sin borde) */
+    var borderWidth: Float = 0f,
+
+    /** Tamaño base en px lógicos (referencia 1920 de alto) */
     var textSize: Float = 64f,
 
     /** 0f..1f */
@@ -65,8 +71,11 @@ data class WidgetLayer(
     /** Grados */
     var rotation: Float = 0f,
 
-    /** false = visible en bloqueo; true = oculto en bloqueo */
+    /** true = oculto en pantalla de bloqueo */
     var disableOnLockScreen: Boolean = false,
+
+    /** true = oculto en launcher (dispositivo desbloqueado) */
+    var disableOnLauncher: Boolean = false,
 
     var fadeDurationMs: Long = 1000L,
 

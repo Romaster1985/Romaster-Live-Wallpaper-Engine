@@ -147,7 +147,15 @@ object DefaultProject {
 
             overlay = factoryProject.overlay.copy(),
 
-            clock = factoryProject.clock.copy()
+            clock = factoryProject.clock.copy(),
+
+            // Listas mutables propias: si se reutiliza la del factory,
+            // los widgets/imágenes "sobreviven" al Nuevo Proyecto.
+            imageLayers = mutableListOf(),
+
+            widgetLayers = mutableListOf(),
+
+            layerStack = mutableListOf()
 
         )
 

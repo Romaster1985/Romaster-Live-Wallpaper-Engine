@@ -40,12 +40,16 @@ object GitHubGalleryRepository {
     private const val BRANCH = "main"
     private const val FOLDER = "LiveWallpapers"
     private const val FONTS_FOLDER = "Fonts"
+    private const val ICONS_FOLDER = "Icons"
 
     private const val CONTENTS_API =
         "https://api.github.com/repos/$OWNER/$REPO/contents/$FOLDER?ref=$BRANCH"
 
     private const val FONTS_CONTENTS_API =
         "https://api.github.com/repos/$OWNER/$REPO/contents/$FONTS_FOLDER?ref=$BRANCH"
+
+    private const val ICONS_CONTENTS_API =
+        "https://api.github.com/repos/$OWNER/$REPO/contents/$ICONS_FOLDER?ref=$BRANCH"
 
     private const val USER_AGENT =
         "Romaster-LiveWall-Engine"
@@ -151,6 +155,61 @@ object GitHubGalleryRepository {
             }
 
             return fonts.sortedBy { it.name.lowercase() }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+
+    data class GalleryIconFont(
+        val name: String,
+        val ttfFileName: String,
+        val ttfUrl: String,
+        val jsonFileName: String,
+        val jsonUrl: String
+    )
+
+    /**
+     * Lista pares TTF+JSON en la carpeta Icons del repo de temas.
+     * Debe llamarse en hilo de fondo.
+     */
+    fun listIconFonts(): List<GalleryIconFont> {
+        val connection = openGet(ICONS_CONTENTS_API)
+        try {
+            val code = connection.responseCode
+            if (code !in 200..299) {
+                throw IllegalStateException("GitHub API HTTP $code (Icons)")
+            }
+            val body = connection.inputStream.bufferedReader().use { it.readText() }
+            val array = JSONArray(body)
+            val ttf = mutableMapOf<String, Pair<String, String>>()
+            val json = mutableMapOf<String, Pair<String, String>>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                if (obj.optString("type") != "file") continue
+                val name = obj.getString("name")
+                val url = obj.optString("download_url")
+                if (url.isNullOrBlank()) continue
+                val lower = name.lowercase()
+                val base = name.substringBeforeLast('.')
+                when {
+                    lower.endsWith(".ttf") || lower.endsWith(".otf") ->
+                        ttf[base.lowercase()] = name to url
+                    lower.endsWith(".json") ->
+                        json[base.lowercase()] = name to url
+                }
+            }
+            return ttf.keys.intersect(json.keys).sorted().map { key ->
+                val (tn, tu) = ttf[key]!!
+                val (jn, ju) = json[key]!!
+                GalleryIconFont(
+                    name = tn.substringBeforeLast('.'),
+                    ttfFileName = tn,
+                    ttfUrl = tu,
+                    jsonFileName = jn,
+                    jsonUrl = ju
+                )
+            }
         } finally {
             connection.disconnect()
         }

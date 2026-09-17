@@ -208,6 +208,7 @@ class GLWallpaperService : WallpaperService() {
                         fadeIn = false
                     )
                     renderer?.setImageLayersLockState(true)
+                    renderer?.setWidgetLayersLockState(true)
 
                 } else {
 
@@ -239,6 +240,7 @@ class GLWallpaperService : WallpaperService() {
                     }
                     // Capas: fade solo las que estaban ocultas en lock
                     renderer?.revealImageLayersAfterUnlock()
+                    renderer?.revealWidgetLayersAfterUnlock()
 
                     val overlay =
                         renderer?.getVideoOverlayRenderer()
@@ -695,11 +697,14 @@ class GLWallpaperService : WallpaperService() {
                                     )
                                 }
                                 renderer!!.startImageLayersSoftStartOnLock()
+                                renderer!!.startWidgetLayersSoftStartOnLock()
                             } else {
                                 // Escritorio / visible desbloqueado
                                 renderer!!.setImageLayersLockState(false)
+                                renderer!!.setWidgetLayersLockState(false)
                                 renderer!!.startClockSoftStart()
                                 renderer!!.startImageLayersSoftStart()
+                                renderer!!.startWidgetLayersSoftStart()
                             }
                         }
 
@@ -1028,6 +1033,7 @@ class GLWallpaperService : WallpaperService() {
                                     val projRev = ProjectManager.getProject()
                                     if (deviceLocked) {
                                         renderer?.setImageLayersLockState(true)
+                    renderer?.setWidgetLayersLockState(true)
                                         // Si el reloj no debe verse en lock, ocultarlo;
                                         // si debe verse, no tocar alpha (puede estar en fade-in)
                                         if (!projRev.clock.enabledOnLockScreen) {
@@ -1038,6 +1044,7 @@ class GLWallpaperService : WallpaperService() {
                                         }
                                     } else {
                                         renderer?.setImageLayersLockState(false)
+                    renderer?.setWidgetLayersLockState(false)
                                     }
                                 } catch (_: Exception) {
                                 }
