@@ -55,6 +55,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
 
     private var renderer: GLRenderer? = null
     @Volatile private var pendingReloadImageLayers = false
+    @Volatile private var pendingReloadWidgetLayers = false
 
     private var videoPlayer: VideoPlayer? = null
     
@@ -786,6 +787,18 @@ class WallpaperPreviewView @JvmOverloads constructor(
                             }
                             pendingReloadImageLayers = false
                         }
+                        if (pendingReloadWidgetLayers) {
+                            try {
+                                renderer?.reloadWidgetLayers()
+                            } catch (e: Exception) {
+                                FileLogger.logException(
+                                    context,
+                                    "Preview reloadWidgetLayers",
+                                    e
+                                )
+                            }
+                            pendingReloadWidgetLayers = false
+                        }
                         renderer?.drawFrame()
 
                         pendingCapture?.let {
@@ -1101,5 +1114,11 @@ class WallpaperPreviewView @JvmOverloads constructor(
     fun reloadImageLayers() {
         pendingReloadImageLayers = true
     }
+
+    /** Marca recarga de widgets de texto/fórmula en el hilo de render. */
+    fun reloadWidgetLayers() {
+        pendingReloadWidgetLayers = true
+    }
+
 
 }

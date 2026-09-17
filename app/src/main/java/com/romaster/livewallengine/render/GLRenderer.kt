@@ -50,6 +50,7 @@ class GLRenderer(
     private var overlayRenderer: GLOverlayRenderer? = null
     private var videoOverlayRenderer: GLVideoOverlayRenderer? = null
     private var imageLayersRenderer: GLImageLayersRenderer? = null
+    private var widgetLayersRenderer: GLWidgetLayersRenderer? = null
 
     private var positionHandle = 0
     private var texCoordHandle = 0
@@ -126,6 +127,7 @@ class GLRenderer(
         this.height = height
         videoOverlayRenderer?.setSize(width, height)
         imageLayersRenderer?.setSize(width, height)
+        widgetLayersRenderer?.setSize(width, height)
     }
 
     fun initialize() {
@@ -170,6 +172,9 @@ class GLRenderer(
         imageLayersRenderer = GLImageLayersRenderer()
         imageLayersRenderer!!.initialize(context, realWidth, realHeight)
 
+        widgetLayersRenderer = GLWidgetLayersRenderer()
+        widgetLayersRenderer!!.initialize(context, realWidth, realHeight)
+
         // Sincronizamos las variables globales del renderizador principal
         onSurfaceChanged(realWidth, realHeight)
     }
@@ -179,6 +184,13 @@ class GLRenderer(
             imageLayersRenderer?.reloadFromProject(force)
         } catch (_: Exception) {
             // No tumbar el hilo GL
+        }
+    }
+
+    fun reloadWidgetLayers(force: Boolean = true) {
+        try {
+            widgetLayersRenderer?.reloadFromProject(force)
+        } catch (_: Exception) {
         }
     }
 
@@ -302,7 +314,8 @@ class GLRenderer(
         updateFade()
         val volOk = videoOverlayRenderer?.isFadeComplete() != false
         val imgOk = imageLayersRenderer?.isFadeComplete() != false
-        val settled = fadeAlpha >= 0.999f && volOk && imgOk
+        val wdgOk = widgetLayersRenderer?.isFadeComplete() != false
+        val settled = fadeAlpha >= 0.999f && volOk && imgOk && wdgOk
         overlayRenderer?.setBackgroundsSettled(settled)
 
         // Orden global de atrás → adelante (cada capa aislada de fallos)
@@ -315,7 +328,11 @@ class GLRenderer(
                         videoOverlayRenderer?.draw()
                     }
                     LayerStack.ID_CLOCK -> overlayRenderer?.draw(vw, vh, width, height)
-                    else -> imageLayersRenderer?.drawById(id)
+                    else -> {
+                        val isWidget = project.widgetLayers.any { it.id == id }
+                        if (isWidget) widgetLayersRenderer?.drawById(id)
+                        else imageLayersRenderer?.drawById(id)
+                    }
                 }
             } catch (_: Exception) {
                 // Seguir con el resto de capas
@@ -459,6 +476,22 @@ class GLRenderer(
         imageLayersRenderer?.revealAfterUnlock()
     }
 
+    fun startWidgetLayersSoftStart() {
+        widgetLayersRenderer?.startSoftStartAll()
+    }
+
+    fun setWidgetLayersLockState(deviceLocked: Boolean) {
+        widgetLayersRenderer?.applyLockScreenState(deviceLocked)
+    }
+
+    fun startWidgetLayersSoftStartOnLock() {
+        widgetLayersRenderer?.startSoftStartOnLockScreen()
+    }
+
+    fun revealWidgetLayersAfterUnlock() {
+        widgetLayersRenderer?.revealAfterUnlock()
+    }
+
     fun clearSurface() {
         if (width <= 0 || height <= 0) return
         try {
@@ -494,6 +527,8 @@ class GLRenderer(
         overlayRenderer = null
         imageLayersRenderer?.release()
         imageLayersRenderer = null
+        widgetLayersRenderer?.release()
+        widgetLayersRenderer = null
         egl.release()
     }
 

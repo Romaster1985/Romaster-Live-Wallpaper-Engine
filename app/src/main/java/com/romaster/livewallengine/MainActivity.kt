@@ -87,6 +87,8 @@ import com.romaster.livewallengine.video.VideoPicker
 import com.romaster.livewallengine.video.GifToMp4Converter
 import com.romaster.livewallengine.video.VideoTranscoder
 import com.romaster.livewallengine.model.ImageLayer
+import com.romaster.livewallengine.model.WidgetLayer
+import com.romaster.livewallengine.formula.FormulaEngine
 import com.romaster.livewallengine.model.LayerStack
 import com.romaster.livewallengine.image.ImageStorage
 import com.romaster.livewallengine.video.VideoStorage
@@ -122,6 +124,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var panelPlayback: View
     
     private lateinit var panelPics: View
+    private lateinit var panelWidgets: View
     private lateinit var panelClock: View
     
     private lateinit var panelProject: View
@@ -185,6 +188,8 @@ class MainActivity : AppCompatActivity() {
 
             FileLogger.log(this, "6b - setupPicsTab")
             setupPicsTab()
+            FileLogger.log(this, "6c - setupWidgetsTab")
+            setupWidgetsTab()
     
             FileLogger.log(this, "7 - setupProjectTab")
             setupProjectTab()
@@ -229,6 +234,7 @@ class MainActivity : AppCompatActivity() {
         
         panelClock = findViewById(R.id.panelClock)
         panelPics = findViewById(R.id.panelPics)
+        panelWidgets = findViewById(R.id.panelWidgets)
     
         panelProject = findViewById(R.id.panelProject)
     
@@ -258,6 +264,11 @@ class MainActivity : AppCompatActivity() {
             tabLayout.newTab()
                 .setText("🖼️ Pics-OL")
         )
+
+        tabLayout.addTab(
+            tabLayout.newTab()
+                .setText("🧩 Widgets-OL")
+        )
     
         tabLayout.addTab(
             tabLayout.newTab()
@@ -274,6 +285,7 @@ class MainActivity : AppCompatActivity() {
         panelPlayback.visibility = View.GONE
         panelClock.visibility = View.GONE
         panelPics.visibility = View.GONE
+        panelWidgets.visibility = View.GONE
         panelProject.visibility = View.GONE
     
         tabLayout.addOnTabSelectedListener(
@@ -289,6 +301,7 @@ class MainActivity : AppCompatActivity() {
                     panelPlayback.visibility = View.GONE
                     panelClock.visibility = View.GONE
                     panelPics.visibility = View.GONE
+                    panelWidgets.visibility = View.GONE
                     panelProject.visibility = View.GONE
     
                     when (tab.position) {
@@ -297,7 +310,8 @@ class MainActivity : AppCompatActivity() {
                         2 -> panelPlayback.visibility = View.VISIBLE
                         3 -> panelClock.visibility = View.VISIBLE
                         4 -> panelPics.visibility = View.VISIBLE
-                        5 -> panelProject.visibility = View.VISIBLE
+                        5 -> panelWidgets.visibility = View.VISIBLE
+                        6 -> panelProject.visibility = View.VISIBLE
                     }
                 }
     
@@ -1915,6 +1929,277 @@ private fun showFadeDurationDialog(
         }
     }
     
+
+
+    // =====================================================
+    // WIDGETS-OL
+    // =====================================================
+
+    private fun setupWidgetsTab() {
+        val addBtn = findViewById<View>(R.id.buttonAddWidgetLayer)
+        addBtn.isClickable = true
+        addBtn.isFocusable = true
+        addBtn.setOnClickListener { addWidgetLayer() }
+        rebuildWidgetLayerCards()
+    }
+
+    private fun addWidgetLayer() {
+        val project = ProjectManager.getProject()
+        LayerStack.ensure(project)
+        val layer = WidgetLayer()
+        project.widgetLayers.add(layer)
+        project.layerStack.add(layer.id)
+        editor.save()
+        rebuildWidgetLayerCards()
+        notifyWidgetLayersChanged()
+    }
+
+    private fun removeWidgetLayer(layerId: String) {
+        val project = ProjectManager.getProject()
+        project.widgetLayers.removeAll { it.id == layerId }
+        project.layerStack.removeAll { it == layerId }
+        LayerStack.ensure(project)
+        editor.save()
+        rebuildWidgetLayerCards()
+        notifyWidgetLayersChanged()
+    }
+
+    private fun rebuildWidgetLayerCards() {
+        val container = findViewById<LinearLayout>(R.id.containerWidgetLayers)
+        container.removeAllViews()
+        val project = ProjectManager.getProject()
+        LayerStack.ensure(project)
+        project.widgetLayers.forEachIndexed { index, layer ->
+            container.addView(buildWidgetLayerCard(layer, index + 1))
+        }
+    }
+
+    private fun notifyWidgetLayersChanged() {
+        try {
+            findViewById<WallpaperPreviewView>(R.id.previewView).post {
+                findViewById<WallpaperPreviewView>(R.id.previewView).reloadWidgetLayers()
+            }
+        } catch (_: Exception) {
+        }
+        editor.save()
+    }
+
+    private fun buildWidgetLayerCard(layer: WidgetLayer, displayIndex: Int): View {
+        val density = resources.displayMetrics.density
+        val pad = (12 * density).toInt()
+        val layerId = layer.id
+        fun live(): WidgetLayer? =
+            ProjectManager.getProject().widgetLayers.find { it.id == layerId }
+
+        val card = com.google.android.material.card.MaterialCardView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (8 * density).toInt() }
+            radius = 16 * density
+            cardElevation = 4 * density
+        }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad, pad, pad)
+        }
+        root.addView(TextView(this).apply {
+            text = "Widget $displayIndex"
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+
+        val previewTv = TextView(this).apply {
+            text = try { FormulaEngine.evaluate(layer.formula, this@MainActivity) } catch (_: Exception) { layer.formula }
+            textSize = 14f
+            setPadding(0, (6 * density).toInt(), 0, (6 * density).toInt())
+        }
+        root.addView(previewTv)
+
+        root.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = "Fórmula / Texto"
+            setOnClickListener {
+                val cur = live() ?: return@setOnClickListener
+                showWidgetFormulaDialog(cur, previewTv)
+            }
+        })
+
+        // Opacidad
+        root.addView(TextView(this).apply {
+            text = "Opacidad"
+            setPadding(0, pad, 0, 0)
+        })
+        val opacityValue = TextView(this).apply {
+            text = "${(layer.opacity * 100).toInt()}%"
+        }
+        root.addView(opacityValue)
+        root.addView(com.google.android.material.slider.Slider(this).apply {
+            valueFrom = 0f
+            valueTo = 100f
+            value = (layer.opacity * 100f).coerceIn(0f, 100f)
+            addOnChangeListener { _, v, fromUser ->
+                if (!fromUser) return@addOnChangeListener
+                live()?.opacity = v / 100f
+                opacityValue.text = "${v.toInt()}%"
+                notifyWidgetLayersChanged()
+            }
+        })
+
+        // Tamaño
+        root.addView(TextView(this).apply {
+            text = "Tamaño de texto"
+            setPadding(0, pad, 0, 0)
+        })
+        val sizeValue = TextView(this).apply { text = "${layer.textSize.toInt()} px" }
+        root.addView(sizeValue)
+        root.addView(com.google.android.material.slider.Slider(this).apply {
+            valueFrom = 12f
+            valueTo = 256f
+            value = layer.textSize.coerceIn(12f, 256f)
+            addOnChangeListener { _, v, fromUser ->
+                if (!fromUser) return@addOnChangeListener
+                live()?.textSize = v
+                sizeValue.text = "${v.toInt()} px"
+                notifyWidgetLayersChanged()
+            }
+        })
+
+        // Posición X / Y
+        fun axisSlider(label: String, initial: Float, onChange: (Float) -> Unit) {
+            root.addView(TextView(this).apply {
+                text = label
+                setPadding(0, pad, 0, 0)
+            })
+            val tv = TextView(this).apply { text = String.format("%.2f", initial) }
+            root.addView(tv)
+            root.addView(com.google.android.material.slider.Slider(this).apply {
+                valueFrom = 0f
+                valueTo = 1f
+                value = initial.coerceIn(0f, 1f)
+                addOnChangeListener { _, v, fromUser ->
+                    if (!fromUser) return@addOnChangeListener
+                    onChange(v)
+                    tv.text = String.format("%.2f", v)
+                    notifyWidgetLayersChanged()
+                }
+            })
+        }
+        axisSlider("Posición X", layer.x) { live()?.x = it }
+        axisSlider("Posición Y", layer.y) { live()?.y = it }
+
+        // Zoom
+        root.addView(TextView(this).apply {
+            text = "Zoom"
+            setPadding(0, pad, 0, 0)
+        })
+        val zoomTv = TextView(this).apply { text = String.format("%.2f", layer.zoom) }
+        root.addView(zoomTv)
+        root.addView(com.google.android.material.slider.Slider(this).apply {
+            valueFrom = 0.1f
+            valueTo = 5f
+            value = layer.zoom.coerceIn(0.1f, 5f)
+            addOnChangeListener { _, v, fromUser ->
+                if (!fromUser) return@addOnChangeListener
+                live()?.zoom = v
+                zoomTv.text = String.format("%.2f", v)
+                notifyWidgetLayersChanged()
+            }
+        })
+
+        root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = "Deshabilitar en pantalla de bloqueo"
+            isChecked = layer.disableOnLockScreen
+            setOnCheckedChangeListener { _, checked ->
+                live()?.disableOnLockScreen = checked
+                notifyWidgetLayersChanged()
+            }
+        })
+
+        root.addView(MaterialButton(this).apply {
+            text = "Eliminar capa"
+            setBackgroundColor(0xFFB00020.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
+            setOnClickListener { removeWidgetLayer(layerId) }
+        })
+
+        card.addView(root)
+        return card
+    }
+
+    private fun showWidgetFormulaDialog(layer: WidgetLayer, previewTv: TextView) {
+        val density = resources.displayMetrics.density
+        val input = EditText(this).apply {
+            setText(layer.formula)
+            setSelection(text.length)
+            minLines = 3
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+        }
+        val livePreview = TextView(this).apply {
+            text = try { FormulaEngine.evaluate(layer.formula, this@MainActivity) } catch (_: Exception) { "" }
+            setPadding(0, (8 * density).toInt(), 0, 0)
+            textSize = 16f
+        }
+        input.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                livePreview.text = try {
+                    FormulaEngine.evaluate(s?.toString() ?: "", this@MainActivity)
+                } catch (_: Exception) { "…" }
+            }
+        })
+
+        val presets = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, (8 * density).toInt(), 0, 0)
+        }
+        fun addPreset(title: String, formula: String) {
+            presets.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = title
+                isAllCaps = false
+                setOnClickListener {
+                    input.setText(formula)
+                    input.setSelection(formula.length)
+                }
+            })
+        }
+        addPreset("Hora HH:MM", "\$df(hh:mm)\$")
+        addPreset("Hora HH:MM:SS", "\$df(hh:mm:ss)\$")
+        addPreset("Fecha completa", "\$df(EEEE), \$df(dd)\$ \$df(MMM)\$ \$df(yyyy)\$")
+        addPreset("Batería %", "\$bi(level)\$%")
+        addPreset("Hora + batería", "\$df(hh:mm)\$  ·  \$bi(level)\$%")
+
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((24 * density).toInt(), 0, (24 * density).toInt(), 0)
+            addView(TextView(this@MainActivity).apply { text = "Vista previa"; setTypeface(typeface, android.graphics.Typeface.BOLD) })
+            addView(livePreview)
+            addView(TextView(this@MainActivity).apply {
+                text = "Editor de fórmula"
+                setPadding(0, (12 * density).toInt(), 0, 0)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            addView(input)
+            addView(TextView(this@MainActivity).apply {
+                text = "Ejemplos (tocar para insertar)"
+                setPadding(0, (12 * density).toInt(), 0, 0)
+            })
+            addView(presets)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Fórmula / Texto")
+            .setView(box)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                layer.formula = input.text.toString()
+                previewTv.text = try {
+                    FormulaEngine.evaluate(layer.formula, this)
+                } catch (_: Exception) { layer.formula }
+                notifyWidgetLayersChanged()
+            }
+            .show()
+    }
 
     private fun setupPicsTab() {
         val addBtn = findViewById<View>(R.id.buttonAddImageLayer)

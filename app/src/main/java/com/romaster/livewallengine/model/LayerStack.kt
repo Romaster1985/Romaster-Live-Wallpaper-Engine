@@ -46,6 +46,7 @@ object LayerStack {
      */
     fun ensure(project: WallpaperProject) {
         val imageIds = project.imageLayers.map { it.id }.toSet()
+        val widgetIds = project.widgetLayers.map { it.id }.toSet()
         var stack = project.layerStack
 
         if (stack.isEmpty()) {
@@ -58,7 +59,7 @@ object LayerStack {
 
         // Quitar huérfanos
         stack.removeAll { id ->
-            id != ID_VBG && id != ID_VOL && id != ID_CLOCK && id !in imageIds
+            id != ID_VBG && id != ID_VOL && id != ID_CLOCK && id !in imageIds && id !in widgetIds
         }
 
         // Asegurar tokens fijos
@@ -68,6 +69,11 @@ object LayerStack {
 
         // Asegurar cada imagen
         for (layer in project.imageLayers) {
+            if (layer.id !in stack) stack.add(layer.id)
+        }
+
+        // Asegurar cada widget
+        for (layer in project.widgetLayers) {
             if (layer.id !in stack) stack.add(layer.id)
         }
 

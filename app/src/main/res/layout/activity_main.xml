@@ -88,6 +88,15 @@
                 layout="@layout/layout_pics"/>
 
             <!-- ========================= -->
+            <!-- Widgets Overlay -->
+            <!-- ========================= -->
+
+            <include
+                android:id="@+id/panelWidgets"
+                android:visibility="gone"
+                layout="@layout/layout_widgets"/>
+
+            <!-- ========================= -->
             <!-- Proyecto -->
             <!-- ========================= -->
 

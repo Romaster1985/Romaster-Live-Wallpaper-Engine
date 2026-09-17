@@ -39,6 +39,10 @@ data class WallpaperProject(
     var imageLayers: MutableList<ImageLayer> =
         mutableListOf(),
 
+    /** Capas de widgets de texto/fórmula (Widgets-OL). */
+    var widgetLayers: MutableList<WidgetLayer> =
+        mutableListOf(),
+
     /**
      * Orden de composición de atrás hacia adelante.
      * Tokens: "vbg", "vol", "ckol" + ids de ImageLayer.
