@@ -36,13 +36,21 @@ data class WidgetLayer(
     var fontName: String? = null,
 
     /**
-     * true = interpretar el resultado como clave de glifo en fuente de íconos.
-     * false = dibujar el texto con [fontName].
+     * Compatibilidad con proyectos antiguos.
+     * En runtime se usa [iconFontName] != null como indicador de modo íconos.
      */
     var useIconFont: Boolean = false,
 
     /** Nombre del par TTF+JSON de íconos (carpeta Icons del repo de temas). */
     var iconFontName: String? = null,
+
+    /**
+     * Reasignación de nombres de íconos por widget.
+     * Clave = nombre del provider (p.ej. RAIN, CLEAR).
+     * Valor = nombre del glifo en la fuente de íconos (p.ej. rain, cloud_rain).
+     * Vacío = usar el nombre del provider tal cual contra el JSON de la fuente.
+     */
+    var iconGlyphMap: Map<String, String> = emptyMap(),
 
     /** Color ARGB del texto */
     var textColor: Int = 0xFFFFFFFF.toInt(),

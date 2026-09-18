@@ -234,7 +234,7 @@ class GLWidgetLayersRenderer {
         }
         val styleKey = listOf(
             layer.textSize, layer.textColor, layer.borderWidth, layer.borderColor,
-            layer.fontName, layer.useIconFont, layer.iconFontName
+            layer.fontName, layer.iconFontName, layer.iconGlyphMap.entries.sortedBy { it.key }
         ).joinToString("|")
         if (!force && text == lastText[layer.id] && styleKey == lastStyle[layer.id] && layer.id in textures) {
             lastEvalMs[layer.id] = SystemClock.elapsedRealtime()
@@ -245,9 +245,12 @@ class GLWidgetLayersRenderer {
         // Así preview (superficie chica) y wallpaper (pantalla real) se ven igual.
         val designScale = (screenH / 1920f).coerceIn(0.25f, 4f)
         // Icon font: mapear nombres de glifo → unicode antes de medir/dibujar
-        val drawText = if (layer.useIconFont && !layer.iconFontName.isNullOrBlank()) {
+        val useIcons = !layer.iconFontName.isNullOrBlank()
+        val drawText = if (useIcons) {
             val glyphs = IconFontStorage.loadGlyphMap(ctx, layer.iconFontName!!)
-            IconFontStorage.resolveGlyphText(text, glyphs)
+            // Aplicar reasignaciones: RAIN → nombre de glifo elegido por el usuario
+            val mapped = applyIconGlyphMap(text, layer.iconGlyphMap)
+            IconFontStorage.resolveGlyphText(mapped, glyphs)
         } else {
             text
         }
@@ -257,7 +260,7 @@ class GLWidgetLayersRenderer {
             textSize = layer.textSize.coerceIn(0f, 800f).coerceAtLeast(1f) * designScale
             textAlign = Paint.Align.LEFT
             typeface = try {
-                if (layer.useIconFont && !layer.iconFontName.isNullOrBlank()) {
+                if (useIcons) {
                     IconFontStorage.loadTypeface(ctx, layer.iconFontName!!)
                         ?: Typeface.DEFAULT
                 } else {
@@ -348,6 +351,22 @@ class GLWidgetLayersRenderer {
                 // Marca especial: negativo = esperando; simplificado: start = now+delay
                 // layerFadeAlpha si start > now → 0
             }
+        }
+    }
+
+
+    /** Aplica mapa weatherKey → glyphName (case-insensitive en la clave). */
+    private fun applyIconGlyphMap(text: String, map: Map<String, String>): String {
+        if (map.isEmpty()) return text
+        val trimmed = text.trim()
+        map[trimmed]?.let { return it }
+        map.entries.firstOrNull { it.key.equals(trimmed, ignoreCase = true) }?.let {
+            return it.value
+        }
+        // tokenizar por espacios
+        return trimmed.split(Regex("\\s+")).joinToString(" ") { token ->
+            map.entries.firstOrNull { it.key.equals(token, ignoreCase = true) }?.value
+                ?: token
         }
     }
 

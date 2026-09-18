@@ -2057,21 +2057,13 @@ private fun showFadeDurationDialog(
                 text = "Importar Fuentes"
                 isAllCaps = false
                 setOnClickListener {
-                    showImportFontsDialog()
+                    showImportFontsDialog(layerId)
                 }
             }
         )
 
-        root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
-            text = "Usar fuente de íconos"
-            isChecked = layer.useIconFont
-            setOnCheckedChangeListener { _, checked ->
-                live()?.useIconFont = checked
-                notifyWidgetLayersChanged()
-            }
-        })
-
         // Desplegables estilo Clock-OL
+        // Fuente de Íconos != "Ninguna" ⇒ modo íconos; "Ninguna" ⇒ fuente de texto
         root.addView(
             buildWidgetFontDropdown(
                 hint = "Fuente de Texto",
@@ -2098,11 +2090,13 @@ private fun showFadeDurationDialog(
                 items = iconItems,
                 selected = layer.iconFontName?.takeIf { it.isNotBlank() } ?: "Ninguna"
             ) { chosen ->
+                val w = live()
                 if (chosen == "Ninguna") {
-                    live()?.iconFontName = null
+                    w?.iconFontName = null
+                    w?.useIconFont = false
                 } else {
-                    live()?.iconFontName = chosen
-                    live()?.useIconFont = true
+                    w?.iconFontName = chosen
+                    w?.useIconFont = true
                 }
                 notifyWidgetLayersChanged()
             }
@@ -2275,6 +2269,31 @@ private fun showFadeDurationDialog(
             ).apply { topMargin = pad }
             setOnClickListener { showLayerPositionDialog(layerId) }
         })
+
+        root.addView(
+            MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = "Reestablecer Asignaciones de Íconos"
+                isAllCaps = false
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (8 * density).toInt() }
+                setOnClickListener {
+                    live()?.iconGlyphMap = emptyMap()
+                    ProjectManager.saveProject(ProjectManager.getProject())
+                    android.widget.Toast.makeText(
+                        this@MainActivity,
+                        "Asignaciones de íconos reestablecidas",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    notifyWidgetLayersChanged()
+                }
+            }
+        )
 
         root.addView(MaterialButton(this).apply {
             text = "Eliminar capa"
@@ -2662,7 +2681,7 @@ private fun showFadeDurationDialog(
     private var pendingIconTtfBytes: ByteArray? = null
     private var pendingIconTtfExt: String = "ttf"
 
-    private fun showImportFontsDialog() {
+    private fun showImportFontsDialog(layerId: String) {
         val options = arrayOf(
             "Importar Fuente de Texto (Local)",
             "Galería de Fuentes 🌎📲",
@@ -2674,11 +2693,9 @@ private fun showFadeDurationDialog(
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
-                        // Mismo flujo que Clock-OL → FontPicker
                         FontPicker.open(this)
                     }
                     1 -> {
-                        // Misma galería que Clock-OL
                         startActivityForResult(
                             Intent(
                                 this,
@@ -2698,12 +2715,14 @@ private fun showFadeDurationDialog(
                         openIconFontFilePicker(isJson = false)
                     }
                     3 -> {
-                        // Solo instala; no asigna a un layer concreto
                         pendingIconPick = null
                         startActivityForResult(
                             Intent(
                                 this,
                                 com.romaster.livewallengine.gallery.IconFontGalleryActivity::class.java
+                            ).putExtra(
+                                com.romaster.livewallengine.gallery.IconFontGalleryActivity.EXTRA_WIDGET_LAYER_ID,
+                                layerId
                             ),
                             FilePicker.REQUEST_GALLERY_ICON_FONT
                         )

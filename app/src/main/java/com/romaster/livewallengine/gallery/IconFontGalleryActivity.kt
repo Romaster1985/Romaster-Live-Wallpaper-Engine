@@ -40,6 +40,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.textfield.TextInputEditText
 import com.romaster.livewallengine.R
 import com.romaster.livewallengine.font.IconFontStorage
+import com.romaster.livewallengine.project.ProjectManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +54,14 @@ class IconFontGalleryActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_ICON_FONT_NAME = "icon_font_name"
+        const val EXTRA_WIDGET_LAYER_ID = "widget_layer_id"
+
+        /** Claves de ícono climático (KLWP / Open-Meteo mapeado). */
+        val WEATHER_ICON_KEYS = listOf(
+            "CLEAR", "PCLOUDY", "MCLOUDY", "FOG", "WINDY",
+            "RAIN", "SHOWER", "SLEET", "SNOW", "LSNOW", "HAIL",
+            "TSTORM", "TSHOWER", "TORNADO", "UNKNOWN"
+        )
     }
 
     private lateinit var recycler: RecyclerView
@@ -265,6 +274,11 @@ class IconFontGalleryActivity : AppCompatActivity() {
                                 LinearLayout.LayoutParams.WRAP_CONTENT
                             )
                         })
+                        val glyphName = name
+                        cell.isClickable = true
+                        cell.setOnClickListener {
+                            showAssignWeatherIconDialog(glyphName)
+                        }
                         grid.addView(cell)
                     }
                 }
@@ -280,7 +294,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
                 val container = LinearLayout(this@IconFontGalleryActivity).apply {
                     orientation = LinearLayout.VERTICAL
                     addView(TextView(this@IconFontGalleryActivity).apply {
-                        text = "${glyphs.size} íconos — toca Instalar para usar esta fuente"
+                        text = "${glyphs.size} íconos — toca un glifo para asignar a un estado climático, o Instalar"
                         textSize = 13f
                         setPadding(
                             (16 * density).toInt(),
@@ -309,6 +323,41 @@ class IconFontGalleryActivity : AppCompatActivity() {
                 ).show()
             }
         }
+    }
+
+
+    private fun showAssignWeatherIconDialog(glyphName: String) {
+        val layerId = intent.getStringExtra(EXTRA_WIDGET_LAYER_ID)
+        if (layerId.isNullOrBlank()) {
+            Toast.makeText(
+                this,
+                "Abrí la galería desde un widget para asignar nombres",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        val layer = ProjectManager.getProject().widgetLayers.find { it.id == layerId }
+        if (layer == null) {
+            Toast.makeText(this, "Widget no encontrado", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val keys = WEATHER_ICON_KEYS.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("Asignar nombre de ícono a:")
+            .setItems(keys) { _, which ->
+                val weatherKey = keys[which]
+                val updated = layer.iconGlyphMap.toMutableMap()
+                updated[weatherKey] = glyphName
+                layer.iconGlyphMap = updated
+                ProjectManager.saveProject(ProjectManager.getProject())
+                Toast.makeText(
+                    this,
+                    "$weatherKey → $glyphName",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun install(item: GalleryIconFontItem, cacheDir: File) {
@@ -342,6 +391,16 @@ class IconFontGalleryActivity : AppCompatActivity() {
                     )
                 }
                 wait.dismiss()
+                // Asignar fuente al widget desde el que se abrió la galería
+                val layerId = intent.getStringExtra(EXTRA_WIDGET_LAYER_ID)
+                if (!layerId.isNullOrBlank()) {
+                    ProjectManager.getProject().widgetLayers
+                        .find { it.id == layerId }
+                        ?.let { w ->
+                            w.iconFontName = item.name
+                            w.useIconFont = true
+                        }
+                }
                 Toast.makeText(
                     this@IconFontGalleryActivity,
                     "Íconos instalados: ${item.name}",
