@@ -36,13 +36,21 @@ data class WidgetLayer(
     var fontName: String? = null,
 
     /**
-     * true = interpretar el resultado como clave de glifo en fuente de íconos.
-     * false = dibujar el texto con [fontName].
+     * Compatibilidad con proyectos antiguos.
+     * En runtime se usa [iconFontName] != null como indicador de modo íconos.
      */
     var useIconFont: Boolean = false,
 
     /** Nombre del par TTF+JSON de íconos (carpeta Icons del repo de temas). */
     var iconFontName: String? = null,
+
+    /**
+     * Reasignación de nombres de íconos por widget.
+     * Clave = nombre del provider (p.ej. RAIN, CLEAR).
+     * Valor = nombre del glifo en la fuente de íconos (p.ej. rain, cloud_rain).
+     * Vacío = usar el nombre del provider tal cual contra el JSON de la fuente.
+     */
+    var iconGlyphMap: Map<String, String> = emptyMap(),
 
     /** Color ARGB del texto */
     var textColor: Int = 0xFFFFFFFF.toInt(),
@@ -79,5 +87,23 @@ data class WidgetLayer(
 
     var fadeDurationMs: Long = 1000L,
 
-    var delayStartMs: Long = 0L
+    var delayStartMs: Long = 0L,
+
+    /** Si true, aplica ejes de fuente variable (OpenType). */
+    var enableFontVariations: Boolean = false,
+
+    // Ejes de fuente variable (mismos defaults que Clock-OL)
+    var fontWidth: Float = 100f,
+    var fontWeight: Float = 400f,
+    var fontOpticalSize: Float = 28f,
+    var fontGrade: Float = 0f,
+    var fontSlant: Float = 0f,
+    var fontXopq: Float = 96f,
+    var fontYopq: Float = 79f,
+    var fontXtra: Float = 468f,
+    var fontYtuc: Float = 712f,
+    var fontYtlc: Float = 514f,
+    var fontYtas: Float = 750f,
+    var fontYtde: Float = -203f,
+    var fontYtfi: Float = 738f
 )

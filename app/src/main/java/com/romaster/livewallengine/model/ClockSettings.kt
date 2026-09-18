@@ -73,6 +73,9 @@ data class ClockSettings(
      */
     var behindVideoOverlay: Boolean = false,
 
+    /** Anclar el centro de la hora al carácter ':' (la fecha no se mueve). */
+    var centerOnColon: Boolean = false,
+
     /**
      * Si true, la fecha va arriba y la hora debajo.
      */

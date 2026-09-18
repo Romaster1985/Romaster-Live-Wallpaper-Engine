@@ -2057,21 +2057,13 @@ private fun showFadeDurationDialog(
                 text = "Importar Fuentes"
                 isAllCaps = false
                 setOnClickListener {
-                    showImportFontsDialog()
+                    showImportFontsDialog(layerId)
                 }
             }
         )
 
-        root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
-            text = "Usar fuente de íconos"
-            isChecked = layer.useIconFont
-            setOnCheckedChangeListener { _, checked ->
-                live()?.useIconFont = checked
-                notifyWidgetLayersChanged()
-            }
-        })
-
         // Desplegables estilo Clock-OL
+        // Fuente de Íconos != "Ninguna" ⇒ modo íconos; "Ninguna" ⇒ fuente de texto
         root.addView(
             buildWidgetFontDropdown(
                 hint = "Fuente de Texto",
@@ -2098,15 +2090,88 @@ private fun showFadeDurationDialog(
                 items = iconItems,
                 selected = layer.iconFontName?.takeIf { it.isNotBlank() } ?: "Ninguna"
             ) { chosen ->
+                val w = live()
                 if (chosen == "Ninguna") {
-                    live()?.iconFontName = null
+                    w?.iconFontName = null
+                    w?.useIconFont = false
                 } else {
-                    live()?.iconFontName = chosen
-                    live()?.useIconFont = true
+                    w?.iconFontName = chosen
+                    w?.useIconFont = true
                 }
                 notifyWidgetLayersChanged()
             }
         )
+
+        // Variaciones de fuente variable (mismo set que Clock-OL)
+        val variationContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = if (layer.enableFontVariations) android.view.View.VISIBLE
+            else android.view.View.GONE
+        }
+        root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = "Habilitar Variaciones de Fuentes"
+            isChecked = layer.enableFontVariations
+            setOnCheckedChangeListener { _, checked ->
+                live()?.enableFontVariations = checked
+                variationContainer.visibility =
+                    if (checked) android.view.View.VISIBLE else android.view.View.GONE
+                notifyWidgetLayersChanged()
+            }
+        })
+        fun addVarSlider(
+            title: String,
+            from: Float,
+            to: Float,
+            value: Float,
+            default: Float,
+            setter: (WidgetLayer, Float) -> Unit
+        ) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (8 * density).toInt(), 0, 0)
+            }
+            row.addView(TextView(this).apply {
+                text = title
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            val valueTv = TextView(this).apply { text = value.toInt().toString() }
+            row.addView(valueTv)
+            variationContainer.addView(row)
+            val slider = com.google.android.material.slider.Slider(this).apply {
+                valueFrom = from
+                valueTo = to
+                stepSize = 1f
+                this.value = value.coerceIn(from, to)
+                addOnChangeListener { _, v, fromUser ->
+                    valueTv.text = v.toInt().toString()
+                    if (fromUser && !loadingUI) {
+                        live()?.let { setter(it, v) }
+                        notifyWidgetLayersChanged()
+                    }
+                }
+            }
+            variationContainer.addView(slider)
+            attachSliderResetButton(slider, valueTv, default) { v ->
+                valueTv.text = v.toInt().toString()
+                live()?.let { setter(it, v) }
+                notifyWidgetLayersChanged()
+            }
+        }
+        addVarSlider("Width (wdth)", 25f, 151f, layer.fontWidth, 100f) { w, v -> w.fontWidth = v }
+        addVarSlider("Weight (wght)", 100f, 1000f, layer.fontWeight, 400f) { w, v -> w.fontWeight = v }
+        addVarSlider("Optical Size (opsz)", 8f, 144f, layer.fontOpticalSize, 28f) { w, v -> w.fontOpticalSize = v }
+        addVarSlider("Grade (GRAD)", -200f, 150f, layer.fontGrade, 0f) { w, v -> w.fontGrade = v }
+        addVarSlider("Slant (slnt)", -10f, 0f, layer.fontSlant, 0f) { w, v -> w.fontSlant = v }
+        addVarSlider("Thick stroke XOPQ", 27f, 175f, layer.fontXopq, 96f) { w, v -> w.fontXopq = v }
+        addVarSlider("Thin stroke YOPQ", 25f, 135f, layer.fontYopq, 79f) { w, v -> w.fontYopq = v }
+        addVarSlider("Counter width XTRA", 323f, 603f, layer.fontXtra, 468f) { w, v -> w.fontXtra = v }
+        addVarSlider("Uppercase YTUC", 528f, 760f, layer.fontYtuc, 712f) { w, v -> w.fontYtuc = v }
+        addVarSlider("Lowercase YTLC", 416f, 570f, layer.fontYtlc, 514f) { w, v -> w.fontYtlc = v }
+        addVarSlider("Ascender YTAS", 649f, 854f, layer.fontYtas, 750f) { w, v -> w.fontYtas = v }
+        addVarSlider("Descender YTDE", -305f, -98f, layer.fontYtde, -203f) { w, v -> w.fontYtde = v }
+        addVarSlider("Figure height YTFI", 560f, 788f, layer.fontYtfi, 738f) { w, v -> w.fontYtfi = v }
+        root.addView(variationContainer)
 
         // Colores (texto + borde) — mismo diálogo que Clock-OL
         val colorRow = LinearLayout(this).apply {
@@ -2275,6 +2340,31 @@ private fun showFadeDurationDialog(
             ).apply { topMargin = pad }
             setOnClickListener { showLayerPositionDialog(layerId) }
         })
+
+        root.addView(
+            MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = "Reestablecer Asignaciones de Íconos"
+                isAllCaps = false
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (8 * density).toInt() }
+                setOnClickListener {
+                    live()?.iconGlyphMap = emptyMap()
+                    ProjectManager.saveProject(ProjectManager.getProject())
+                    android.widget.Toast.makeText(
+                        this@MainActivity,
+                        "Asignaciones de íconos reestablecidas",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    notifyWidgetLayersChanged()
+                }
+            }
+        )
 
         root.addView(MaterialButton(this).apply {
             text = "Eliminar capa"
@@ -2662,7 +2752,7 @@ private fun showFadeDurationDialog(
     private var pendingIconTtfBytes: ByteArray? = null
     private var pendingIconTtfExt: String = "ttf"
 
-    private fun showImportFontsDialog() {
+    private fun showImportFontsDialog(layerId: String) {
         val options = arrayOf(
             "Importar Fuente de Texto (Local)",
             "Galería de Fuentes 🌎📲",
@@ -2674,11 +2764,9 @@ private fun showFadeDurationDialog(
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
-                        // Mismo flujo que Clock-OL → FontPicker
                         FontPicker.open(this)
                     }
                     1 -> {
-                        // Misma galería que Clock-OL
                         startActivityForResult(
                             Intent(
                                 this,
@@ -2698,12 +2786,14 @@ private fun showFadeDurationDialog(
                         openIconFontFilePicker(isJson = false)
                     }
                     3 -> {
-                        // Solo instala; no asigna a un layer concreto
                         pendingIconPick = null
                         startActivityForResult(
                             Intent(
                                 this,
                                 com.romaster.livewallengine.gallery.IconFontGalleryActivity::class.java
+                            ).putExtra(
+                                com.romaster.livewallengine.gallery.IconFontGalleryActivity.EXTRA_WIDGET_LAYER_ID,
+                                layerId
                             ),
                             FilePicker.REQUEST_GALLERY_ICON_FONT
                         )
@@ -4359,6 +4449,11 @@ findViewById<CheckBox>(
             (clock.y * 100f).toInt().toString()
 
         findViewById<MaterialSwitch>(
+            R.id.switchCenterOnColon
+        ).isChecked =
+            clock.centerOnColon
+
+        findViewById<MaterialSwitch>(
             R.id.switchClockBehindOverlay
         ).isChecked =
             clock.behindVideoOverlay
@@ -4572,6 +4667,18 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             if (loadingUI)
                 return@setOnCheckedChangeListener
         
+            updatePreviewProject()
+        }
+
+        findViewById<MaterialSwitch>(
+            R.id.switchCenterOnColon
+        ).setOnCheckedChangeListener { _, checked ->
+
+            if (loadingUI)
+                return@setOnCheckedChangeListener
+
+            ProjectManager.getProject().clock.centerOnColon = checked
+            editor.save()
             updatePreviewProject()
         }
 
@@ -6167,6 +6274,11 @@ clock.enabled =
             findViewById<Slider>(
                 R.id.sliderY
             ).value / 100f
+
+        clock.centerOnColon =
+            findViewById<MaterialSwitch>(
+                R.id.switchCenterOnColon
+            ).isChecked
 
         clock.behindVideoOverlay =
             findViewById<MaterialSwitch>(

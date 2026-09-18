@@ -1124,6 +1124,13 @@
                     android:value="50"/>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchCenterOnColon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Centrar hora con marcador [ : ]"/>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switchClockBehindOverlay"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

@@ -126,7 +126,8 @@ class ClockRenderer {
             val textSize: Float,
             val fontFile: String?,
             val deform: Float,
-            val border: Float
+            val border: Float,
+            val isTime: Boolean = false
         )
 
         val lines = ArrayList<LineInfo>(2)
@@ -152,7 +153,8 @@ class ClockRenderer {
                 lines.add(
                     LineInfo(
                         part, baseline, settings.clockSize,
-                        settings.clockFont, settings.clockVerticalDeform, settings.clockBorderWidth
+                        settings.clockFont, settings.clockVerticalDeform, settings.clockBorderWidth,
+                        isTime = true
                     )
                 )
                 bot = baseline + fm.descent * scaleY
@@ -216,10 +218,17 @@ class ClockRenderer {
             val tw = paint.measureText(line.text)
             val scaleY = verticalScale(line.textSize, line.deform)
             val fm = paint.fontMetrics
-            val lineLeft = when (settings.alignment) {
-                TextAlignment.CENTER -> baseX - tw / 2f
-                TextAlignment.RIGHT -> baseX - tw
-                else -> baseX
+            val lineLeft = if (line.isTime && settings.centerOnColon && line.text.contains(':')) {
+                val idx = line.text.indexOf(':')
+                val beforeW = paint.measureText(line.text, 0, idx)
+                val colonW = paint.measureText(":")
+                baseX - beforeW - colonW / 2f
+            } else {
+                when (settings.alignment) {
+                    TextAlignment.CENTER -> baseX - tw / 2f
+                    TextAlignment.RIGHT -> baseX - tw
+                    else -> baseX
+                }
             }
             val lineRight = lineLeft + tw
             val lineTop = line.baseline + fm.ascent * scaleY
@@ -301,18 +310,32 @@ class ClockRenderer {
             fontFile: String?,
             deformPx: Float,
             borderWidth: Float,
-            borderColorHex: String
+            borderColorHex: String,
+            isTime: Boolean = false
         ) {
             track(baselineY, textSize, deformPx, fontFile)
+            var drawX = baseX
+            var drawAlign = settings.alignment
+            if (isTime && settings.centerOnColon && text.contains(':')) {
+                preparePaint(
+                    context, textSize, colorHex, fontFile,
+                    settings.alignment, variationOf(settings)
+                )
+                val idx = text.indexOf(':')
+                val beforeW = paint.measureText(text, 0, idx)
+                val colonW = paint.measureText(":")
+                drawX = baseX - beforeW - colonW / 2f
+                drawAlign = TextAlignment.LEFT
+            }
             drawTextLine(
                 context, canvas,
                 text = text,
-                x = baseX,
+                x = drawX,
                 baselineY = baselineY,
                 textSize = textSize,
                 colorHex = colorHex,
                 fontFile = fontFile,
-                alignment = settings.alignment,
+                alignment = drawAlign,
                 deformPx = deformPx,
                 borderWidth = borderWidth,
                 borderColorHex = borderColorHex,
@@ -342,7 +365,8 @@ class ClockRenderer {
                 line(
                     part, baseline, settings.clockSize,
                     settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
-                    settings.clockBorderWidth, settings.clockBorderColor
+                    settings.clockBorderWidth, settings.clockBorderColor,
+                    isTime = true
                 )
                 bot = baseline + fm.descent * scaleY
             }
