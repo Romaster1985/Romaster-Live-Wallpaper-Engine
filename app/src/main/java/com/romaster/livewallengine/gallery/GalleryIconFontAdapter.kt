@@ -35,7 +35,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Grilla de fuentes de íconos: preview con los primeros glifos del JSON.
+ * Grilla de fuentes de íconos estilo KLWP:
+ * nombre arriba, muchos glifos pequeños sobre fondo oscuro, conteo abajo.
  */
 class GalleryIconFontAdapter(
     private val scope: CoroutineScope,
@@ -54,7 +55,7 @@ class GalleryIconFontAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_gallery_font, parent, false)
+            .inflate(R.layout.item_gallery_icon_font, parent, false)
         return VH(view)
     }
 
@@ -65,6 +66,7 @@ class GalleryIconFontAdapter(
         holder.name.text = item.name
         holder.preview.typeface = Typeface.DEFAULT
         holder.preview.text = "…"
+        holder.count.text = "…"
         holder.progress.visibility = View.VISIBLE
         holder.itemView.setOnClickListener { onClick(item) }
 
@@ -81,7 +83,7 @@ class GalleryIconFontAdapter(
                         GitHubGalleryRepository.downloadFile(item.jsonUrl, jsonLocal)
                     }
                 }
-                val (tf, sample) = withContext(Dispatchers.IO) {
+                val (tf, sample, total) = withContext(Dispatchers.IO) {
                     val typeface = try {
                         Typeface.createFromFile(ttfLocal)
                     } catch (_: Exception) {
@@ -92,23 +94,24 @@ class GalleryIconFontAdapter(
                     } catch (_: Exception) {
                         emptyMap()
                     }
-                    // Primeros 8–10 glifos para el preview
+                    // Muchos glifos pequeños (estilo KLWP); ~48 máx en la tarjeta
                     val sampleText = glyphs.values
                         .distinct()
-                        .take(10)
+                        .take(48)
                         .joinToString(" ")
                         .ifBlank { "?" }
-                    typeface to sampleText
+                    Triple(typeface, sampleText, glyphs.size)
                 }
                 if (holder.bindingAdapterPosition == position) {
                     holder.preview.typeface = tf
                     holder.preview.text = sample
-                    holder.preview.textSize = 22f
+                    holder.count.text = if (total == 1) "1 icon" else "$total icons"
                     holder.progress.visibility = View.GONE
                 }
             } catch (_: Exception) {
                 if (holder.bindingAdapterPosition == position) {
                     holder.preview.text = "Error"
+                    holder.count.text = "—"
                     holder.progress.visibility = View.GONE
                 }
             }
@@ -124,8 +127,9 @@ class GalleryIconFontAdapter(
     }
 
     class VH(view: View) : RecyclerView.ViewHolder(view) {
-        val preview: TextView = view.findViewById(R.id.textFontPreview)
-        val name: TextView = view.findViewById(R.id.textFontName)
-        val progress: ProgressBar = view.findViewById(R.id.progressFontPreview)
+        val preview: TextView = view.findViewById(R.id.textIconFontPreview)
+        val name: TextView = view.findViewById(R.id.textIconFontName)
+        val count: TextView = view.findViewById(R.id.textIconFontCount)
+        val progress: ProgressBar = view.findViewById(R.id.progressIconFontPreview)
     }
 }

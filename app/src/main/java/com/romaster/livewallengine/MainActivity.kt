@@ -134,6 +134,8 @@ class MainActivity : AppCompatActivity() {
     private var pendingImageLayerId: String? = null
     private val REQUEST_IMAGE_LAYER = 4711
     private val REQUEST_CLOCK_CRYSTAL_TEXTURE = 4712
+    private val REQUEST_WIDGET_ICON_TTF = 4713
+    private val REQUEST_WIDGET_ICON_JSON = 4714
     
     private var clockColorHex =
         "#FFFFFF"
@@ -2052,14 +2054,10 @@ private fun showFadeDurationDialog(
                 null,
                 com.google.android.material.R.attr.materialButtonOutlinedStyle
             ).apply {
-                text = "Fuente: " + (layer.fontName ?: "Sistema")
+                text = "Importar Fuentes"
                 isAllCaps = false
-                setOnClickListener { btn ->
-                    showWidgetFontPicker(layerId) { name ->
-                        live()?.fontName = name
-                        (btn as MaterialButton).text = "Fuente: " + (name ?: "Sistema")
-                        notifyWidgetLayersChanged()
-                    }
+                setOnClickListener {
+                    showImportFontsDialog()
                 }
             }
         )
@@ -2073,22 +2071,40 @@ private fun showFadeDurationDialog(
             }
         })
 
+        // Desplegables estilo Clock-OL
         root.addView(
-            MaterialButton(
-                this,
-                null,
-                com.google.android.material.R.attr.materialButtonOutlinedStyle
-            ).apply {
-                text = "Íconos: " + (layer.iconFontName ?: "Ninguna")
-                isAllCaps = false
-                setOnClickListener { btn ->
-                    showWidgetIconFontPicker(layerId) { name ->
-                        live()?.iconFontName = name
-                        if (name != null) live()?.useIconFont = true
-                        (btn as MaterialButton).text = "Íconos: " + (name ?: "Ninguna")
-                        notifyWidgetLayersChanged()
-                    }
+            buildWidgetFontDropdown(
+                hint = "Fuente de Texto",
+                items = listOf("Fuente predeterminada") +
+                    FontStorage.getInstalledFonts(this),
+                selected = layer.fontName?.takeIf { it.isNotBlank() } ?: "Fuente predeterminada"
+            ) { chosen ->
+                live()?.fontName =
+                    if (chosen == "Fuente predeterminada") null else chosen
+                notifyWidgetLayersChanged()
+            }
+        )
+
+        val iconItems = mutableListOf("Ninguna")
+        try {
+            iconItems.addAll(
+                com.romaster.livewallengine.font.IconFontStorage.listInstalled(this)
+            )
+        } catch (_: Exception) {
+        }
+        root.addView(
+            buildWidgetFontDropdown(
+                hint = "Fuente de Íconos",
+                items = iconItems,
+                selected = layer.iconFontName?.takeIf { it.isNotBlank() } ?: "Ninguna"
+            ) { chosen ->
+                if (chosen == "Ninguna") {
+                    live()?.iconFontName = null
+                } else {
+                    live()?.iconFontName = chosen
+                    live()?.useIconFont = true
                 }
+                notifyWidgetLayersChanged()
             }
         )
 
@@ -2581,6 +2597,277 @@ private fun showFadeDurationDialog(
             .setNegativeButton("Cancelar", null)
             .show()
     }
+
+
+
+    /**
+     * Menú desplegable Material (ExposedDropdown) como en Clock-OL.
+     * Construido en código para las cards de Widgets-OL.
+     */
+    private fun buildWidgetFontDropdown(
+        hint: String,
+        items: List<String>,
+        selected: String,
+        onSelected: (String) -> Unit
+    ): com.google.android.material.textfield.TextInputLayout {
+        val density = resources.displayMetrics.density
+        val til = com.google.android.material.textfield.TextInputLayout(
+            this,
+            null,
+            com.google.android.material.R.attr.textInputOutlinedExposedDropdownMenuStyle
+        ).apply {
+            this.hint = hint
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = (6 * density).toInt()
+            }
+            endIconMode =
+                com.google.android.material.textfield.TextInputLayout.END_ICON_DROPDOWN_MENU
+            boxBackgroundMode =
+                com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+        }
+        val actv = AutoCompleteTextView(til.context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            inputType = android.text.InputType.TYPE_NULL
+            keyListener = null
+            isFocusable = false
+            isClickable = true
+            setText(
+                if (items.contains(selected)) selected else items.firstOrNull().orEmpty(),
+                false
+            )
+            setAdapter(
+                ArrayAdapter(
+                    this@MainActivity,
+                    android.R.layout.simple_list_item_1,
+                    items
+                )
+            )
+            setOnItemClickListener { _, _, position, _ ->
+                val value = items.getOrNull(position) ?: return@setOnItemClickListener
+                onSelected(value)
+            }
+        }
+        til.addView(actv)
+        return til
+    }
+
+    /** Bytes y nombre base del TTF pendiente de emparejar con JSON. */
+    private var pendingIconTtfBase: String? = null
+    private var pendingIconTtfBytes: ByteArray? = null
+    private var pendingIconTtfExt: String = "ttf"
+
+    private fun showImportFontsDialog() {
+        val options = arrayOf(
+            "Importar Fuente de Texto (Local)",
+            "Galería de Fuentes 🌎📲",
+            "Importar Fuente de Íconos (Local)",
+            "Galería de Íconos 🌎📲"
+        )
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Importar Fuentes")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        // Mismo flujo que Clock-OL → FontPicker
+                        FontPicker.open(this)
+                    }
+                    1 -> {
+                        // Misma galería que Clock-OL
+                        startActivityForResult(
+                            Intent(
+                                this,
+                                com.romaster.livewallengine.gallery.FontGalleryActivity::class.java
+                            ),
+                            FilePicker.REQUEST_GALLERY_FONT
+                        )
+                    }
+                    2 -> {
+                        pendingIconTtfBase = null
+                        pendingIconTtfBytes = null
+                        android.widget.Toast.makeText(
+                            this,
+                            "Cargar TTF",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                        openIconFontFilePicker(isJson = false)
+                    }
+                    3 -> {
+                        // Solo instala; no asigna a un layer concreto
+                        pendingIconPick = null
+                        startActivityForResult(
+                            Intent(
+                                this,
+                                com.romaster.livewallengine.gallery.IconFontGalleryActivity::class.java
+                            ),
+                            FilePicker.REQUEST_GALLERY_ICON_FONT
+                        )
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun openIconFontFilePicker(isJson: Boolean) {
+        val intent = android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(android.content.Intent.CATEGORY_OPENABLE)
+            if (isJson) {
+                type = "application/json"
+                putExtra(
+                    android.content.Intent.EXTRA_MIME_TYPES,
+                    arrayOf("application/json", "text/json", "text/plain", "*/*")
+                )
+            } else {
+                type = "*/*"
+                putExtra(
+                    android.content.Intent.EXTRA_MIME_TYPES,
+                    arrayOf(
+                        "font/ttf",
+                        "font/otf",
+                        "application/x-font-ttf",
+                        "application/x-font-otf",
+                        "application/octet-stream",
+                        "*/*"
+                    )
+                )
+            }
+        }
+        startActivityForResult(
+            intent,
+            if (isJson) REQUEST_WIDGET_ICON_JSON else REQUEST_WIDGET_ICON_TTF
+        )
+    }
+
+    private fun displayNameFromUri(uri: android.net.Uri): String {
+        var name = "file"
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (idx >= 0 && cursor.moveToFirst()) {
+                name = cursor.getString(idx) ?: name
+            }
+        }
+        return name
+    }
+
+    private fun handleWidgetIconTtf(uri: android.net.Uri) {
+        try {
+            val fileName = displayNameFromUri(uri)
+            val lower = fileName.lowercase()
+            if (!lower.endsWith(".ttf") && !lower.endsWith(".otf")) {
+                android.widget.Toast.makeText(
+                    this,
+                    "Error: seleccioná un archivo .ttf u .otf",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+            val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes == null || bytes.isEmpty()) {
+                android.widget.Toast.makeText(
+                    this,
+                    "Error al leer el TTF",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+            pendingIconTtfBase = fileName.substringBeforeLast('.')
+            pendingIconTtfExt = fileName.substringAfterLast('.', "ttf")
+            pendingIconTtfBytes = bytes
+            android.widget.Toast.makeText(
+                this,
+                "Cargar json",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            openIconFontFilePicker(isJson = true)
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(
+                this,
+                "Error: ${e.message ?: e.javaClass.simpleName}",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun handleWidgetIconJson(uri: android.net.Uri) {
+        try {
+            val fileName = displayNameFromUri(uri)
+            val lower = fileName.lowercase()
+            if (!lower.endsWith(".json")) {
+                pendingIconTtfBase = null
+                pendingIconTtfBytes = null
+                android.widget.Toast.makeText(
+                    this,
+                    "Error: seleccioná un archivo .json",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+            val jsonBase = fileName.substringBeforeLast('.')
+            val ttfBase = pendingIconTtfBase
+            val ttfBytes = pendingIconTtfBytes
+            pendingIconTtfBase = null
+            pendingIconTtfBytes = null
+            if (ttfBase == null || ttfBytes == null) {
+                android.widget.Toast.makeText(
+                    this,
+                    "Error: no hay TTF pendiente. Volvé a importar.",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+            if (!jsonBase.equals(ttfBase, ignoreCase = true)) {
+                android.widget.Toast.makeText(
+                    this,
+                    "Error al cargar: Los nombres de los archivos no coinciden",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+            val jsonBytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            if (jsonBytes == null || jsonBytes.isEmpty()) {
+                android.widget.Toast.makeText(
+                    this,
+                    "Error al leer el JSON",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+            // Guardar con el nombre del TTF (base canónica)
+            val base = ttfBase
+            val ext = pendingIconTtfExt.ifBlank { "ttf" }
+            com.romaster.livewallengine.font.IconFontStorage.saveFromBytes(
+                this,
+                "$base.$ext",
+                ttfBytes
+            )
+            com.romaster.livewallengine.font.IconFontStorage.saveFromBytes(
+                this,
+                "$base.json",
+                jsonBytes
+            )
+            android.widget.Toast.makeText(
+                this,
+                "Fuente de Íconos cargada",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            rebuildWidgetLayerCards()
+        } catch (e: Exception) {
+            pendingIconTtfBase = null
+            pendingIconTtfBytes = null
+            android.widget.Toast.makeText(
+                this,
+                "Error: ${e.message ?: e.javaClass.simpleName}",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
 
     private var pendingIconPick: ((String?) -> Unit)? = null
 
@@ -4397,6 +4684,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         // Galería de fuentes: ya instalada en FontGalleryActivity
         if (requestCode == FilePicker.REQUEST_GALLERY_FONT) {
             reloadFontLibrary()
+            rebuildWidgetLayerCards()
             editor.save()
             updatePreviewProject()
             return
@@ -4409,7 +4697,20 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             )
             pendingIconPick?.invoke(name)
             pendingIconPick = null
+            rebuildWidgetLayerCards()
             notifyWidgetLayersChanged()
+            return
+        }
+
+        // Import local de fuente de íconos (TTF luego JSON)
+        if (requestCode == REQUEST_WIDGET_ICON_TTF) {
+            val iconUri = data?.data ?: return
+            handleWidgetIconTtf(iconUri)
+            return
+        }
+        if (requestCode == REQUEST_WIDGET_ICON_JSON) {
+            val iconUri = data?.data ?: return
+            handleWidgetIconJson(iconUri)
             return
         }
     
@@ -4500,6 +4801,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 )
     
                 reloadFontLibrary()
+                rebuildWidgetLayerCards()
     
                 editor.save()
             }

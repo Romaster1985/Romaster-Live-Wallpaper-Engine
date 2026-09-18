@@ -24,7 +24,11 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.graphics.Typeface
+import android.widget.GridLayout
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -163,14 +167,148 @@ class IconFontGalleryActivity : AppCompatActivity() {
     }
 
     private fun confirmInstall(item: GalleryIconFontItem, cacheDir: File) {
-        AlertDialog.Builder(this)
+        val density = resources.displayMetrics.density
+        val loading = AlertDialog.Builder(this)
             .setTitle(item.name)
-            .setMessage("¿Instalar esta fuente de íconos (TTF + JSON)?")
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Instalar") { _, _ ->
-                install(item, cacheDir)
+            .setMessage("Cargando glifos…")
+            .setCancelable(true)
+            .create()
+        loading.show()
+
+        lifecycleScope.launch {
+            try {
+                val ttfLocal = File(cacheDir, item.ttfFileName)
+                val jsonLocal = File(cacheDir, item.jsonFileName)
+                val (iconTypeface, glyphs) = withContext(Dispatchers.IO) {
+                    if (!ttfLocal.exists() || ttfLocal.length() == 0L) {
+                        GitHubGalleryRepository.downloadFile(item.ttfUrl, ttfLocal)
+                    }
+                    if (!jsonLocal.exists() || jsonLocal.length() == 0L) {
+                        GitHubGalleryRepository.downloadFile(item.jsonUrl, jsonLocal)
+                    }
+                    val tf = try {
+                        Typeface.createFromFile(ttfLocal)
+                    } catch (_: Exception) {
+                        Typeface.DEFAULT
+                    }
+                    val map = try {
+                        IconFontStorage.parseIcoMoon(jsonLocal.readText())
+                    } catch (_: Exception) {
+                        emptyMap()
+                    }
+                    // Orden estable por nombre
+                    tf to map.toList().sortedBy { it.first.lowercase() }
+                }
+                loading.dismiss()
+
+                val scroll = ScrollView(this@IconFontGalleryActivity)
+                val cols = 4
+                val grid = GridLayout(this@IconFontGalleryActivity).apply {
+                    columnCount = cols
+                    setPadding(
+                        (6 * density).toInt(),
+                        (4 * density).toInt(),
+                        (6 * density).toInt(),
+                        (4 * density).toInt()
+                    )
+                }
+
+                if (glyphs.isEmpty()) {
+                    grid.addView(TextView(this@IconFontGalleryActivity).apply {
+                        text = "No se encontraron glifos en el JSON."
+                        setPadding((8 * density).toInt(), (16 * density).toInt(), 0, 0)
+                    })
+                } else {
+                    // Ancho usable ≈ diálogo (~88% pantalla) menos paddings/márgenes
+                    val margin = (2 * density).toInt()
+                    val gridHPad = (12 * density).toInt()
+                    val dialogUsable = (resources.displayMetrics.widthPixels * 0.88f).toInt()
+                    val cellSize = ((dialogUsable - gridHPad) / cols) - margin * 2
+                    for ((name, char) in glyphs) {
+                        val cell = LinearLayout(this@IconFontGalleryActivity).apply {
+                            orientation = LinearLayout.VERTICAL
+                            gravity = android.view.Gravity.CENTER
+                            setPadding(
+                                (2 * density).toInt(),
+                                (4 * density).toInt(),
+                                (2 * density).toInt(),
+                                (4 * density).toInt()
+                            )
+                            setBackgroundColor(0xFF2A2A2A.toInt())
+                            layoutParams = GridLayout.LayoutParams().apply {
+                                width = cellSize
+                                height = cellSize // cuadrado
+                                setMargins(margin, margin, margin, margin)
+                            }
+                        }
+                        cell.addView(TextView(this@IconFontGalleryActivity).apply {
+                            text = char
+                            typeface = iconTypeface
+                            textSize = 22f
+                            gravity = android.view.Gravity.CENTER
+                            setTextColor(0xFFFFFFFF.toInt())
+                            layoutParams = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                0,
+                                1f
+                            )
+                        })
+                        cell.addView(TextView(this@IconFontGalleryActivity).apply {
+                            text = name
+                            textSize = 9f
+                            gravity = android.view.Gravity.CENTER
+                            setTextColor(0xFFCCCCCC.toInt())
+                            maxLines = 1
+                            ellipsize = android.text.TextUtils.TruncateAt.END
+                            layoutParams = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            )
+                        })
+                        grid.addView(cell)
+                    }
+                }
+
+                scroll.addView(grid)
+                // Altura máxima ~60% de pantalla para no tapar botones
+                val maxH = (resources.displayMetrics.heightPixels * 0.55f).toInt()
+                scroll.layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    maxH
+                )
+
+                val container = LinearLayout(this@IconFontGalleryActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(TextView(this@IconFontGalleryActivity).apply {
+                        text = "${glyphs.size} íconos — toca Instalar para usar esta fuente"
+                        textSize = 13f
+                        setPadding(
+                            (16 * density).toInt(),
+                            (8 * density).toInt(),
+                            (16 * density).toInt(),
+                            (4 * density).toInt()
+                        )
+                    })
+                    addView(scroll)
+                }
+
+                AlertDialog.Builder(this@IconFontGalleryActivity)
+                    .setTitle(item.name)
+                    .setView(container)
+                    .setNegativeButton("Cancelar", null)
+                    .setPositiveButton("Instalar") { _, _ ->
+                        install(item, cacheDir)
+                    }
+                    .show()
+            } catch (e: Exception) {
+                loading.dismiss()
+                Toast.makeText(
+                    this@IconFontGalleryActivity,
+                    "Error: ${e.message ?: e.javaClass.simpleName}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
-            .show()
+        }
     }
 
     private fun install(item: GalleryIconFontItem, cacheDir: File) {

@@ -378,15 +378,28 @@ class GLWidgetLayersRenderer {
         }
     }
 
+    /**
+     * Al desbloquear:
+     * - visible en lock y launcher → sin re-fade (ya se veía)
+     * - oculto en lock (disableOnLockScreen) y visible en launcher → Soft Start
+     * - oculto en launcher (disableOnLauncher) → hidden
+     */
     fun revealAfterUnlock() {
         lastDeviceLocked = false
         val now = SystemClock.elapsedRealtime()
         ProjectManager.getProject().widgetLayers.forEach { layer ->
-            if (shouldShow(layer, deviceLocked = false)) {
-                forceHidden[layer.id] = false
-                fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
-            } else {
+            if (!shouldShow(layer, deviceLocked = false)) {
                 forceHidden[layer.id] = true
+                fadeStartTimes.remove(layer.id)
+            } else {
+                forceHidden[layer.id] = false
+                if (layer.disableOnLockScreen) {
+                    // Estaba oculto en bloqueo → fade al desbloquear
+                    fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
+                } else {
+                    // Ya visible en lock screen → no reiniciar soft start
+                    fadeStartTimes.remove(layer.id)
+                }
             }
         }
     }
