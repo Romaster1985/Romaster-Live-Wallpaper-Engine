@@ -44,7 +44,7 @@ object WeatherProvider {
         val windKmh: Float = 0f,
         val code: Int = 0,
         val condition: String = "—",
-        val iconKey: String = "unknown",
+        val iconKey: String = "UNKNOWN",
         val updatedMs: Long = 0L
     )
 
@@ -164,20 +164,34 @@ object WeatherProvider {
         conn.inputStream.bufferedReader().use { return it.readText() }
     }
 
-    /** WMO Weather interpretation codes → texto + clave de ícono. */
+    /**
+     * WMO weather codes → (condición legible, clave de ícono KLWP).
+     *
+     * Claves de ícono exactas de KLWP ($wi(icon)$):
+     * UNKNOWN, TORNADO, TSTORM, TSHOWER, SHOWER, RAIN, SLEET,
+     * LSNOW, SNOW, HAIL, FOG, WINDY, PCLOUDY, MCLOUDY, CLEAR
+     */
     private fun mapCode(code: Int): Pair<String, String> {
         return when (code) {
-            0 -> "Clear" to "clear"
-            1, 2 -> "Partly cloudy" to "partly_cloudy"
-            3 -> "Overcast" to "cloudy"
-            45, 48 -> "Fog" to "fog"
-            51, 53, 55, 56, 57 -> "Drizzle" to "drizzle"
-            61, 63, 65, 66, 67 -> "Rain" to "rain"
-            71, 73, 75, 77 -> "Snow" to "snow"
-            80, 81, 82 -> "Showers" to "showers"
-            85, 86 -> "Snow showers" to "snow"
-            95, 96, 99 -> "Thunderstorm" to "storm"
-            else -> "Unknown" to "unknown"
+            0 -> "cielo claro" to "CLEAR"
+            1 -> "mayormente despejado" to "PCLOUDY"
+            2 -> "parcialmente nublado" to "PCLOUDY"
+            3 -> "nublado" to "MCLOUDY"
+            45, 48 -> "niebla" to "FOG"
+            51, 53, 55 -> "llovizna" to "RAIN"
+            56, 57 -> "llovizna helada" to "SLEET"
+            61, 63 -> "lluvia" to "RAIN"
+            65 -> "lluvia intensa" to "RAIN"
+            66, 67 -> "lluvia helada" to "SLEET"
+            71, 73 -> "nieve" to "SNOW"
+            75, 77 -> "nieve intensa" to "SNOW"
+            80 -> "chubascos" to "SHOWER"
+            81, 82 -> "chubascos intensos" to "SHOWER"
+            85 -> "chubascos de nieve" to "LSNOW"
+            86 -> "chubascos de nieve intensos" to "LSNOW"
+            95 -> "tormenta" to "TSTORM"
+            96, 99 -> "tormenta con granizo" to "HAIL"
+            else -> "desconocido" to "UNKNOWN"
         }
     }
 }

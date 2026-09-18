@@ -100,6 +100,11 @@ object ProjectExporter {
         if (!project.clock.clockFont.isNullOrBlank()) n++
         if (!project.clock.dateFont.isNullOrBlank()) n++
         n += project.imageLayers.count { !it.fileName.isNullOrBlank() }
+        // Fuentes de texto e íconos usadas por widgets
+        val widgetFonts = project.widgetLayers.mapNotNull { it.fontName }.toSet()
+        val widgetIcons = project.widgetLayers.mapNotNull { it.iconFontName }.toSet()
+        n += widgetFonts.size
+        n += widgetIcons.size * 2 // ttf + json
         return n
     }
 
@@ -243,6 +248,41 @@ object ProjectExporter {
                 context
             )
             onFileDone()
+        }
+
+        // Fuentes de texto usadas por Widgets-OL
+        val exportedFonts = mutableSetOf<String>()
+        project.clock.clockFont?.let { exportedFonts += it }
+        project.clock.dateFont?.let { exportedFonts += it }
+        for (layer in project.widgetLayers) {
+            val fname = layer.fontName ?: continue
+            if (fname in exportedFonts) continue
+            exportedFonts += fname
+            addFile(
+                zip,
+                File(context.filesDir, "fonts/$fname"),
+                "fonts/$fname",
+                context
+            )
+            onFileDone()
+        }
+
+        // Fuentes de íconos (TTF + JSON) usadas por Widgets-OL
+        val exportedIcons = mutableSetOf<String>()
+        for (layer in project.widgetLayers) {
+            val base = layer.iconFontName ?: continue
+            if (base in exportedIcons) continue
+            exportedIcons += base
+            val ttf = com.romaster.livewallengine.font.IconFontStorage.getTtf(context, base)
+            val json = com.romaster.livewallengine.font.IconFontStorage.getJson(context, base)
+            if (ttf != null) {
+                addFile(zip, ttf, "icons/${ttf.name}", context)
+                onFileDone()
+            }
+            if (json != null) {
+                addFile(zip, json, "icons/${json.name}", context)
+                onFileDone()
+            }
         }
     }
 }

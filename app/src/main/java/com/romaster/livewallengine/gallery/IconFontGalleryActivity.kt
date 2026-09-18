@@ -1,0 +1,227 @@
+/*
+ * Copyright 2026 Román Ignacio Romero (Romaster)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Nota: Este proyecto incluye ColorPickerView (skydoves) licenciado bajo Apache 2.0.
+ */
+
+package com.romaster.livewallengine.gallery
+
+import android.app.Activity
+import android.content.Intent
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.textfield.TextInputEditText
+import com.romaster.livewallengine.R
+import com.romaster.livewallengine.font.IconFontStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+
+/**
+ * Galería de fuentes de íconos (carpeta Icons del repo de temas).
+ * Preview: primeros glifos del JSON + typeface del TTF.
+ */
+class IconFontGalleryActivity : AppCompatActivity() {
+
+    companion object {
+        const val EXTRA_ICON_FONT_NAME = "icon_font_name"
+    }
+
+    private lateinit var recycler: RecyclerView
+    private lateinit var progress: ProgressBar
+    private lateinit var textEmpty: TextView
+    private lateinit var textError: TextView
+    private lateinit var editSearch: TextInputEditText
+    private lateinit var adapter: GalleryIconFontAdapter
+
+    private var allItems: List<GalleryIconFontItem> = emptyList()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_font_gallery)
+
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbarGallery)
+        toolbar.title = "Galería de íconos"
+        toolbar.setNavigationOnClickListener { finish() }
+
+        recycler = findViewById(R.id.recyclerGallery)
+        progress = findViewById(R.id.progressGallery)
+        textEmpty = findViewById(R.id.textGalleryEmpty)
+        textError = findViewById(R.id.textGalleryError)
+        editSearch = findViewById(R.id.editFontSearch)
+        editSearch.hint = "Buscar fuente de íconos…"
+
+        val cacheDir = File(cacheDir, "icon_font_gallery")
+        cacheDir.mkdirs()
+
+        adapter = GalleryIconFontAdapter(
+            scope = lifecycleScope,
+            cacheDir = cacheDir
+        ) { item ->
+            confirmInstall(item, cacheDir)
+        }
+
+        recycler.layoutManager = GridLayoutManager(this, 2)
+        recycler.adapter = adapter
+
+        editSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                applyFilter(s?.toString().orEmpty())
+            }
+        })
+
+        loadGallery()
+    }
+
+    private fun loadGallery() {
+        progress.visibility = View.VISIBLE
+        textEmpty.visibility = View.GONE
+        textError.visibility = View.GONE
+        recycler.visibility = View.GONE
+        editSearch.isEnabled = false
+
+        lifecycleScope.launch {
+            try {
+                val list = withContext(Dispatchers.IO) {
+                    GitHubGalleryRepository.listIconFonts().map {
+                        GalleryIconFontItem(
+                            name = it.name,
+                            ttfFileName = it.ttfFileName,
+                            ttfUrl = it.ttfUrl,
+                            jsonFileName = it.jsonFileName,
+                            jsonUrl = it.jsonUrl
+                        )
+                    }
+                }
+                progress.visibility = View.GONE
+                allItems = list
+                editSearch.isEnabled = true
+                if (list.isEmpty()) {
+                    textEmpty.visibility = View.VISIBLE
+                    textEmpty.text = "No hay pares TTF+JSON en la carpeta Icons del repositorio."
+                    recycler.visibility = View.GONE
+                } else {
+                    applyFilter(editSearch.text?.toString().orEmpty())
+                }
+            } catch (e: Exception) {
+                progress.visibility = View.GONE
+                textError.visibility = View.VISIBLE
+                textError.text = "Error: ${e.message ?: e.javaClass.simpleName}"
+            }
+        }
+    }
+
+    private fun applyFilter(query: String) {
+        val q = query.trim()
+        val filtered = if (q.isEmpty()) {
+            allItems
+        } else {
+            allItems.filter {
+                it.name.contains(q, ignoreCase = true) ||
+                    it.ttfFileName.contains(q, ignoreCase = true)
+            }
+        }
+        if (filtered.isEmpty()) {
+            recycler.visibility = View.GONE
+            textEmpty.visibility = View.VISIBLE
+            textEmpty.text = if (q.isEmpty()) {
+                "No hay fuentes de íconos en Icons/."
+            } else {
+                "Ninguna coincide con \"$q\"."
+            }
+        } else {
+            textEmpty.visibility = View.GONE
+            recycler.visibility = View.VISIBLE
+            adapter.submit(filtered)
+        }
+    }
+
+    private fun confirmInstall(item: GalleryIconFontItem, cacheDir: File) {
+        AlertDialog.Builder(this)
+            .setTitle(item.name)
+            .setMessage("¿Instalar esta fuente de íconos (TTF + JSON)?")
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Instalar") { _, _ ->
+                install(item, cacheDir)
+            }
+            .show()
+    }
+
+    private fun install(item: GalleryIconFontItem, cacheDir: File) {
+        val wait = AlertDialog.Builder(this)
+            .setMessage("Instalando íconos…")
+            .setCancelable(false)
+            .create()
+        wait.show()
+
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val ttfLocal = File(cacheDir, item.ttfFileName)
+                    val jsonLocal = File(cacheDir, item.jsonFileName)
+                    if (!ttfLocal.exists() || ttfLocal.length() == 0L) {
+                        GitHubGalleryRepository.downloadFile(item.ttfUrl, ttfLocal)
+                    }
+                    if (!jsonLocal.exists() || jsonLocal.length() == 0L) {
+                        GitHubGalleryRepository.downloadFile(item.jsonUrl, jsonLocal)
+                    }
+                    // Copiar al almacenamiento permanente icons/
+                    IconFontStorage.saveFromBytes(
+                        this@IconFontGalleryActivity,
+                        item.ttfFileName,
+                        ttfLocal.readBytes()
+                    )
+                    IconFontStorage.saveFromBytes(
+                        this@IconFontGalleryActivity,
+                        item.jsonFileName,
+                        jsonLocal.readBytes()
+                    )
+                }
+                wait.dismiss()
+                Toast.makeText(
+                    this@IconFontGalleryActivity,
+                    "Íconos instalados: ${item.name}",
+                    Toast.LENGTH_SHORT
+                ).show()
+                setResult(
+                    Activity.RESULT_OK,
+                    Intent().putExtra(EXTRA_ICON_FONT_NAME, item.name)
+                )
+                finish()
+            } catch (e: Exception) {
+                wait.dismiss()
+                Toast.makeText(
+                    this@IconFontGalleryActivity,
+                    "Error: ${e.message ?: e.javaClass.simpleName}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+}

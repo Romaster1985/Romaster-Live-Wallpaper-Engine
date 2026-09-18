@@ -113,7 +113,10 @@ object LayerStack {
             ID_CLOCK -> "Clock-OL"
             else -> {
                 val idx = project.imageLayers.indexOfFirst { it.id == id }
-                if (idx >= 0) "Capa de Imagen ${idx + 1}" else "Capa"
+                if (idx >= 0) return "Capa de Imagen ${idx + 1}"
+                val wIdx = project.widgetLayers.indexOfFirst { it.id == id }
+                if (wIdx >= 0) return "Widget ${wIdx + 1}"
+                "Capa"
             }
         }
     }

@@ -33,11 +33,21 @@ import java.net.URL
  */
 object IconFontStorage {
 
-    private const val DIR = "icon_fonts"
+    private const val DIR = "icons"
 
     fun getDir(context: Context): File {
         val d = File(context.filesDir, DIR)
         if (!d.exists()) d.mkdirs()
+        // Migrar restos de versiones anteriores (icon_fonts/)
+        val legacy = File(context.filesDir, "icon_fonts")
+        if (legacy.isDirectory) {
+            legacy.listFiles()?.forEach { f ->
+                val dest = File(d, f.name)
+                if (!dest.exists()) {
+                    try { f.copyTo(dest, overwrite = false) } catch (_: Exception) {}
+                }
+            }
+        }
         return d
     }
 

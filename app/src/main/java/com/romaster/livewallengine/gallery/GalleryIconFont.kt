@@ -16,18 +16,12 @@
  * Nota: Este proyecto incluye ColorPickerView (skydoves) licenciado bajo Apache 2.0.
  */
 
-package com.romaster.livewallengine.storage
+package com.romaster.livewallengine.gallery
 
-object FilePicker {
-
-    const val REQUEST_EXPORT_PROJECT = 4001
-
-    const val REQUEST_IMPORT_PROJECT = 4002
-
-    const val REQUEST_GALLERY_PROJECT = 4003
-
-    const val REQUEST_GALLERY_FONT = 4004
-
-    const val REQUEST_GALLERY_ICON_FONT = 4005
-
-}
+data class GalleryIconFontItem(
+    val name: String,
+    val ttfFileName: String,
+    val ttfUrl: String,
+    val jsonFileName: String,
+    val jsonUrl: String
+)

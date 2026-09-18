@@ -1974,6 +1974,8 @@ private fun showFadeDurationDialog(
         project.widgetLayers.forEachIndexed { index, layer ->
             container.addView(buildWidgetLayerCard(layer, index + 1))
         }
+        rebuildWidgetSoftStartRows()
+        rebuildWidgetDelayStartRows()
     }
 
     private fun notifyWidgetLayersChanged() {
@@ -2250,13 +2252,22 @@ private fun showFadeDurationDialog(
         })
 
         root.addView(MaterialButton(this).apply {
+            text = "Seleccionar ubicación de capa"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = pad }
+            setOnClickListener { showLayerPositionDialog(layerId) }
+        })
+
+        root.addView(MaterialButton(this).apply {
             text = "Eliminar capa"
             setBackgroundColor(0xFFB00020.toInt())
             setTextColor(0xFFFFFFFF.toInt())
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = pad }
+            ).apply { topMargin = (8 * density).toInt() }
             setOnClickListener { removeWidgetLayer(layerId) }
         })
 
@@ -2571,75 +2582,16 @@ private fun showFadeDurationDialog(
             .show()
     }
 
+    private var pendingIconPick: ((String?) -> Unit)? = null
+
     private fun openIconFontGallery(onPicked: (String?) -> Unit) {
-        val progress = android.app.ProgressDialog(this).apply {
-            setMessage("Cargando galería de íconos…")
-            setCancelable(true)
-            show()
-        }
-        lifecycleScope.launch {
-            try {
-                val list = withContext(Dispatchers.IO) {
-                    com.romaster.livewallengine.gallery.GitHubGalleryRepository.listIconFonts()
-                }
-                progress.dismiss()
-                if (list.isEmpty()) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "No hay pares TTF+JSON en Icons/",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    return@launch
-                }
-                val names = list.map { it.name }.toTypedArray()
-                AlertDialog.Builder(this@MainActivity)
-                    .setTitle("Galería de íconos")
-                    .setItems(names) { _, which ->
-                        val item = list[which]
-                        val dlg = android.app.ProgressDialog(this@MainActivity).apply {
-                            setMessage("Descargando ${item.name}…")
-                            setCancelable(false)
-                            show()
-                        }
-                        lifecycleScope.launch {
-                            try {
-                                withContext(Dispatchers.IO) {
-                                    com.romaster.livewallengine.font.IconFontStorage.downloadPair(
-                                        this@MainActivity,
-                                        item.name,
-                                        item.ttfUrl,
-                                        item.jsonUrl
-                                    )
-                                }
-                                dlg.dismiss()
-                                onPicked(item.name)
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Íconos instalados: ${item.name}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            } catch (e: Exception) {
-                                dlg.dismiss()
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Error: ${e.message}",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
-            } catch (e: Exception) {
-                progress.dismiss()
-                Toast.makeText(
-                    this@MainActivity,
-                    "Error galería: ${e.message}",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
+        pendingIconPick = onPicked
+        startActivityForResult(
+            Intent(this, com.romaster.livewallengine.gallery.IconFontGalleryActivity::class.java),
+            FilePicker.REQUEST_GALLERY_ICON_FONT
+        )
     }
+
 
     private fun showWidgetFontPicker(layerId: String, onPicked: (String?) -> Unit) {
         val fonts = try {
@@ -2848,6 +2800,128 @@ private fun showFadeDurationDialog(
             }
             .show()
     }
+
+
+    private fun rebuildWidgetSoftStartRows() {
+        val container = findViewById<LinearLayout>(R.id.containerWidgetFadeDurations)
+            ?: return
+        container.removeAllViews()
+        val project = ProjectManager.getProject()
+        val density = resources.displayMetrics.density
+        project.widgetLayers.forEachIndexed { index, layer ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (16 * density).toInt(), 0, 0)
+            }
+            val texts = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            texts.addView(TextView(this).apply {
+                text = "Widget ${index + 1}"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            val valueTv = TextView(this).apply {
+                text = "${layer.fadeDurationMs} ms"
+                textSize = 14f
+                setPadding(0, (2 * density).toInt(), 0, 0)
+            }
+            texts.addView(valueTv)
+            row.addView(texts)
+            row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = "Editar..."
+                setOnClickListener {
+                    showWidgetLayerFadeDialog(layer.id, valueTv)
+                }
+            })
+            container.addView(row)
+        }
+    }
+
+    private fun showWidgetLayerFadeDialog(layerId: String, valueTv: TextView) {
+        val project = ProjectManager.getProject()
+        val layer = project.widgetLayers.find { it.id == layerId } ?: return
+        val idx = project.widgetLayers.indexOfFirst { it.id == layerId } + 1
+        val input = android.widget.EditText(this).apply {
+            setText(layer.fadeDurationMs.toString())
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Soft Start — Widget $idx")
+            .setMessage("Duración del fade-in en milisegundos.")
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val value = input.text.toString().toLongOrNull()?.coerceAtLeast(0L) ?: return@setPositiveButton
+                layer.fadeDurationMs = value
+                valueTv.text = "$value ms"
+                editor.save()
+                notifyWidgetLayersChanged()
+            }
+            .show()
+    }
+
+    private fun rebuildWidgetDelayStartRows() {
+        val container = findViewById<LinearLayout>(R.id.containerWidgetDelayStarts)
+            ?: return
+        container.removeAllViews()
+        val project = ProjectManager.getProject()
+        val density = resources.displayMetrics.density
+        project.widgetLayers.forEachIndexed { index, layer ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (16 * density).toInt(), 0, 0)
+            }
+            val texts = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            texts.addView(TextView(this).apply {
+                text = "Widget ${index + 1}"
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            val valueTv = TextView(this).apply {
+                text = "${layer.delayStartMs} ms"
+                textSize = 14f
+                setPadding(0, (2 * density).toInt(), 0, 0)
+            }
+            texts.addView(valueTv)
+            row.addView(texts)
+            row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = "Editar..."
+                setOnClickListener {
+                    showWidgetLayerDelayDialog(layer.id, valueTv)
+                }
+            })
+            container.addView(row)
+        }
+    }
+
+    private fun showWidgetLayerDelayDialog(layerId: String, valueTv: TextView) {
+        val project = ProjectManager.getProject()
+        val layer = project.widgetLayers.find { it.id == layerId } ?: return
+        val idx = project.widgetLayers.indexOfFirst { it.id == layerId } + 1
+        val input = android.widget.EditText(this).apply {
+            setText(layer.delayStartMs.toString())
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Delay Start — Widget $idx")
+            .setMessage("Tiempo de espera en milisegundos antes del Soft Start.")
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val value = input.text.toString().toLongOrNull()?.coerceAtLeast(0L) ?: return@setPositiveButton
+                layer.delayStartMs = value
+                valueTv.text = "$value ms"
+                editor.save()
+                notifyWidgetLayersChanged()
+            }
+            .show()
+    }
+
 
     private fun buildImageLayerCard(
         layer: ImageLayer,
@@ -4325,6 +4399,17 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             reloadFontLibrary()
             editor.save()
             updatePreviewProject()
+            return
+        }
+
+        // Galería de íconos: TTF+JSON instalados en IconFontGalleryActivity
+        if (requestCode == FilePicker.REQUEST_GALLERY_ICON_FONT) {
+            val name = data?.getStringExtra(
+                com.romaster.livewallengine.gallery.IconFontGalleryActivity.EXTRA_ICON_FONT_NAME
+            )
+            pendingIconPick?.invoke(name)
+            pendingIconPick = null
+            notifyWidgetLayersChanged()
             return
         }
     

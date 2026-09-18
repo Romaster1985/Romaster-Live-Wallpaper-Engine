@@ -123,6 +123,12 @@ object ProjectImporter {
                             entry.name
                         )
 
+                    entry.name.startsWith("icons/") ->
+                        File(
+                            context.filesDir,
+                            entry.name
+                        )
+
                     entry.name.startsWith("images/") ->
                         File(
                             context.filesDir,

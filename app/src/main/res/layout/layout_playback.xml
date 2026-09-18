@@ -534,6 +534,13 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"/>
 
+                <!-- Widgets-OL — se rellena en runtime -->
+                <LinearLayout
+                    android:id="@+id/containerWidgetDelayStarts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"/>
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
@@ -703,6 +710,13 @@
                 <!-- Capas de imagen (Pics-OL) — se rellena en runtime -->
                 <LinearLayout
                     android:id="@+id/containerImageFadeDurations"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"/>
+
+                <!-- Widgets-OL Soft Start — se rellena en runtime -->
+                <LinearLayout
+                    android:id="@+id/containerWidgetFadeDurations"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"/>

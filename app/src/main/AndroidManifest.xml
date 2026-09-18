@@ -68,6 +68,13 @@
         <activity
             android:name=".gallery.FontGalleryActivity"
             android:exported="false"
+            android:theme="@style/Theme.RomasterLiveWall"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".gallery.IconFontGalleryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RomasterLiveWall"
             android:parentActivityName=".MainActivity" />
 
         <service
