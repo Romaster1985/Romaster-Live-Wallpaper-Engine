@@ -25,6 +25,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
 import android.graphics.Typeface
+import android.widget.FrameLayout
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -275,9 +276,15 @@ class IconFontGalleryActivity : AppCompatActivity() {
                             )
                         })
                         val glyphName = name
+                        val glyphChar = char
                         cell.isClickable = true
                         cell.setOnClickListener {
-                            showAssignWeatherIconDialog(glyphName)
+                            showAssignWeatherIconDialog(
+                                glyphName = glyphName,
+                                glyphChar = glyphChar,
+                                typeface = iconTypeface,
+                                baseCellSize = cellSize
+                            )
                         }
                         grid.addView(cell)
                     }
@@ -326,7 +333,12 @@ class IconFontGalleryActivity : AppCompatActivity() {
     }
 
 
-    private fun showAssignWeatherIconDialog(glyphName: String) {
+    private fun showAssignWeatherIconDialog(
+        glyphName: String,
+        glyphChar: String,
+        typeface: Typeface,
+        baseCellSize: Int
+    ) {
         val layerId = intent.getStringExtra(EXTRA_WIDGET_LAYER_ID)
         if (layerId.isNullOrBlank()) {
             Toast.makeText(
@@ -341,9 +353,142 @@ class IconFontGalleryActivity : AppCompatActivity() {
             Toast.makeText(this, "Widget no encontrado", Toast.LENGTH_SHORT).show()
             return
         }
+
+        val density = resources.displayMetrics.density
+        val previewSize = (baseCellSize * 2).coerceAtLeast((72 * density).toInt())
+
+        // Contenido del glifo (ícono + nombre)
+        val previewContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(
+                (8 * density).toInt(),
+                (12 * density).toInt(),
+                (8 * density).toInt(),
+                (12 * density).toInt()
+            )
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+        previewContent.addView(TextView(this).apply {
+            text = glyphChar
+            this.typeface = typeface
+            textSize = 44f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(0xFFFFFFFF.toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        })
+        previewContent.addView(TextView(this).apply {
+            text = glyphName
+            textSize = 12f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(0xFFCCCCCC.toInt())
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        })
+
+        // Ícono copiar: dos cuadrados superpuestos.
+        // Trasero = abajo-derecha; delantero = arriba-izquierda (tapa al de atrás).
+        val copyIconSize = (14 * density).toInt()
+        val previewBg = 0xFF2A2A2A.toInt()
+        val copyIcon = object : View(this) {
+            private val fill = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                style = android.graphics.Paint.Style.FILL
+                color = previewBg
+            }
+            private val stroke = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                style = android.graphics.Paint.Style.STROKE
+                strokeWidth = 2.2f * density
+                color = 0xFFB0B0B0.toInt()
+            }
+            override fun onDraw(canvas: android.graphics.Canvas) {
+                super.onDraw(canvas)
+                val pad = stroke.strokeWidth * 0.55f
+                val s = minOf(width, height) * 0.58f
+                val offset = s * 0.36f
+                val radius = 1.0f * density
+
+                // Trasero: abajo-derecha (se dibuja primero)
+                val backL = pad + offset
+                val backT = pad + offset
+                canvas.drawRoundRect(backL, backT, backL + s, backT + s, radius, radius, fill)
+                canvas.drawRoundRect(backL, backT, backL + s, backT + s, radius, radius, stroke)
+
+                // Delantero: arriba-izquierda (relleno tapa el solape)
+                val frontL = pad
+                val frontT = pad
+                canvas.drawRoundRect(frontL, frontT, frontL + s, frontT + s, radius, radius, fill)
+                canvas.drawRoundRect(frontL, frontT, frontL + s, frontT + s, radius, radius, stroke)
+            }
+        }.apply {
+            layoutParams = FrameLayout.LayoutParams(copyIconSize, copyIconSize).apply {
+                gravity = android.view.Gravity.TOP or android.view.Gravity.END
+                setMargins(
+                    0,
+                    (6 * density).toInt(),
+                    (6 * density).toInt(),
+                    0
+                )
+            }
+            isClickable = false
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+
+        // Recuadro completo: toque → copiar nombre del glifo al clipboard
+        val preview = FrameLayout(this).apply {
+            setBackgroundColor(0xFF2A2A2A.toInt())
+            layoutParams = LinearLayout.LayoutParams(previewSize, previewSize).apply {
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
+                topMargin = (8 * density).toInt()
+                bottomMargin = (4 * density).toInt()
+            }
+            isClickable = true
+            isFocusable = true
+            contentDescription = "Copiar nombre: $glyphName"
+            addView(previewContent)
+            addView(copyIcon)
+            setOnClickListener {
+                val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(
+                    android.content.ClipData.newPlainText("icon_glyph", glyphName)
+                )
+                Toast.makeText(
+                    this@IconFontGalleryActivity,
+                    "Copiado: $glyphName",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+            setPadding(
+                (16 * density).toInt(),
+                (8 * density).toInt(),
+                (16 * density).toInt(),
+                (4 * density).toInt()
+            )
+            addView(preview)
+            addView(TextView(this@IconFontGalleryActivity).apply {
+                text = "Asignar nombre de ícono a:"
+                textSize = 16f
+                this.typeface = Typeface.DEFAULT_BOLD
+                setTextColor(0xFFFFFFFF.toInt())
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, (8 * density).toInt(), 0, (4 * density).toInt())
+            })
+        }
+
         val keys = WEATHER_ICON_KEYS.toTypedArray()
         AlertDialog.Builder(this)
-            .setTitle("Asignar nombre de ícono a:")
+            .setCustomTitle(header)
             .setItems(keys) { _, which ->
                 val weatherKey = keys[which]
                 val updated = layer.iconGlyphMap.toMutableMap()
