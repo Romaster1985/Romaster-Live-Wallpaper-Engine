@@ -79,6 +79,12 @@ data class WidgetLayer(
     /** Grados */
     var rotation: Float = 0f,
 
+    /** Alineación horizontal del texto y ancla de posición X. */
+    var alignH: TextAlignment = TextAlignment.CENTER,
+
+    /** Alineación vertical del texto y ancla de posición Y. */
+    var alignV: VerticalAlignment = VerticalAlignment.MIDDLE,
+
     /** true = oculto en pantalla de bloqueo */
     var disableOnLockScreen: Boolean = false,
 

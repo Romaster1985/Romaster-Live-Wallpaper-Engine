@@ -30,6 +30,8 @@ import android.os.SystemClock
 import com.romaster.livewallengine.formula.FormulaEngine
 import com.romaster.livewallengine.font.FontManager
 import com.romaster.livewallengine.font.IconFontStorage
+import com.romaster.livewallengine.model.TextAlignment
+import com.romaster.livewallengine.model.VerticalAlignment
 import com.romaster.livewallengine.model.WidgetLayer
 import com.romaster.livewallengine.project.ProjectManager
 import java.nio.ByteBuffer
@@ -181,8 +183,23 @@ class GLWidgetLayersRenderer {
         val scaleX = (bw.toFloat() / screenH) * zoom
         val scaleY = (bh.toFloat() / screenH) * zoom
 
-        val tx = (layer.x.coerceIn(0f, 1f) - 0.5f) * 2f * screenRatio
-        val ty = (0.5f - layer.y.coerceIn(0f, 1f)) * 2f
+        // Ancla de posición según alineación (el "cero" de X/Y):
+        // LEFT/CENTER/RIGHT → borde izq / centro / borde der del bitmap
+        // TOP/MIDDLE/BOTTOM → borde sup / centro / borde inf
+        val anchorX = (layer.x.coerceIn(0f, 1f) - 0.5f) * 2f * screenRatio
+        val anchorY = (0.5f - layer.y.coerceIn(0f, 1f)) * 2f
+        val ox = when (layer.alignH) {
+            TextAlignment.LEFT -> scaleX
+            TextAlignment.RIGHT -> -scaleX
+            TextAlignment.CENTER -> 0f
+        }
+        val oy = when (layer.alignV) {
+            VerticalAlignment.TOP -> -scaleY
+            VerticalAlignment.BOTTOM -> scaleY
+            VerticalAlignment.MIDDLE -> 0f
+        }
+        val tx = anchorX + ox
+        val ty = anchorY + oy
 
         val mvp = FloatArray(16)
         val proj = FloatArray(16)
@@ -237,7 +254,8 @@ class GLWidgetLayersRenderer {
             layer.fontName, layer.iconFontName, layer.iconGlyphMap.entries.sortedBy { it.key },
             layer.enableFontVariations, layer.fontWidth, layer.fontWeight, layer.fontOpticalSize,
             layer.fontGrade, layer.fontSlant, layer.fontXopq, layer.fontYopq, layer.fontXtra,
-            layer.fontYtuc, layer.fontYtlc, layer.fontYtas, layer.fontYtde, layer.fontYtfi
+            layer.fontYtuc, layer.fontYtlc, layer.fontYtas, layer.fontYtde, layer.fontYtfi,
+            layer.alignH, layer.alignV
         ).joinToString("|")
         if (!force && text == lastText[layer.id] && styleKey == lastStyle[layer.id] && layer.id in textures) {
             lastEvalMs[layer.id] = SystemClock.elapsedRealtime()
@@ -310,16 +328,22 @@ class GLWidgetLayersRenderer {
         val borderPx = (layer.borderWidth * designScale).coerceAtLeast(0f)
         var y = pad - fm.top
         for (line in lines) {
+            val lineW = paint.measureText(line)
+            val x = when (layer.alignH) {
+                TextAlignment.LEFT -> pad.toFloat()
+                TextAlignment.RIGHT -> (tw - pad).toFloat() - lineW
+                TextAlignment.CENTER -> (tw - lineW) / 2f
+            }
             if (borderPx > 0.5f) {
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = borderPx * 2f
                 paint.color = layer.borderColor
-                canvas.drawText(line, pad.toFloat(), y, paint)
+                canvas.drawText(line, x, y, paint)
             }
             paint.style = Paint.Style.FILL
             paint.strokeWidth = 0f
             paint.color = layer.textColor
-            canvas.drawText(line, pad.toFloat(), y, paint)
+            canvas.drawText(line, x, y, paint)
             y += lineHeight
         }
 

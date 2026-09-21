@@ -71,6 +71,7 @@ import com.romaster.livewallengine.font.FontPicker
 import com.romaster.livewallengine.font.FontStorage
 import com.romaster.livewallengine.model.DateFormat
 import com.romaster.livewallengine.model.TextAlignment
+import com.romaster.livewallengine.model.VerticalAlignment
 import com.romaster.livewallengine.model.TimeFormat
 import com.romaster.livewallengine.model.ClockSettings
 import com.romaster.livewallengine.model.OverlaySettings
@@ -2266,6 +2267,24 @@ private fun showFadeDurationDialog(
             }
         }
 
+        root.addView(
+            MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = "Alineación de Fuentes"
+                isAllCaps = false
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (8 * density).toInt() }
+                setOnClickListener {
+                    showWidgetAlignmentDialog(layerId)
+                }
+            }
+        )
+
         addSliderRow(
             "Tamaño de texto",
             0f, 800f,
@@ -2751,6 +2770,119 @@ private fun showFadeDurationDialog(
     private var pendingIconTtfBase: String? = null
     private var pendingIconTtfBytes: ByteArray? = null
     private var pendingIconTtfExt: String = "ttf"
+
+
+    private fun showWidgetAlignmentDialog(layerId: String) {
+        val layer = ProjectManager.getProject().widgetLayers.find { it.id == layerId }
+            ?: return
+        val density = resources.displayMetrics.density
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(
+                (20 * density).toInt(),
+                (12 * density).toInt(),
+                (20 * density).toInt(),
+                (8 * density).toInt()
+            )
+        }
+
+        // Cabecera columnas: LEFT CENTER RIGHT
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, 0, 0, (8 * density).toInt())
+        }
+        header.addView(TextView(this).apply {
+            // espacio para labels TOP/MIDDLE/BOTTOM
+            layoutParams = LinearLayout.LayoutParams((64 * density).toInt(), LinearLayout.LayoutParams.WRAP_CONTENT)
+        })
+        for (label in listOf("LEFT", "CENTER", "RIGHT")) {
+            header.addView(TextView(this).apply {
+                text = label
+                gravity = android.view.Gravity.CENTER
+                textSize = 12f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+        }
+        root.addView(header)
+
+        val group = android.widget.RadioGroup(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        data class Cell(val h: TextAlignment, val v: VerticalAlignment, val id: Int)
+        val cells = listOf(
+            Cell(TextAlignment.LEFT, VerticalAlignment.TOP, 9001),
+            Cell(TextAlignment.CENTER, VerticalAlignment.TOP, 9002),
+            Cell(TextAlignment.RIGHT, VerticalAlignment.TOP, 9003),
+            Cell(TextAlignment.LEFT, VerticalAlignment.MIDDLE, 9004),
+            Cell(TextAlignment.CENTER, VerticalAlignment.MIDDLE, 9005),
+            Cell(TextAlignment.RIGHT, VerticalAlignment.MIDDLE, 9006),
+            Cell(TextAlignment.LEFT, VerticalAlignment.BOTTOM, 9007),
+            Cell(TextAlignment.CENTER, VerticalAlignment.BOTTOM, 9008),
+            Cell(TextAlignment.RIGHT, VerticalAlignment.BOTTOM, 9009)
+        )
+
+        val rowLabels = listOf("TOP", "MIDDLE", "BOTTOM")
+        for (row in 0 until 3) {
+            val rowLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (6 * density).toInt(), 0, (6 * density).toInt())
+            }
+            rowLayout.addView(TextView(this).apply {
+                text = rowLabels[row]
+                textSize = 12f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                gravity = android.view.Gravity.CENTER_VERTICAL or android.view.Gravity.END
+                layoutParams = LinearLayout.LayoutParams(
+                    (64 * density).toInt(),
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            })
+            // RadioGroup no admite filas horizontales anidadas bien con exclusividad,
+            // usamos radios sueltos y sincronizamos manualmente.
+            for (col in 0 until 3) {
+                val cell = cells[row * 3 + col]
+                val rb = android.widget.RadioButton(this).apply {
+                    id = cell.id
+                    isChecked = layer.alignH == cell.h && layer.alignV == cell.v
+                    gravity = android.view.Gravity.CENTER
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                }
+                rowLayout.addView(rb)
+            }
+            root.addView(rowLayout)
+        }
+
+        // Contenedor con todos los radios para poder desmarcar por id
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Alineación de fuentes")
+            .setView(root)
+            .setPositiveButton("OK", null)
+            .create()
+
+        // Re-bind clicks con acceso al root del diálogo para desmarcar
+        fun rebind() {
+            for (cell in cells) {
+                val rb = root.findViewById<android.widget.RadioButton>(cell.id) ?: continue
+                rb.setOnClickListener {
+                    for (c in cells) {
+                        root.findViewById<android.widget.RadioButton>(c.id)?.isChecked =
+                            c.id == cell.id
+                    }
+                    layer.alignH = cell.h
+                    layer.alignV = cell.v
+                    ProjectManager.saveProject(ProjectManager.getProject())
+                    notifyWidgetLayersChanged()
+                }
+            }
+        }
+        dialog.setOnShowListener { rebind() }
+        dialog.show()
+    }
 
     private fun showImportFontsDialog(layerId: String) {
         val options = arrayOf(
