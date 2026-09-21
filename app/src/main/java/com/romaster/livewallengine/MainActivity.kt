@@ -3510,7 +3510,7 @@ private fun showFadeDurationDialog(
             tag = "file_${layer.id}"
         })
 
-        // Igual que Video-OL: destildado = visible en bloqueo
+        // Igual que Video-OL / Widgets-OL: destildado = visible en bloqueo
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
             text = "Deshabilitar en pantalla de bloqueo"
             isChecked = layer.disableOnLockScreen
@@ -3518,6 +3518,18 @@ private fun showFadeDurationDialog(
             setOnCheckedChangeListener { _, checked ->
                 if (loadingUI) return@setOnCheckedChangeListener
                 liveLayer()?.disableOnLockScreen = checked
+                editor.save()
+                notifyImageLayersChanged()
+            }
+        })
+
+        root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = "Deshabilitar en Launcher (Desbloqueado)"
+            isChecked = layer.disableOnLauncher
+            setPadding(0, (4 * density).toInt(), 0, 0)
+            setOnCheckedChangeListener { _, checked ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                liveLayer()?.disableOnLauncher = checked
                 editor.save()
                 notifyImageLayersChanged()
             }

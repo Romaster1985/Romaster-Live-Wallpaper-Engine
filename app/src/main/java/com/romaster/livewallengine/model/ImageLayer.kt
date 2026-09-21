@@ -57,6 +57,12 @@ data class ImageLayer(
      */
     var disableOnLockScreen: Boolean = false,
 
+    /**
+     * Si true, la capa no se muestra en el launcher (dispositivo desbloqueado).
+     * Mismo comportamiento que [WidgetLayer.disableOnLauncher].
+     */
+    var disableOnLauncher: Boolean = false,
+
     /** Soft Start propio en ms */
     var fadeDurationMs: Long = 1000L,
 

@@ -211,26 +211,33 @@ class GLImageLayersRenderer {
         fadeStartTimes[id] = android.os.SystemClock.elapsedRealtime() + delay
     }
 
+    /** Visible según flags de bloqueo / launcher (igual que Widgets-OL). */
+    private fun shouldShow(layer: ImageLayer, deviceLocked: Boolean): Boolean {
+        if (deviceLocked && layer.disableOnLockScreen) return false
+        if (!deviceLocked && layer.disableOnLauncher) return false
+        return true
+    }
+
     /**
-     * Igual que Video-OL disableOnLockScreen:
-     * - disableOnLockScreen=false (default) → visible en bloqueo
-     * - disableOnLockScreen=true → oculto en bloqueo
+     * Igual que Widgets-OL:
+     * - disableOnLockScreen → oculto en bloqueo
+     * - disableOnLauncher → oculto en launcher (desbloqueado)
      */
     fun applyLockScreenState(deviceLocked: Boolean) {
         val layers = ProjectManager.getProject().imageLayers
         for (layer in layers) {
-            val show = !deviceLocked || !layer.disableOnLockScreen
+            val show = shouldShow(layer, deviceLocked)
             forceHidden[layer.id] = !show
             if (!show) fadeStartTimes.remove(layer.id)
         }
     }
 
-    /** Soft Start de capas visibles en lock (disableOnLockScreen=false). */
+    /** Soft Start de capas visibles en pantalla de bloqueo. */
     fun startSoftStartOnLockScreen() {
         val layers = ProjectManager.getProject().imageLayers
         val now = android.os.SystemClock.elapsedRealtime()
         for (layer in layers) {
-            if (!layer.disableOnLockScreen) {
+            if (shouldShow(layer, deviceLocked = true)) {
                 forceHidden[layer.id] = false
                 fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
             } else {
@@ -242,18 +249,24 @@ class GLImageLayersRenderer {
 
     /**
      * Al desbloquear:
-     * - capas visibles en lock → sin fade
-     * - capas con disableOnLockScreen → Soft Start
+     * - visible en lock y launcher → sin re-fade
+     * - oculto en lock (disableOnLockScreen) y visible en launcher → Soft Start
+     * - oculto en launcher (disableOnLauncher) → hidden
      */
     fun revealAfterUnlock() {
         val layers = ProjectManager.getProject().imageLayers
         val now = android.os.SystemClock.elapsedRealtime()
         for (layer in layers) {
-            forceHidden[layer.id] = false
-            if (layer.disableOnLockScreen) {
-                fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
+            if (!shouldShow(layer, deviceLocked = false)) {
+                forceHidden[layer.id] = true
+                fadeStartTimes.remove(layer.id)
             } else {
-                fadeStartTimes.remove(layer.id) // ya visible
+                forceHidden[layer.id] = false
+                if (layer.disableOnLockScreen) {
+                    fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
+                } else {
+                    fadeStartTimes.remove(layer.id) // ya visible en lock
+                }
             }
         }
     }
