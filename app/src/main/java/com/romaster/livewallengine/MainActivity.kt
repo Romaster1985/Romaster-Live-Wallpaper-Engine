@@ -452,6 +452,20 @@ class MainActivity : AppCompatActivity() {
 
             updatePreviewProject()
         }
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkVideoBgEnabled
+        ).setOnCheckedChangeListener { _, _ ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            updatePreviewProject()
+        }
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkVideoOlEnabled
+        ).setOnCheckedChangeListener { _, _ ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            updatePreviewProject()
+        }
         
         findViewById<RadioGroup>(
             R.id.radioGroupOverlayAspect
@@ -5304,6 +5318,10 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             R.id.checkOverlayDisableOnLock
         ).isChecked =
             overlay.disableOnLockScreen
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkVideoOlEnabled
+        ).isChecked = overlay.layerEnabled
         
         findViewById<RadioGroup>(
             R.id.radioGroupOverlayAspect
@@ -5422,6 +5440,10 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 .layers
                 .firstOrNull()
                 ?: return
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkVideoBgEnabled
+        ).isChecked = layer.enabled
         
         // -----------------------------
         // Aspect Ratio
@@ -5678,6 +5700,11 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         overlay.disableOnLockScreen =
             findViewById<MaterialCheckBox>(
                 R.id.checkOverlayDisableOnLock
+            ).isChecked
+
+        overlay.layerEnabled =
+            findViewById<MaterialCheckBox>(
+                R.id.checkVideoOlEnabled
             ).isChecked
         
         overlay.chromaColor =
@@ -6547,6 +6574,11 @@ clock.enabled =
     
         val layer =
             oldLayer ?: VideoLayer()
+
+        layer.enabled =
+            findViewById<MaterialCheckBox>(
+                R.id.checkVideoBgEnabled
+            ).isChecked
     
         // -----------------------------
         // Aspect Ratio

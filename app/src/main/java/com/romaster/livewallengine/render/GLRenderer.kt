@@ -295,10 +295,13 @@ class GLRenderer(
 
     fun drawFrame() {
         if (width <= 0 || height <= 0) return
-        try {
-            surfaceTexture?.updateTexImage()
-            surfaceTexture?.getTransformMatrix(textureMatrix)
-        } catch (_: IllegalStateException) {}
+        val bgOn = ProjectManager.getProject().layers.firstOrNull()?.enabled != false
+        if (bgOn) {
+            try {
+                surfaceTexture?.updateTexImage()
+                surfaceTexture?.getTransformMatrix(textureMatrix)
+            } catch (_: IllegalStateException) {}
+        }
 
         GLES20.glViewport(0, 0, width, height)
         GLES20.glClearColor(0f, 0f, 0f, 1f)
@@ -307,25 +310,33 @@ class GLRenderer(
         val project = ProjectManager.getProject()
         LayerStack.ensure(project)
 
+        val bgEnabled = project.layers.firstOrNull()?.enabled != false
+        val olEnabled = project.overlay.layerEnabled
+
         val vw = if (virtualWidth > 0) virtualWidth else width
         val vh = if (virtualHeight > 0) virtualHeight else height
 
         // Blur del reloj: capturar solo cuando BG/OL/Pics terminaron soft start
         updateFade()
-        val volOk = videoOverlayRenderer?.isFadeComplete() != false
+        val volOk = if (!olEnabled) true else videoOverlayRenderer?.isFadeComplete() != false
         val imgOk = imageLayersRenderer?.isFadeComplete() != false
         val wdgOk = widgetLayersRenderer?.isFadeComplete() != false
-        val settled = fadeAlpha >= 0.999f && volOk && imgOk && wdgOk
+        val bgFadeOk = if (!bgEnabled) true else fadeAlpha >= 0.999f
+        val settled = bgFadeOk && volOk && imgOk && wdgOk
         overlayRenderer?.setBackgroundsSettled(settled)
 
         // Orden global de atrás → adelante (cada capa aislada de fallos)
         for (id in project.layerStack) {
             try {
                 when (id) {
-                    LayerStack.ID_VBG -> drawVideoBackground()
+                    LayerStack.ID_VBG -> {
+                        if (bgEnabled) drawVideoBackground()
+                    }
                     LayerStack.ID_VOL -> {
-                        videoOverlayRenderer?.update()
-                        videoOverlayRenderer?.draw()
+                        if (olEnabled) {
+                            videoOverlayRenderer?.update()
+                            videoOverlayRenderer?.draw()
+                        }
                     }
                     LayerStack.ID_CLOCK -> overlayRenderer?.draw(vw, vh, width, height)
                     else -> {

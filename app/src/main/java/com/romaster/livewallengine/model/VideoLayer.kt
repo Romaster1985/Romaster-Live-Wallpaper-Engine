@@ -23,6 +23,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class VideoLayer(
 
+    /** Si false, no se renderiza ni procesa el Video-BG. */
+    var enabled: Boolean = true,
+
     var fileName: String = "",
 
     var x: Float = 0f,

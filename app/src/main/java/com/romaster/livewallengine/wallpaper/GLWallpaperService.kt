@@ -68,6 +68,8 @@ class GLWallpaperService : WallpaperService() {
         private var lastSurfaceHeight: Int = 0
 
         private var videoPlayer: VideoPlayer? = null
+        private var layerBgWasEnabled = true
+        private var layerOlWasEnabled = true
 
         private var bgSoundPlayer: WallpaperSoundPlayer? = null
 
@@ -1347,6 +1349,29 @@ class GLWallpaperService : WallpaperService() {
                                         overlayStalledFrames = 0
                                     }
                                 }
+
+                            // --------------------------------
+                            // Capas de video deshabilitadas → pausar players
+                            // --------------------------------
+                            try {
+                                val proj = ProjectManager.getProject()
+                                val bgOn = proj.layers.firstOrNull()?.enabled != false
+                                val olOn = proj.overlay.layerEnabled
+                                if (!bgOn) {
+                                    videoPlayer?.pause()
+                                } else if (!layerBgWasEnabled) {
+                                    try { videoPlayer?.play() } catch (_: Exception) {}
+                                }
+                                layerBgWasEnabled = bgOn
+                                val ov = renderer?.getVideoOverlayRenderer()
+                                if (!olOn) {
+                                    ov?.pause()
+                                } else if (!layerOlWasEnabled && ov?.isForceHidden() != true) {
+                                    try { ov?.play() } catch (_: Exception) {}
+                                }
+                                layerOlWasEnabled = olOn
+                            } catch (_: Exception) {
+                            }
 
                             // --------------------------------
                             // Dibujar

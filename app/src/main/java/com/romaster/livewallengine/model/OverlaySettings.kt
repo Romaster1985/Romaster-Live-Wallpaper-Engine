@@ -25,6 +25,9 @@ data class OverlaySettings(
 
     var enabled: Boolean = false,
 
+    /** Si false, no se renderiza ni procesa el Video-OL. Default true. */
+    var layerEnabled: Boolean = true,
+
     var videoPath: String? = null,
 
     var x: Float = 0f,

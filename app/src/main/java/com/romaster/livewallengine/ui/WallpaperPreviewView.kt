@@ -58,6 +58,8 @@ class WallpaperPreviewView @JvmOverloads constructor(
     @Volatile private var pendingReloadWidgetLayers = false
 
     private var videoPlayer: VideoPlayer? = null
+    private var layerBgWasEnabled = true
+    private var layerOlWasEnabled = true
     
     private var bgSoundPlayer: WallpaperSoundPlayer? = null
 
@@ -802,6 +804,25 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                 )
                             }
                             pendingReloadWidgetLayers = false
+                        }
+                        try {
+                            val proj = ProjectManager.getProject()
+                            val bgOn = proj.layers.firstOrNull()?.enabled != false
+                            val olOn = proj.overlay.layerEnabled
+                            if (!bgOn) {
+                                videoPlayer?.pause()
+                            } else if (!layerBgWasEnabled) {
+                                try { videoPlayer?.play() } catch (_: Exception) {}
+                            }
+                            layerBgWasEnabled = bgOn
+                            val ov = renderer?.getVideoOverlayRenderer()
+                            if (!olOn) {
+                                ov?.pause()
+                            } else if (!layerOlWasEnabled && ov?.isForceHidden() != true) {
+                                try { ov?.play() } catch (_: Exception) {}
+                            }
+                            layerOlWasEnabled = olOn
+                        } catch (_: Exception) {
                         }
                         renderer?.drawFrame()
 
