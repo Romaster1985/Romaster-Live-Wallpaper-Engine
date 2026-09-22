@@ -203,6 +203,30 @@
                     android:layout_marginTop="12dp"
                     android:text="Transición suave"/>
 
+                <RadioGroup
+                    android:id="@+id/radioGroupCueLockedSmoothMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <RadioButton
+                        android:id="@+id/radioCueLockedSmoothNormal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="Normal"/>
+
+                    <RadioButton
+                        android:id="@+id/radioCueLockedSmoothAltern"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Altern"/>
+                </RadioGroup>
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -340,6 +364,30 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:text="Transición suave"/>
+
+                <RadioGroup
+                    android:id="@+id/radioGroupCueUnlockedSmoothMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <RadioButton
+                        android:id="@+id/radioCueUnlockedSmoothNormal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="Normal"/>
+
+                    <RadioButton
+                        android:id="@+id/radioCueUnlockedSmoothAltern"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Altern"/>
+                </RadioGroup>
 
                 <TextView
                     android:layout_width="match_parent"

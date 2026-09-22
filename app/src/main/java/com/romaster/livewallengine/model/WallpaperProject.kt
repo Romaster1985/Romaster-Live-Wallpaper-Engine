@@ -75,6 +75,17 @@ data class WallpaperProject(
     /** Fundido al reiniciar el loop del cue unlocked (cue ↔ fin). */
     var cueUnlockedSmoothTransition: Boolean = false,
 
+    /**
+     * Modo de transición del cue locked: "normal" (doble fade) o "altern" (capa detrás).
+     * Default normal para compatibilidad con proyectos existentes.
+     */
+    var cueLockedSmoothMode: String = "normal",
+
+    /**
+     * Modo de transición del cue unlocked: "normal" o "altern".
+     */
+    var cueUnlockedSmoothMode: String = "normal",
+
     /** Duración del crossfade del cue locked (ms). */
     var cueLockedCrossfadeMs: Long = 500L,
 

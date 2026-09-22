@@ -1198,6 +1198,7 @@ class GLWallpaperService : WallpaperService() {
                                                     loopEndMs = overlayCueController.cueLockedMs,
                                                     loopStartMs = 0,
                                                     crossfadeMs = project.cueLockedCrossfadeMs,
+                                                    layeredReveal = project.cueLockedSmoothMode == "altern",
                                                     onSeekToStart = {
                                                         FileLogger.log(
                                                             this@GLWallpaperService,
@@ -1259,6 +1260,7 @@ class GLWallpaperService : WallpaperService() {
                                                         loopEndMs = dur,
                                                         loopStartMs = project.cueUnlockedMs,
                                                         crossfadeMs = project.cueUnlockedCrossfadeMs,
+                                                        layeredReveal = project.cueUnlockedSmoothMode == "altern",
                                                         onSeekToStart = {
                                                             FileLogger.log(
                                                                 this@GLWallpaperService,

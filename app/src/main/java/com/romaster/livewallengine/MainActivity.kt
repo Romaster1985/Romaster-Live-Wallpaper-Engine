@@ -827,17 +827,33 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<CheckBox>(
             R.id.checkCueLockedSmoothTransition
-        ).setOnCheckedChangeListener { _, _ ->
+        ).setOnCheckedChangeListener { _, checked ->
             if (loadingUI) return@setOnCheckedChangeListener
+            findViewById<RadioGroup>(R.id.radioGroupCueLockedSmoothMode).visibility =
+                if (checked) android.view.View.VISIBLE else android.view.View.GONE
             updatePreviewProject()
         }
 
         findViewById<CheckBox>(
             R.id.checkCueUnlockedSmoothTransition
-        ).setOnCheckedChangeListener { _, _ ->
+        ).setOnCheckedChangeListener { _, checked ->
             if (loadingUI) return@setOnCheckedChangeListener
+            findViewById<RadioGroup>(R.id.radioGroupCueUnlockedSmoothMode).visibility =
+                if (checked) android.view.View.VISIBLE else android.view.View.GONE
             updatePreviewProject()
         }
+
+        findViewById<RadioGroup>(R.id.radioGroupCueLockedSmoothMode)
+            .setOnCheckedChangeListener { _, _ ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                updatePreviewProject()
+            }
+
+        findViewById<RadioGroup>(R.id.radioGroupCueUnlockedSmoothMode)
+            .setOnCheckedChangeListener { _, _ ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                updatePreviewProject()
+            }
 
         findViewById<MaterialButton>(R.id.buttonCueLockedCrossfade).setOnClickListener {
             if (loadingUI) return@setOnClickListener
@@ -1166,6 +1182,27 @@ class MainActivity : AppCompatActivity() {
             R.id.checkCueUnlockedSmoothTransition
         ).isChecked =
             project.cueUnlockedSmoothTransition
+
+        // Modos Normal / Altern (visibles solo si transición suave activa)
+        findViewById<RadioGroup>(R.id.radioGroupCueLockedSmoothMode).visibility =
+            if (project.cueLockedSmoothTransition) android.view.View.VISIBLE
+            else android.view.View.GONE
+        findViewById<RadioGroup>(R.id.radioGroupCueLockedSmoothMode).check(
+            if (project.cueLockedSmoothMode == "altern")
+                R.id.radioCueLockedSmoothAltern
+            else
+                R.id.radioCueLockedSmoothNormal
+        )
+
+        findViewById<RadioGroup>(R.id.radioGroupCueUnlockedSmoothMode).visibility =
+            if (project.cueUnlockedSmoothTransition) android.view.View.VISIBLE
+            else android.view.View.GONE
+        findViewById<RadioGroup>(R.id.radioGroupCueUnlockedSmoothMode).check(
+            if (project.cueUnlockedSmoothMode == "altern")
+                R.id.radioCueUnlockedSmoothAltern
+            else
+                R.id.radioCueUnlockedSmoothNormal
+        )
 
         findViewById<TextView>(R.id.textCueLockedCrossfade).text =
             "${project.cueLockedCrossfadeMs} ms"
@@ -1872,6 +1909,16 @@ private fun showFadeDurationDialog(
             findViewById<CheckBox>(
                 R.id.checkCueUnlockedSmoothTransition
             ).isChecked
+
+        project.cueLockedSmoothMode =
+            if (findViewById<RadioGroup>(R.id.radioGroupCueLockedSmoothMode)
+                    .checkedRadioButtonId == R.id.radioCueLockedSmoothAltern)
+                "altern" else "normal"
+
+        project.cueUnlockedSmoothMode =
+            if (findViewById<RadioGroup>(R.id.radioGroupCueUnlockedSmoothMode)
+                    .checkedRadioButtonId == R.id.radioCueUnlockedSmoothAltern)
+                "altern" else "normal"
     
     
         // =====================================================

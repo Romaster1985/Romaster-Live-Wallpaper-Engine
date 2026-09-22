@@ -30,9 +30,10 @@ import com.romaster.livewallengine.video.ReverseClipKind
 /**
  * Overlay de video con dos decoders.
  *
- * Player A y B se intercambian de rol tras cada crossfade de loop:
- * el que entró en la transición sigue como activo (sin seek) y el
- * saliente queda en espera para la próxima vuelta.
+ * Player A y B se intercambian de rol tras cada transición de loop:
+ * el standby se dibuja detrás al 100% y el activo hace fade-out;
+ * el que entró sigue como activo (sin seek) y el saliente queda
+ * en espera para la próxima vuelta.
  */
 class GLVideoOverlayRenderer(
     private val context: Context
@@ -82,6 +83,8 @@ class GLVideoOverlayRenderer(
     /** 0 = solo saliente (activo), 1 = solo entrante (standby). */
     @Volatile
     private var crossT: Float = 0f
+    /** true = Altern (capa detrás al 100%); false = Normal (doble fade). */
+    private var crossfadeLayered: Boolean = false
     private var loopPhaseStartElapsed: Long = 0L
     private var loopTransMs: Long = LOOP_TRANS_DEFAULT_MS
     private var pendingLoopStartMs: Int = 0
@@ -214,29 +217,57 @@ class GLVideoOverlayRenderer(
 
         if (loopPhase == LOOP_CROSSFADING) {
             val t = crossT.coerceIn(0f, 1f)
-            val outA = base * (1f - t)
-            if (outA > 0.01f) {
-                quadRenderer.draw(
-                    activeTexture.getTextureId(),
-                    activeTexture.getTextureMatrix(),
-                    outA,
-                    overlay.chromaEnabled,
-                    overlay.chromaColor,
-                    overlay.threshold,
-                    overlay.softness
-                )
-            }
-            val inA = base * t
-            if (inA > 0.01f) {
-                quadRenderer.draw(
-                    standbyTexture.getTextureId(),
-                    standbyTexture.getTextureMatrix(),
-                    inA,
-                    overlay.chromaEnabled,
-                    overlay.chromaColor,
-                    overlay.threshold,
-                    overlay.softness
-                )
+            if (crossfadeLayered) {
+                // Altern: standby detrás al 100%, activo fade-out (sin transparencia intermedia)
+                if (base > 0.01f) {
+                    quadRenderer.draw(
+                        standbyTexture.getTextureId(),
+                        standbyTexture.getTextureMatrix(),
+                        base,
+                        overlay.chromaEnabled,
+                        overlay.chromaColor,
+                        overlay.threshold,
+                        overlay.softness
+                    )
+                }
+                val outA = base * (1f - t)
+                if (outA > 0.01f) {
+                    quadRenderer.draw(
+                        activeTexture.getTextureId(),
+                        activeTexture.getTextureMatrix(),
+                        outA,
+                        overlay.chromaEnabled,
+                        overlay.chromaColor,
+                        overlay.threshold,
+                        overlay.softness
+                    )
+                }
+            } else {
+                // Normal: doble fade simultáneo (out + in)
+                val outA = base * (1f - t)
+                if (outA > 0.01f) {
+                    quadRenderer.draw(
+                        activeTexture.getTextureId(),
+                        activeTexture.getTextureMatrix(),
+                        outA,
+                        overlay.chromaEnabled,
+                        overlay.chromaColor,
+                        overlay.threshold,
+                        overlay.softness
+                    )
+                }
+                val inA = base * t
+                if (inA > 0.01f) {
+                    quadRenderer.draw(
+                        standbyTexture.getTextureId(),
+                        standbyTexture.getTextureMatrix(),
+                        inA,
+                        overlay.chromaEnabled,
+                        overlay.chromaColor,
+                        overlay.threshold,
+                        overlay.softness
+                    )
+                }
             }
         } else {
             quadRenderer.draw(
@@ -273,6 +304,7 @@ class GLVideoOverlayRenderer(
         }
         loopPhase = LOOP_IDLE
         crossT = 0f
+        crossfadeLayered = false
         loopPhaseStartElapsed = 0L
         pendingLoopStartMs = 0
         crossReady = false
@@ -288,11 +320,12 @@ class GLVideoOverlayRenderer(
     }
 
     /**
-     * Crossfade dual-decoder con **intercambio de roles**.
+     * Transición suave dual-decoder con **intercambio de roles**.
      *
-     * El standby se prepara en [loopStartMs], se funde con el activo cerca
-     * del fin del tramo y al terminar el standby pasa a ser el activo
-     * (sigue reproduciendo sin seek). El saliente queda en espera.
+     * El standby se prepara en [loopStartMs] y se coloca DETRÁS del activo
+     * al 100% de opacidad. El activo hace fade-out (100→0) revelando el
+     * standby sin transparencia intermedia. Al terminar, el standby pasa
+     * a ser el activo (sigue sin seek) y el saliente queda en espera.
      *
      * @return true si el seek duro externo NO debe aplicarse
      */
@@ -302,6 +335,11 @@ class GLVideoOverlayRenderer(
         loopEndMs: Int,
         loopStartMs: Int = 0,
         crossfadeMs: Long = LOOP_TRANS_DEFAULT_MS,
+        /**
+         * true = Altern (revelar capa detrás al 100%).
+         * false = Normal (fade-out + fade-in simultáneos). Default Normal.
+         */
+        layeredReveal: Boolean = false,
         onSeekToStart: (() -> Unit)? = null
     ): Boolean {
         if (!enabled || loopEndMs <= 0) {
@@ -321,6 +359,7 @@ class GLVideoOverlayRenderer(
                 if (positionMs >= zoneStart) {
                     pendingLoopStartMs = loopStartMs
                     crossReady = false
+                    crossfadeLayered = layeredReveal
                     loopPhase = LOOP_PREPARING
                     loopPhaseStartElapsed = now
                     crossT = 0f

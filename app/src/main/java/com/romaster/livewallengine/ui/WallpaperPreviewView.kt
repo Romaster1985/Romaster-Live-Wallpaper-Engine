@@ -684,7 +684,8 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                             positionMs = position,
                                             loopEndMs = overlayCueController.cueLockedMs,
                                             loopStartMs = 0,
-                                            crossfadeMs = project.cueLockedCrossfadeMs
+                                            crossfadeMs = project.cueLockedCrossfadeMs,
+                                            layeredReveal = project.cueLockedSmoothMode == "altern"
                                         )
                                     } else if (
                                         position >= overlayCueController.cueLockedMs
@@ -714,7 +715,8 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                                 positionMs = position,
                                                 loopEndMs = dur,
                                                 loopStartMs = project.cueUnlockedMs,
-                                                crossfadeMs = project.cueUnlockedCrossfadeMs
+                                                crossfadeMs = project.cueUnlockedCrossfadeMs,
+                                                layeredReveal = project.cueUnlockedSmoothMode == "altern"
                                             )
                                         }
                                     }
