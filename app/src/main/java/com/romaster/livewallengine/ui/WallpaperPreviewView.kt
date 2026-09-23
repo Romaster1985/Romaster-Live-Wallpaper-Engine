@@ -64,6 +64,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
     private var bgSoundPlayer: WallpaperSoundPlayer? = null
 
     private var overlaySoundPlayer: WallpaperSoundPlayer? = null
+    private var unlockSoundPlayer: WallpaperSoundPlayer? = null
 
     private var renderThread: Thread? = null
     
@@ -232,6 +233,9 @@ class WallpaperPreviewView @JvmOverloads constructor(
                     WallpaperSoundPlayer(context)
                 
                 overlaySoundPlayer =
+                    WallpaperSoundPlayer(context)
+
+                unlockSoundPlayer =
                     WallpaperSoundPlayer(context)
                 
                 // Restaurar posición del Video BG si hay una guardada  
@@ -618,6 +622,21 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                     renderer?.startImageLayersSoftStartOnLock()
                                     renderer?.startWidgetLayersSoftStartOnLock()
                                 } else {
+                                    // Sonido one-shot al desbloquear (simulación)
+                                    try {
+                                        val us = project.unlockSoundPath
+                                        if (!us.isNullOrBlank() &&
+                                            project.unlockSoundEnabled &&
+                                            project.unlockSoundVolume > 0.001f
+                                        ) {
+                                            unlockSoundPlayer?.playOnceByName(
+                                                us,
+                                                project.unlockSoundVolume
+                                            )
+                                        }
+                                    } catch (_: Exception) {
+                                    }
+
                                     FileLogger.log(
                                         context,
                                         "Preview UNLOCKED (sim) reverse=" +
@@ -940,6 +959,8 @@ class WallpaperPreviewView @JvmOverloads constructor(
                 
                 overlaySoundPlayer?.release()
                 overlaySoundPlayer = null
+                unlockSoundPlayer?.release()
+                unlockSoundPlayer = null
 
                 renderer?.release()
                 renderer = null

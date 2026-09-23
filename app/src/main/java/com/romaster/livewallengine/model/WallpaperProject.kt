@@ -98,6 +98,13 @@ data class WallpaperProject(
     /** Nombre de archivo del clip invertido (unlocked), dentro de pingpong/ */
     var cueUnlockedReverseFile: String? = null,
 
+    /** Sonido one-shot al desbloquear el dispositivo (archivo en audio/). */
+    var unlockSoundPath: String? = null,
+    var unlockSoundDisplayName: String? = null,
+    var unlockSoundDuration: Long = 0L,
+    var unlockSoundVolume: Float = 1f,
+    var unlockSoundEnabled: Boolean = true,
+
     var previewLocked: Boolean = false,
     
     var overlayDurationMs: Long = 0L,

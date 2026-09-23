@@ -84,6 +84,34 @@ class WallpaperSoundPlayer(
         }
     }
 
+    /**
+     * Reproduce una sola vez desde el inicio (sin loop).
+     * Siempre reinicia aunque sea el mismo archivo.
+     */
+    fun playOnce(file: File, volume: Float) {
+        release()
+        try {
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(file.absolutePath)
+                isLooping = false
+                prepare()
+                val v = volume.coerceIn(0f, 1f)
+                setVolume(v, v)
+                start()
+            }
+            currentFile = file
+        } catch (_: Exception) {
+            release()
+        }
+    }
+
+    fun playOnceByName(fileName: String?, volume: Float) {
+        if (fileName.isNullOrEmpty()) return
+        val file = File(context.filesDir, "audio/$fileName")
+        if (!file.exists()) return
+        playOnce(file, volume)
+    }
+
     fun loadAndPlay(
 
         fileName: String?,

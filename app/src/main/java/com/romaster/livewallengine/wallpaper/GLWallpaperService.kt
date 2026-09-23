@@ -74,6 +74,7 @@ class GLWallpaperService : WallpaperService() {
         private var bgSoundPlayer: WallpaperSoundPlayer? = null
 
         private var overlaySoundPlayer: WallpaperSoundPlayer? = null
+        private var unlockSoundPlayer: WallpaperSoundPlayer? = null
 
         private var renderThread: Thread? = null
 
@@ -215,6 +216,21 @@ class GLWallpaperService : WallpaperService() {
                 } else {
 
                     deviceLocked = false
+
+                    // Sonido one-shot al desbloquear (una sola vez, sin loop)
+                    try {
+                        val us = project.unlockSoundPath
+                        if (!us.isNullOrBlank() &&
+                            project.unlockSoundEnabled &&
+                            project.unlockSoundVolume > 0.001f
+                        ) {
+                            unlockSoundPlayer?.playOnceByName(
+                                us,
+                                project.unlockSoundVolume
+                            )
+                        }
+                    } catch (_: Exception) {
+                    }
 
                     FileLogger.log(
                         this@GLWallpaperService,
@@ -629,6 +645,11 @@ class GLWallpaperService : WallpaperService() {
                             )
 
                         overlaySoundPlayer =
+                            WallpaperSoundPlayer(
+                                this@GLWallpaperService
+                            )
+
+                        unlockSoundPlayer =
                             WallpaperSoundPlayer(
                                 this@GLWallpaperService
                             )
@@ -1515,6 +1536,8 @@ class GLWallpaperService : WallpaperService() {
 
                         overlaySoundPlayer?.release()
                         overlaySoundPlayer = null
+                        unlockSoundPlayer?.release()
+                        unlockSoundPlayer = null
 
                         renderer?.release()
                         renderer = null

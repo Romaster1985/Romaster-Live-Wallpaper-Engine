@@ -478,6 +478,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         setupOverlaySoundControls()
+        setupUnlockSoundControls()
         
     }
     
@@ -1218,6 +1219,26 @@ class MainActivity : AppCompatActivity() {
             R.id.switchPreviewLocked
         ).isChecked =
             project.previewLocked
+
+        // =====================================================
+        // SONIDO AL DESBLOQUEAR
+        // =====================================================
+        val unlockVol = project.unlockSoundVolume * 100f
+        findViewById<Slider>(R.id.sliderUnlockSoundVolume).value =
+            unlockVol.coerceIn(0f, 100f)
+        findViewById<TextView>(R.id.textUnlockSoundVolumeValue).text =
+            unlockVol.toInt().toString()
+        findViewById<ImageView>(R.id.imageUnlockSoundIcon).setImageResource(
+            if (unlockVol == 0f) R.drawable.baseline_volume_off_24
+            else R.drawable.baseline_volume_up_24
+        )
+        findViewById<TextView>(R.id.textUnlockSoundFile).text =
+            project.unlockSoundDisplayName ?: "Ningún sonido seleccionado"
+        findViewById<TextView>(R.id.textUnlockSoundDuration).text =
+            if (project.unlockSoundDuration > 0L)
+                "Duración: ${AudioStorage.formatDuration(project.unlockSoundDuration)}"
+            else
+                "Duración: --:--.---"
     
     
         // =====================================================
@@ -4378,6 +4399,41 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         }
     
     }
+
+    private fun setupUnlockSoundControls() {
+        connectVolumeSlider(
+            R.id.sliderUnlockSoundVolume,
+            R.id.textUnlockSoundVolumeValue,
+            R.id.imageUnlockSoundIcon
+        )
+        findViewById<MaterialButton>(R.id.buttonLoadUnlockSound).setOnClickListener {
+            AudioPicker.open(this, AudioPicker.REQUEST_UNLOCK_SOUND)
+        }
+        findViewById<MaterialButton>(R.id.buttonResetUnlockSound).setOnClickListener {
+            resetUnlockSound()
+        }
+    }
+
+    private fun resetUnlockSound() {
+        val project = ProjectManager.getProject()
+        project.unlockSoundPath = null
+        project.unlockSoundDisplayName = null
+        project.unlockSoundDuration = 0L
+        project.unlockSoundVolume = 1f
+        project.unlockSoundEnabled = true
+        try {
+            AudioStorage.deleteAudio(this, AudioStorage.UNLOCK_SOUND)
+        } catch (_: Exception) {
+        }
+        findViewById<Slider>(R.id.sliderUnlockSoundVolume).value = 100f
+        findViewById<TextView>(R.id.textUnlockSoundVolumeValue).text = "100"
+        findViewById<TextView>(R.id.textUnlockSoundFile).text = "Ningún sonido seleccionado"
+        findViewById<TextView>(R.id.textUnlockSoundDuration).text = "Duración: --:--.---"
+        findViewById<ImageView>(R.id.imageUnlockSoundIcon)
+            .setImageResource(R.drawable.baseline_volume_up_24)
+        ProjectManager.saveProject(project)
+        editor.save()
+    }
     
     private fun resetBackgroundSound() {
 
@@ -5246,6 +5302,26 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 editor.save()
             }
             
+
+            AudioPicker.REQUEST_UNLOCK_SOUND -> {
+                AudioStorage.copyAudio(
+                    this,
+                    uri,
+                    AudioStorage.UNLOCK_SOUND
+                )
+                val project = ProjectManager.getProject()
+                val displayName = AudioStorage.getDisplayName(this, uri)
+                val duration = AudioStorage.getDuration(this, uri)
+                project.unlockSoundPath = AudioStorage.UNLOCK_SOUND
+                project.unlockSoundDisplayName = displayName
+                project.unlockSoundDuration = duration
+                findViewById<TextView>(R.id.textUnlockSoundFile).text = displayName
+                findViewById<TextView>(R.id.textUnlockSoundDuration).text =
+                    "Duración: ${AudioStorage.formatDuration(duration)}"
+                ProjectManager.saveProject(project)
+                editor.save()
+            }
+
             FilePicker.REQUEST_EXPORT_PROJECT -> {
 
                 val previewBitmap = exportPreviewBitmap
@@ -5781,6 +5857,12 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         
         overlay.soundEnabled =
             overlay.soundVolume > 0f
+
+        // Sonido al desbloquear
+        val proj = ProjectManager.getProject()
+        proj.unlockSoundVolume =
+            findViewById<Slider>(R.id.sliderUnlockSoundVolume).value / 100f
+        proj.unlockSoundEnabled = proj.unlockSoundVolume > 0f
         
         // -----------------------------
         // Aspect Ratio

@@ -32,6 +32,9 @@ object AudioStorage {
     const val OVERLAY_SOUND =
         "overlay_sound"
 
+    const val UNLOCK_SOUND =
+        "unlock_sound"
+
     private fun getAudioDirectory(
         context: Context
     ): File {

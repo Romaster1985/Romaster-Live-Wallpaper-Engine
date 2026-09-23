@@ -97,6 +97,7 @@ object ProjectExporter {
         n += 2 // reverse locked + unlocked (se intentan siempre)
         if (!project.layers.firstOrNull()?.soundPath.isNullOrBlank()) n++
         if (!project.overlay.soundPath.isNullOrBlank()) n++
+        if (!project.unlockSoundPath.isNullOrBlank()) n++
         if (!project.clock.clockFont.isNullOrBlank()) n++
         if (!project.clock.dateFont.isNullOrBlank()) n++
         n += project.imageLayers.count { !it.fileName.isNullOrBlank() }
@@ -198,6 +199,16 @@ object ProjectExporter {
         }
 
         project.overlay.soundPath?.let {
+            addFile(
+                zip,
+                File(context.filesDir, "audio/$it"),
+                "audio/$it",
+                context
+            )
+            onFileDone()
+        }
+
+        project.unlockSoundPath?.let {
             addFile(
                 zip,
                 File(context.filesDir, "audio/$it"),
