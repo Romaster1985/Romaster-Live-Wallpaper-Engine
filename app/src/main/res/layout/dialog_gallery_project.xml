@@ -29,7 +29,7 @@
     <ImageView
         android:id="@+id/imageDialogPreview"
         android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="440dp"
         android:scaleType="fitCenter"
         android:adjustViewBounds="true"
         android:contentDescription="@null"
@@ -60,6 +60,7 @@
         android:indeterminate="true"
         android:visibility="gone"/>
 
+    <!-- Fila principal: Descargar / Re-descargar + Aplicar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -68,18 +69,10 @@
         android:gravity="end">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonDialogCancel"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Cerrar"/>
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonDialogDownload"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
             android:text="Descargar"/>
 
         <com.google.android.material.button.MaterialButton
@@ -90,6 +83,23 @@
             android:layout_marginStart="8dp"
             android:enabled="false"
             android:text="Aplicar"/>
+
+    </LinearLayout>
+
+    <!-- Cerrar debajo, alineado a la derecha (bajo Aplicar), tamaño del texto -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonDialogCancel"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cerrar"/>
 
     </LinearLayout>
 
