@@ -4,9 +4,11 @@
   <img src="pictures/imagen_10.png" alt="Romaster LiveWall Engine" width="360"/>
 </p>
 
-**Motor y editor de live wallpapers para Android** con video de fondo, video overlay, capas de imagen, reloj avanzado (cristal, reflejo, fuentes variables), reproducción reactiva al bloqueo, galerías online y proyectos importables/exportables.
+**Motor y editor de live wallpapers para Android** con video de fondo, video overlay, capas de imagen, **widgets con fórmulas (estilo KLWP)**, reloj avanzado (cristal, reflejo, fuentes variables), reproducción reactiva al bloqueo, galerías online y proyectos importables/exportables.
 
-> Crea fondos animados con varias capas, chroma key, audio independiente, ping-pong, soft start y comportamientos distintos cuando el teléfono está bloqueado o desbloqueado.
+> Crea fondos animados con varias capas, chroma key, audio independiente, ping-pong, crossfade de loops, soft start, widgets de hora/batería/clima y comportamientos distintos cuando el teléfono está bloqueado o desbloqueado.
+
+**Versión actual:** `1.0.0-alpha2` (versionCode 2)
 
 <p align="center">
   <img src="pictures/imagen_1.png" alt="Editor con preview en vivo" width="280"/>
@@ -38,7 +40,10 @@ El **Overlay Loop Inteligente** permite que el video overlay se comporte distint
 - **Cue Locked** — punto de tiempo y modo (LOOP / PAUSE) al **bloquear**
 - **Cue Unlocked** — punto de tiempo y modo al **desbloquear**
 - **Ping-Pong** — ida y vuelta fluida con clip de reversa preprocesado (exportable en el ZIP)
-- **Soft Start** — fade-in configurable al volver a ser visible (video BG, OL, reloj, cada capa de imagen)
+- **Transición suave de loops** — dual MediaPlayer con intercambio de roles:
+  - **Normal** — fade-out + fade-in simultáneos (compatible con proyectos anteriores)
+  - **Altern** — capa de atrás al 100 % y fade-out del video de encima (sin transparencia intermedia)
+- **Soft Start** — fade-in configurable al volver a ser visible (video BG, OL, reloj, capas de imagen y widgets)
 - **Delay Start** — retrasos por módulo; con desenfoque del reloj, el reloj espera a que el resto termine su soft start
 - **Simulación de bloqueo** en el editor (mismo comportamiento que el dispositivo real)
 
@@ -74,12 +79,30 @@ Ideal para personajes o escenas que “duermen” en la pantalla de bloqueo y �
 - Carga de PNG, JPEG, WebP, GIF, etc.
 - Transparencia, X/Y, zoom, rotación
 - Orden de apilado respecto a Video-BG, Video-OL, Clock-OL y otras imágenes (diálogo subir/bajar)
-- Soft start y “Deshabilitar en pantalla de bloqueo”
+- Soft start, **Deshabilitar en pantalla de bloqueo** y **Deshabilitar en Launcher (Desbloqueado)**
 - Reset de sliders a valores por defecto
 
 <p align="center">
   <img src="pictures/imagen_7.png" alt="Pestaña Pics-OL" width="320"/>
 </p>
+
+### Widgets con fórmulas (Widgets-OL)
+
+Capa de texto/fórmulas inspirada en KLWP/KWGT:
+
+- Fórmulas entre `$ ... $` con funciones `df`, `bi`, `wi`, `if`, operadores matemáticos y lógicos
+- Fuentes de texto + **fuentes de íconos** (TTF+JSON estilo IcoMoon), galería online y reasignación de nombres climáticos
+- Tamaño, color, borde, rotación, opacidad, **alineación 3×3** (LEFT/CENTER/RIGHT × TOP/MIDDLE/BOTTOM)
+- Orden Z respecto a Video-BG, Video-OL, Clock-OL, imágenes y otros widgets
+- Soft start, delay, deshabilitar en lock screen y en launcher
+- Variaciones de fuente variable (mismos ejes que Clock-OL)
+- Limpiar fuentes de texto e íconos no usadas (conserva las del reloj y widgets en uso)
+
+Ver tabla completa de fórmulas más abajo.
+
+### Video-BG / Video-OL — activar o desactivar capa
+
+Checkbox en el título de cada card (**activado por defecto**). Al destildar, esa capa **no se renderiza** y su player se pausa (menos carga de CPU/GPU). Útil en lugar de cargar un video negro vacío.
 
 ### Audio
 
@@ -156,9 +179,11 @@ app/src/main/java/com/romaster/livewallengine/
 ├── audio/
 ├── wallpaper/      # GLWallpaperService (+ Video / Canvas)
 ├── storage/        # ZIP import/export, directorios
-├── gallery/        # ProjectGalleryActivity, FontGalleryActivity
+├── gallery/        # ProjectGallery, FontGallery, IconFontGallery
+├── formula/        # FormulaEngine (df, bi, wi, if, math)
+├── weather/        # WeatherProvider (Open-Meteo)
 ├── ui/             # WallpaperPreviewView, diálogos
-├── font/           # FontStorage, FontManager (variables)
+├── font/           # FontStorage, IconFontStorage, FontManager (variables)
 └── debug/          # FileLogger
 ```
 
@@ -168,10 +193,11 @@ app/src/main/java/com/romaster/livewallengine/
 |-----|-----------|
 | **Video-BG** | Video / GIF / pantalla negra, ajuste, escala, posición, audio, reset de tab |
 | **Video-OL** | Overlay, chroma, transformaciones, lock screen, audio, reset de tab |
-| **Playback** | Cues, ping-pong, soft start, delay start, simulación de bloqueo |
+| **Playback** | Cues, ping-pong, transición suave (Normal/Altern), soft/delay start, simulación de bloqueo |
 | **Clock-OL** | Formatos, fuentes, variables, cristal, reflejo, blur, posición, bordes |
-| **Pics-OL** | Capas de imagen, orden Z, soft start, lock screen |
-| **Proyecto** | Guardar, importar, exportar, nuevo, galería de wallpapers |
+| **Pics-OL** | Capas de imagen, orden Z, soft start, lock/launcher |
+| **Widgets-OL** | Fórmulas KLWP-like, fuentes texto/íconos, alineación 3×3, clima, batería |
+| **Proyecto** | Guardar, importar, exportar, nuevo, galería de wallpapers, Acerca de |
 
 ---
 
@@ -183,7 +209,8 @@ proyecto.zip
 ├── preview.png        # Miniatura del diseño
 ├── videos/            # wallpaper_video, overlay_video, reversas
 ├── audio/             # Pistas externas (opcional)
-├── fonts/             # Tipografías del reloj (opcional)
+├── fonts/             # Tipografías de texto (reloj / widgets)
+├── icons/             # Fuentes de íconos (TTF+JSON) de widgets
 └── images/            # Capas Pics-OL (opcional)
 ```
 
@@ -196,6 +223,67 @@ proyecto.zip
 | **GLWallpaperService** | Motor completo OpenGL (**recomendado**) |
 | **VideoWallpaperService** | Variante más simple basada en video |
 | **CanvasWallpaperService** | Variante Canvas 2D |
+
+---
+
+
+---
+
+## Motor de fórmulas (Widgets-OL)
+
+Sintaxis inspirada en KLWP. El texto **fuera** de `$...$` es literal (incluye saltos de línea con Enter). **Dentro** de cada par `$...$` se evalúan funciones, operadores y condiciones.
+
+### Funciones
+
+| Fórmula | Resultado / descripción |
+|---------|-------------------------|
+| `$df(hh:mm)$` | Hora 24 h con dos dígitos (ej. `17:05`) |
+| `$df(HH:mm)$` | Igual que `hh`/`HH` (hora 0–23 rellenada) |
+| `$df(h:m)$` | Hora y minutos sin ceros a la izquierda |
+| `$df(hh:mm:ss)$` / `$df(ss)$` | Con segundos |
+| `$df(EEEE)$` | Día de la semana largo (ej. `jueves`) |
+| `$df(EEE)$` | Día de la semana corto |
+| `$df(dd)$` / `$df(d)$` | Día del mes (con/sin cero) |
+| `$df(MMMM)$` / `$df(MMM)$` | Mes largo / corto |
+| `$df(yyyy)$` / `$df(yy)$` | Año 4 / 2 dígitos |
+| `$df(EEEE), df(dd) df(MMM) df(yyyy)$` | Varias piezas en un solo bloque |
+| `$df(yyyy)+4$` | Aritmética sobre el resultado (→ año + 4) |
+| `$bi(level)$` | Nivel de batería 0–100 |
+| `$bi(level)$%` | Nivel con sufijo literal `%` |
+| `$bi(charging)$` | `1` cargando/lleno, `0` si no |
+| `$bi(temp)$` / `$bi(tempc)$` | Temperatura de batería (°C, entero) |
+| `$bi(volt)$` | Voltaje de batería (mV del sistema) |
+| `$wi(temp)$` / `$wi(tempc)$` | Temperatura ambiente °C (Open-Meteo) |
+| `$wi(tempf)$` | Temperatura °F |
+| `$wi(icon)$` | Clave de ícono KLWP (`CLEAR`, `RAIN`, `TSTORM`, …) |
+| `$wi(humidity)$` | Humedad relativa % |
+| `$wi(wind)$` | Viento |
+| `$wi(feels)$` / `$wi(feelsc)$` | Sensación térmica |
+| `$if(cond, sí, no)$` | Condicional; el branch elegido se evalúa de nuevo |
+| `$"texto"$` | Literal: no se calcula (ej. `$"20*2+5"$` → `20*2+5`) |
+
+### Operadores y condiciones
+
+| Operador | Uso |
+|----------|-----|
+| `+` `-` `*` `/` | Aritmética dentro de `$...$` |
+| `( )` | Agrupación |
+| `==` `!=` `<` `>` `<=` `>=` | Comparación (números o texto) |
+| `&` / `and` | AND lógico en condiciones de `if` |
+| `\|` / `or` | OR lógico |
+
+**Ejemplos**
+
+```
+$df(hh:mm)$
+Bat: $bi(level)$%
+$if(bi(level)<20, LOW, OK)$
+$wi(icon)$   → RAIN  (o el glifo si usás fuente de íconos)
+$df(yyyy)+4$
+```
+
+Claves de clima (`$wi(icon)$`) alineadas con KLWP:  
+`CLEAR`, `PCLOUDY`, `MCLOUDY`, `FOG`, `WINDY`, `RAIN`, `SHOWER`, `SLEET`, `SNOW`, `LSNOW`, `HAIL`, `TSTORM`, `TSHOWER`, `TORNADO`, `UNKNOWN`.
 
 ---
 

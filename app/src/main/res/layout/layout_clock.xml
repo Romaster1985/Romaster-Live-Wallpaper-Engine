@@ -338,15 +338,6 @@
                     android:text="Importar fuente"
                     android:icon="@android:drawable/ic_input_add"/>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonClearFonts"
-                    style="@style/Widget.Material3.Button"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Limpiar Fuentes"
-                    android:textColor="@android:color/white"
-                    app:backgroundTint="#B00020"/>
                 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/layoutClockFont"

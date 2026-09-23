@@ -90,7 +90,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:layout_marginTop="20dp"
-                    android:text="Motor y editor de live wallpapers para Android.\nVideo, overlay, capas de imagen, reloj avanzado y reproducción reactiva al bloqueo del dispositivo."
+                    android:text="Motor y editor de live wallpapers para Android.\nVideo, Overlay, capas de imagen, capas de widgets, reloj avanzado y reproducción reactiva al bloqueo del dispositivo."
                     android:textColor="@android:color/white"
                     android:textSize="15sp"
                     android:lineSpacingExtra="4dp"/>

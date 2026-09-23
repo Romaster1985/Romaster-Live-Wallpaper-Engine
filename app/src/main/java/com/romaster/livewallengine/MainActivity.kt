@@ -1979,10 +1979,6 @@ private fun showFadeDurationDialog(
             FontPicker.open(this)
         }
 
-        findViewById<MaterialButton>(R.id.buttonClearFonts).setOnClickListener {
-            confirmClearUnusedFonts()
-        }
-    
         // ---------------------------------
         // ESPACIO ENTRE RELOJ Y FECHA
         // ---------------------------------
@@ -3933,6 +3929,10 @@ private fun showFadeDurationDialog(
         
         }
 
+        findViewById<MaterialButton>(R.id.buttonClearFonts).setOnClickListener {
+            confirmClearUnusedFonts()
+        }
+
         findViewById<MaterialButton>(R.id.buttonAbout).setOnClickListener {
             startActivity(Intent(this, AboutActivity::class.java))
         }
@@ -5806,27 +5806,50 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
     }
     
     private fun confirmClearUnusedFonts() {
-        val clock = ProjectManager.getProject().clock
-        val keep = setOfNotNull(
-            clock.clockFont?.takeIf { it.isNotBlank() },
-            clock.dateFont?.takeIf { it.isNotBlank() }
-        )
+        val project = ProjectManager.getProject()
+        val clock = project.clock
+        val keepText = mutableSetOf<String>()
+        clock.clockFont?.takeIf { it.isNotBlank() }?.let { keepText += it }
+        clock.dateFont?.takeIf { it.isNotBlank() }?.let { keepText += it }
+        project.widgetLayers.forEach { w ->
+            w.fontName?.takeIf { it.isNotBlank() }?.let { keepText += it }
+        }
+        val keepIcons = project.widgetLayers
+            .mapNotNull { it.iconFontName?.takeIf { n -> n.isNotBlank() } }
+            .toSet()
+
+        val keepMsg = buildString {
+            if (keepText.isNotEmpty()) append("Texto: ${keepText.joinToString(", ")}")
+            if (keepIcons.isNotEmpty()) {
+                if (isNotEmpty()) append("\n")
+                append("Íconos: ${keepIcons.joinToString(", ")}")
+            }
+            if (isEmpty()) append("(ninguna)")
+        }
+
         AlertDialog.Builder(this)
             .setTitle("Limpiar Fuentes")
             .setMessage(
-                "Se eliminarán las fuentes importadas o descargadas que no estén " +
-                    "seleccionadas como Fuente de la Hora o Fuente de la Fecha.\n\n" +
-                    "Se conservarán: ${keep.joinToString(", ").ifEmpty { "(ninguna)" }}\n\n" +
+                "Se eliminarán fuentes de texto e íconos importadas/descargadas que no estén " +
+                    "en uso por el reloj ni por los widgets.\n\n" +
+                    "Se conservarán:\n$keepMsg\n\n" +
                     "¿Continuar?"
             )
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Eliminar") { _, _ ->
-                val deleted = FontStorage.clearUnusedFonts(this, keep)
+                val deletedText = FontStorage.clearUnusedFonts(this, keepText)
+                val deletedIcons = try {
+                    com.romaster.livewallengine.font.IconFontStorage.clearUnused(this, keepIcons)
+                } catch (_: Exception) {
+                    0
+                }
                 setupFontDropdowns()
+                rebuildWidgetLayerCards()
+                val total = deletedText + deletedIcons
                 Toast.makeText(
                     this,
-                    if (deleted == 0) "No había fuentes para eliminar"
-                    else "Se eliminaron $deleted fuente(s)",
+                    if (total == 0) "No había fuentes para eliminar"
+                    else "Se eliminaron $total archivo(s) ($deletedText texto, $deletedIcons íconos)",
                     Toast.LENGTH_SHORT
                 ).show()
             }

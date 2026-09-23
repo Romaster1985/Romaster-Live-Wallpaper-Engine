@@ -188,4 +188,22 @@ object IconFontStorage {
             }
         }
     }
+
+    /**
+     * Elimina pares TTF/OTF+JSON de íconos no listados en [keepBaseNames].
+     * @return cantidad de archivos eliminados
+     */
+    fun clearUnused(context: Context, keepBaseNames: Set<String>): Int {
+        val keep = keepBaseNames.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        var deleted = 0
+        getDir(context).listFiles()?.forEach { file ->
+            if (!file.isFile) return@forEach
+            val base = file.name.substringBeforeLast('.')
+            if (base !in keep) {
+                if (file.delete()) deleted++
+            }
+        }
+        return deleted
+    }
+
 }
