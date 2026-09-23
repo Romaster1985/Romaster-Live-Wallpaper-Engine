@@ -5843,7 +5843,10 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 } catch (_: Exception) {
                     0
                 }
-                setupFontDropdowns()
+                // Restaurar selección desde el proyecto (no resetear a predeterminada)
+                val clock = ProjectManager.getProject().clock
+                setupFontDropdown(R.id.dropClockFont, clock.clockFont)
+                setupFontDropdown(R.id.dropDateFont, clock.dateFont)
                 rebuildWidgetLayerCards()
                 val total = deletedText + deletedIcons
                 Toast.makeText(
@@ -5857,15 +5860,9 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
     }
 
     private fun setupFontDropdowns() {
-
-
-        setupFontDropdown(
-            R.id.dropClockFont
-        )
-    
-        setupFontDropdown(
-            R.id.dropDateFont
-        )
+        val clock = ProjectManager.getProject().clock
+        setupFontDropdown(R.id.dropClockFont, clock.clockFont)
+        setupFontDropdown(R.id.dropDateFont, clock.dateFont)
     }
     
     private fun reloadFontLibrary() {
@@ -5930,21 +5927,15 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             adapter
         )
     
-        val index =
-            selected?.let {
-    
-                fonts.indexOf(it)
-    
-            }?.takeIf {
-    
-                it >= 0
-    
-            } ?: 0
-    
-        dropdown.setText(
-            fonts[index],
-            false
-        )
+        val preferred = selected?.takeIf { it.isNotBlank() }
+        val index = when {
+            preferred == null -> 0 // Fuente predeterminada
+            fonts.indexOf(preferred) >= 0 -> fonts.indexOf(preferred)
+            else -> fonts.indexOfFirst { it.equals(preferred, ignoreCase = true) }
+                .takeIf { it >= 0 } ?: 0
+        }
+
+        dropdown.setText(fonts[index], false)
     
         dropdown.setOnItemClickListener {
     
