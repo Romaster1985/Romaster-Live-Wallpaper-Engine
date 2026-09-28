@@ -1222,6 +1222,14 @@
                     android:layout_height="wrap_content"
                     android:text="Colores del Reloj (Hora/Fecha)"
                     android:textAppearance="?attr/textAppearanceTitleMedium"/>
+
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/checkClockMulticolor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Reloj Multicolor"
+                    android:checked="false"/>
                     
                 <TextView
                     android:layout_width="match_parent"
@@ -1258,7 +1266,163 @@
                         android:text="Cambiar"/>
                     
                 </LinearLayout>
-                    
+
+                <LinearLayout
+                    android:id="@+id/layoutMinutesColorSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Color de Minutos"
+                        android:layout_marginTop="8dp"/>
+
+                    <LinearLayout
+                        android:id="@+id/layoutMinutesColor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/viewMinutesColor"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@android:color/white"/>
+
+                        <TextView
+                            android:id="@+id/textMinutesColor"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="#FFFFFF"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonMinutesColor"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cambiar"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Color de Segundos"
+                        android:layout_marginTop="8dp"/>
+
+                    <LinearLayout
+                        android:id="@+id/layoutSecondsColor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/viewSecondsColor"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@android:color/white"/>
+
+                        <TextView
+                            android:id="@+id/textSecondsColor"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="#FFFFFF"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonSecondsColor"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cambiar"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutColonColorSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Color de Marcador [ : ]"
+                        android:layout_marginTop="8dp"/>
+
+                    <LinearLayout
+                        android:id="@+id/layoutColonColor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/viewColonColor"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@android:color/white"/>
+
+                        <TextView
+                            android:id="@+id/textColonColor"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="#FFFFFF"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonColonColor"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cambiar"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Color AM/PM"
+                        android:layout_marginTop="8dp"/>
+
+                    <LinearLayout
+                        android:id="@+id/layoutAmPmColor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/viewAmPmColor"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginEnd="12dp"
+                            android:background="@android:color/white"/>
+
+                        <TextView
+                            android:id="@+id/textAmPmColor"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="#FFFFFF"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/buttonAmPmColor"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cambiar"/>
+                    </LinearLayout>
+                </LinearLayout>
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -1294,7 +1458,7 @@
                         android:text="Cambiar"/>
                 
                 </LinearLayout>
-                
+
             </LinearLayout>
         
         </com.google.android.material.card.MaterialCardView>

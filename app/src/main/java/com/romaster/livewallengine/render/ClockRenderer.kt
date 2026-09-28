@@ -347,21 +347,55 @@ class ClockRenderer {
         /** Dibuja hora (1 o 2 líneas verticales); devuelve bottom del bloque. */
         fun drawTimeBlock(startBaseline: Float): Float {
             if (!drawClock) return startBaseline
-            val parts = timeParts(settings)
             preparePaint(
                 context, settings.clockSize, settings.clockColor,
                 settings.clockFont, settings.alignment, variationOf(settings)
             )
             val scaleY = verticalScale(settings.clockSize, settings.clockVerticalDeform)
             val fm = paint.fontMetrics
-            // Separación HH/MM controlada por slider (0 = misma línea / superpuestos)
             val gapPx = settings.verticalHhMmGap.coerceAtLeast(0f)
+
+            // Vertical HH/MM: cada línea con su color si multicolor
+            if (settings.timeFormat == TimeFormat.HH_MM_VERTICAL) {
+                val parts = timeParts(settings)
+                var baseline = startBaseline
+                var bot = startBaseline
+                for ((i, part) in parts.withIndex()) {
+                    if (i > 0) baseline = startBaseline + gapPx
+                    val color = when {
+                        !settings.multicolorClock -> settings.clockColor
+                        i == 0 -> settings.clockColor
+                        else -> settings.minutesColor
+                    }
+                    line(
+                        part, baseline, settings.clockSize,
+                        color, settings.clockFont, settings.clockVerticalDeform,
+                        settings.clockBorderWidth, settings.clockBorderColor,
+                        isTime = true
+                    )
+                    bot = baseline + fm.descent * scaleY
+                }
+                return bot
+            }
+
+            // Horizontal: multicolor → hora / : / minutos (/ :ss / ampm)
+            if (settings.multicolorClock) {
+                drawMulticolorTime(
+                    context, canvas, settings,
+                    baseX, startBaseline,
+                    settings.clockSize, settings.clockFont,
+                    settings.clockVerticalDeform,
+                    settings.clockBorderWidth, settings.clockBorderColor
+                )
+                track(startBaseline, settings.clockSize, settings.clockVerticalDeform, settings.clockFont)
+                return startBaseline + fm.descent * scaleY
+            }
+
+            val parts = timeParts(settings)
             var baseline = startBaseline
             var bot = startBaseline
             for ((i, part) in parts.withIndex()) {
-                if (i > 0) {
-                    baseline = startBaseline + gapPx
-                }
+                if (i > 0) baseline = startBaseline + gapPx
                 line(
                     part, baseline, settings.clockSize,
                     settings.clockColor, settings.clockFont, settings.clockVerticalDeform,
@@ -880,6 +914,129 @@ class ClockRenderer {
             TextAlignment.LEFT -> Paint.Align.LEFT
             TextAlignment.RIGHT -> Paint.Align.RIGHT
             TextAlignment.CENTER -> Paint.Align.CENTER
+        }
+    }
+
+
+    /**
+     * Dibuja la hora horizontal en tramos: horas | : | minutos [| : | segundos] [| am/pm]
+     * con colores independientes (hora, minutos, segundos, marcador, AM/PM).
+     */
+    private fun drawMulticolorTime(
+        context: android.content.Context,
+        canvas: Canvas,
+        settings: ClockSettings,
+        baseX: Float,
+        baselineY: Float,
+        textSize: Float,
+        fontFile: String?,
+        deformPx: Float,
+        borderWidth: Float,
+        borderColorHex: String
+    ) {
+        val full = buildTime(settings)
+        // Segmentos coloreados
+        data class Seg(val text: String, val color: String)
+        val segs = mutableListOf<Seg>()
+        // Soporta HH:mm, HH:mm:ss, hh:mm a
+        var i = 0
+        val n = full.length
+        var buf = StringBuilder()
+        var segIndex = 0 // 0=hour, 1=after first colon (minutes), 2=seconds...
+        fun flush(isColon: Boolean) {
+            if (buf.isNotEmpty()) {
+                // segIndex: 0=hora, 1=minutos, 2=segundos
+                val color = when (segIndex) {
+                    0 -> settings.clockColor
+                    1 -> settings.minutesColor
+                    else -> settings.secondsColor
+                }
+                segs += Seg(buf.toString(), color)
+                buf = StringBuilder()
+            }
+            if (isColon) {
+                segs += Seg(":", settings.colonColor)
+                if (segIndex == 0) segIndex = 1
+                else segIndex++
+            }
+        }
+        while (i < n) {
+            val c = full[i]
+            when {
+                c == ':' -> {
+                    flush(true)
+                    i++
+                }
+                c == ' ' -> {
+                    // espacio + AM/PM
+                    flush(false)
+                    buf.append(' ')
+                    i++
+                    while (i < n) {
+                        buf.append(full[i])
+                        i++
+                    }
+                    if (buf.isNotEmpty()) {
+                        segs += Seg(buf.toString(), settings.amPmColor)
+                        buf = StringBuilder()
+                    }
+                }
+                else -> {
+                    buf.append(c)
+                    i++
+                }
+            }
+        }
+        flush(false)
+        if (segs.isEmpty()) return
+
+        preparePaint(
+            context, textSize, settings.clockColor, fontFile,
+            TextAlignment.LEFT, variationOf(settings)
+        )
+        val widths = segs.map { paint.measureText(it.text) }
+        val totalW = widths.sum()
+
+        // Origen X según alineación / centerOnColon
+        var startX: Float
+        if (settings.centerOnColon && segs.any { it.text == ":" }) {
+            // Centro del primer ":" sobre baseX
+            var beforeColon = 0f
+            var colonW = 0f
+            for ((idx, s) in segs.withIndex()) {
+                if (s.text == ":") {
+                    colonW = widths[idx]
+                    break
+                }
+                beforeColon += widths[idx]
+            }
+            startX = baseX - beforeColon - colonW / 2f
+        } else {
+            startX = when (settings.alignment) {
+                TextAlignment.LEFT -> baseX
+                TextAlignment.RIGHT -> baseX - totalW
+                TextAlignment.CENTER -> baseX - totalW / 2f
+            }
+        }
+
+        var x = startX
+        for ((idx, s) in segs.withIndex()) {
+            drawTextLine(
+                context, canvas,
+                text = s.text,
+                x = x,
+                baselineY = baselineY,
+                textSize = textSize,
+                colorHex = s.color,
+                fontFile = fontFile,
+                alignment = TextAlignment.LEFT,
+                deformPx = deformPx,
+                borderWidth = borderWidth,
+                borderColorHex = borderColorHex,
+                variationSettings = variationOf(settings),
+                enableReflection = false
+            )
+            x += widths[idx]
         }
     }
 

@@ -149,6 +149,18 @@ class MainActivity : AppCompatActivity() {
 
     private var dateColorHex =
         "#FFFFFF"
+
+    private var minutesColorHex =
+        "#FFFFFF"
+
+    private var colonColorHex =
+        "#FFFFFF"
+
+    private var secondsColorHex =
+        "#FFFFFF"
+
+    private var amPmColorHex =
+        "#FFFFFF"
     
     private var dateSpacingValue = 20f
     
@@ -4030,6 +4042,48 @@ private fun showFadeDurationDialog(
                 updatePreviewProject()
             }
         }
+
+        findViewById<MaterialButton>(R.id.buttonMinutesColor).setOnClickListener {
+            ColorPickerDialog.show(this, minutesColorHex) { hex ->
+                minutesColorHex = hex
+                updateMinutesColorUI()
+                updatePreviewProject()
+            }
+        }
+
+        findViewById<MaterialButton>(R.id.buttonColonColor).setOnClickListener {
+            ColorPickerDialog.show(this, colonColorHex) { hex ->
+                colonColorHex = hex
+                updateColonColorUI()
+                updatePreviewProject()
+            }
+        }
+
+        findViewById<MaterialButton>(R.id.buttonSecondsColor).setOnClickListener {
+            ColorPickerDialog.show(this, secondsColorHex) { hex ->
+                secondsColorHex = hex
+                updateSecondsColorUI()
+                updatePreviewProject()
+            }
+        }
+
+        findViewById<MaterialButton>(R.id.buttonAmPmColor).setOnClickListener {
+            ColorPickerDialog.show(this, amPmColorHex) { hex ->
+                amPmColorHex = hex
+                updateAmPmColorUI()
+                updatePreviewProject()
+            }
+        }
+
+        findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
+            R.id.checkClockMulticolor
+        ).setOnCheckedChangeListener { _, checked ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            val vis = if (checked) android.view.View.VISIBLE else android.view.View.GONE
+            findViewById<android.view.View>(R.id.layoutMinutesColorSection).visibility = vis
+            findViewById<android.view.View>(R.id.layoutColonColorSection).visibility = vis
+            updatePreviewProject()
+        }
     }
     
     private fun updateClockColorUI() {
@@ -4058,6 +4112,40 @@ private fun showFadeDurationDialog(
             R.id.textDateColor
         ).text =
             dateColorHex
+    }
+
+    private fun updateMinutesColorUI() {
+        findViewById<View>(R.id.viewMinutesColor).setBackgroundColor(
+            Color.parseColor(minutesColorHex)
+        )
+        findViewById<TextView>(R.id.textMinutesColor).text = minutesColorHex
+    }
+
+    private fun updateColonColorUI() {
+        findViewById<View>(R.id.viewColonColor).setBackgroundColor(
+            Color.parseColor(colonColorHex)
+        )
+        findViewById<TextView>(R.id.textColonColor).text = colonColorHex
+    }
+
+    private fun updateSecondsColorUI() {
+        findViewById<View>(R.id.viewSecondsColor).setBackgroundColor(
+            Color.parseColor(secondsColorHex)
+        )
+        findViewById<TextView>(R.id.textSecondsColor).text = secondsColorHex
+    }
+
+    private fun updateAmPmColorUI() {
+        findViewById<View>(R.id.viewAmPmColor).setBackgroundColor(
+            Color.parseColor(amPmColorHex)
+        )
+        findViewById<TextView>(R.id.textAmPmColor).text = amPmColorHex
+    }
+
+    private fun updateMulticolorVisibility(enabled: Boolean) {
+        val vis = if (enabled) android.view.View.VISIBLE else android.view.View.GONE
+        findViewById<android.view.View>(R.id.layoutMinutesColorSection).visibility = vis
+        findViewById<android.view.View>(R.id.layoutColonColorSection).visibility = vis
     }
 
     private fun updateClockBorderColorUI() {
@@ -4826,6 +4914,20 @@ findViewById<CheckBox>(
             clock.dateColor
         
         updateDateColorUI()
+
+        minutesColorHex = clock.minutesColor
+        updateMinutesColorUI()
+        colonColorHex = clock.colonColor
+        updateColonColorUI()
+        secondsColorHex = clock.secondsColor
+        updateSecondsColorUI()
+        amPmColorHex = clock.amPmColor
+        updateAmPmColorUI()
+
+        findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
+            R.id.checkClockMulticolor
+        ).isChecked = clock.multicolorClock
+        updateMulticolorVisibility(clock.multicolorClock)
         
         setupFontDropdown(
             R.id.dropClockFont,
@@ -6685,6 +6787,15 @@ clock.enabled =
         
         clock.dateColor =
             dateColorHex
+
+        clock.multicolorClock =
+            findViewById<com.google.android.material.checkbox.MaterialCheckBox>(
+                R.id.checkClockMulticolor
+            ).isChecked
+        clock.minutesColor = minutesColorHex
+        clock.colonColor = colonColorHex
+        clock.secondsColor = secondsColorHex
+        clock.amPmColor = amPmColorHex
     
         clock.clockFont =
             findViewById<AutoCompleteTextView>(

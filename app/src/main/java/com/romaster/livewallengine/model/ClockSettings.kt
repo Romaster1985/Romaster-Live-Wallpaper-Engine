@@ -50,6 +50,21 @@ data class ClockSettings(
     var clockColor: String = "#FFFFFF",
 
     var dateColor: String = "#FFFFFF",
+
+    /** Hora, minutos y marcador ":" con colores independientes. */
+    var multicolorClock: Boolean = false,
+
+    /** Color de los minutos (solo si multicolorClock). */
+    var minutesColor: String = "#FFFFFF",
+
+    /** Color de los segundos (solo si multicolorClock). */
+    var secondsColor: String = "#FFFFFF",
+
+    /** Color del marcador ":" (solo si multicolorClock). */
+    var colonColor: String = "#FFFFFF",
+
+    /** Color del sufijo AM/PM (solo si multicolorClock). */
+    var amPmColor: String = "#FFFFFF",
     
     var clockColorPreset: String = "Blanco",
 
