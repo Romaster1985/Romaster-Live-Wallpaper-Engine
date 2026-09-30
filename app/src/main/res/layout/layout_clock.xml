@@ -58,7 +58,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Pantalla de bloqueo"
+                    android:text="@string/clock_lock_screen_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:layout_marginBottom="8dp"/>
         
@@ -66,7 +66,7 @@
                     android:id="@+id/checkClockLockScreen"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Habilitar en Pantalla de bloqueo"/>
+                    android:text="@string/clock_enable_on_lock"/>
         
             </LinearLayout>
         
@@ -103,7 +103,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Formato de Hora"
+                        android:text="@string/clock_time_format"
                         android:textAppearance="?attr/textAppearanceTitleMedium"/>
 
                     <com.google.android.material.button.MaterialButton
@@ -114,7 +114,7 @@
                         android:minWidth="0dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        android:text="mostrar [+]"
+                        android:text="@string/show_expand"
                         android:textSize="12sp"/>
                 </LinearLayout>
 
@@ -130,7 +130,7 @@
                         android:id="@+id/checkClock"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Mostrar Hora"/>
+                        android:text="@string/show_time"/>
 
                     <RadioGroup
                         android:id="@+id/radioTimeFormat"
@@ -181,7 +181,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="Separación HH/MM"/>
+                                android:text="@string/hhmm_vertical_gap"/>
 
                             <TextView
                                 android:id="@+id/textVerticalHhMmGap"
@@ -236,7 +236,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Formato de Fecha"
+                        android:text="@string/clock_date_format"
                         android:textAppearance="?attr/textAppearanceTitleMedium"/>
 
                     <com.google.android.material.button.MaterialButton
@@ -247,7 +247,7 @@
                         android:minWidth="0dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        android:text="mostrar [+]"
+                        android:text="@string/show_expand"
                         android:textSize="12sp"/>
                 </LinearLayout>
 
@@ -263,7 +263,7 @@
                         android:id="@+id/checkDate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Mostrar Fecha"/>
+                        android:text="@string/show_date"/>
 
                     <RadioGroup
                         android:id="@+id/radioDateFormat"
@@ -319,7 +319,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Fuentes"
+                    android:text="@string/fonts_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:layout_marginBottom="12dp"/>
         
@@ -329,13 +329,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:text="Galería de Fuentes 🌎📲"/>
+                    android:text="@string/font_gallery_button"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonImportFont"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Importar fuente"
+                    android:text="@string/import_font"
                     android:icon="@android:drawable/ic_input_add"/>
 
                 
@@ -345,7 +345,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:hint="Fuente de la Hora">
+                    android:hint="@string/font_hour_hint">
                 
                     <AutoCompleteTextView
                         android:id="@+id/dropClockFont"
@@ -361,7 +361,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:hint="Fuente de la Fecha">
+                    android:hint="@string/font_date_hint">
                 
                     <AutoCompleteTextView
                         android:id="@+id/dropDateFont"
@@ -406,7 +406,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Variaciones de fuente"
+                        android:text="@string/font_variations_title"
                         android:textAppearance="?attr/textAppearanceTitleMedium"/>
 
                     <com.google.android.material.button.MaterialButton
@@ -432,7 +432,7 @@
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
                         android:layout_marginStart="4dp"
-                        android:text="mostrar [+]"
+                        android:text="@string/show_expand"
                         android:textSize="12sp"/>
                 </LinearLayout>
 
@@ -447,7 +447,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Ejes OpenType (Roboto Flex y otras variables). En fuentes fijas se ignoran."
+                    android:text="@string/font_variations_help"
                     android:textSize="12sp"
                     android:alpha="0.7"/>
 
@@ -806,7 +806,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tamaño de Hora"
+                    android:text="@string/size_hour_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"/>
         
                 <LinearLayout
@@ -819,7 +819,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Tamaño"/>
+                        android:text="@string/label_size"/>
         
                     <TextView
                         android:id="@+id/textClockSizeValue"
@@ -848,7 +848,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Deformación Vertical"/>
+                        android:text="@string/vertical_deform"/>
 
                     <TextView
                         android:id="@+id/textClockVerticalDeform"
@@ -895,7 +895,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tamaño de Fecha"
+                    android:text="@string/size_date_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"/>
         
                 <LinearLayout
@@ -908,7 +908,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Tamaño"/>
+                        android:text="@string/label_size"/>
         
                     <TextView
                         android:id="@+id/textDateSizeValue"
@@ -937,7 +937,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Deformación Vertical"/>
+                        android:text="@string/vertical_deform"/>
 
                     <TextView
                         android:id="@+id/textDateVerticalDeform"
@@ -984,7 +984,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Espacio entre hora y fecha"
+                    android:text="@string/spacing_time_date_title"
                     android:textSize="18sp"
                     android:textStyle="bold" />
         
@@ -992,7 +992,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Define manualmente la separación vertical entre ambos textos."
+                    android:text="@string/spacing_time_date_help"
                     android:textSize="14sp" />
         
                 <LinearLayout
@@ -1014,7 +1014,7 @@
                         android:id="@+id/buttonDateSpacing"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Editar" />
+                        android:text="@string/edit" />
         
                 </LinearLayout>
 
@@ -1023,7 +1023,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Superposición admitida"/>
+                    android:text="@string/overlap_allowed"/>
         
             </LinearLayout>
         
@@ -1053,7 +1053,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Posición"
+                    android:text="@string/position_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"/>
         
                 <LinearLayout
@@ -1066,7 +1066,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Horizontal"/>
+                        android:text="@string/label_horizontal"/>
         
                     <TextView
                         android:id="@+id/textXValue"
@@ -1095,7 +1095,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Vertical"/>
+                        android:text="@string/label_vertical"/>
         
                     <TextView
                         android:id="@+id/textYValue"
@@ -1119,21 +1119,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Centrar hora con marcador [ : ]"/>
+                    android:text="@string/center_colon"/>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switchClockBehindOverlay"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Reloj detrás del Video-OL"/>
+                    android:text="@string/clock_behind_vol"/>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switchSwapTimeDate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Intercambiar Hora 🔀 Fecha"/>
+                    android:text="@string/swap_time_date"/>
         
             </LinearLayout>
         
@@ -1163,7 +1163,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Alineación"
+                    android:text="@string/alignment_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:layout_marginBottom="8dp"/>
         
@@ -1176,19 +1176,19 @@
                         android:id="@+id/radioAlignLeft"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Izquierda"/>
+                        android:text="@string/align_left"/>
         
                     <com.google.android.material.radiobutton.MaterialRadioButton
                         android:id="@+id/radioAlignCenter"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Centro"/>
+                        android:text="@string/align_center"/>
         
                     <com.google.android.material.radiobutton.MaterialRadioButton
                         android:id="@+id/radioAlignRight"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Derecha"/>
+                        android:text="@string/align_right"/>
         
                 </RadioGroup>
         
@@ -1220,7 +1220,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Colores del Reloj (Hora/Fecha)"
+                    android:text="@string/clock_colors_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"/>
 
                 <com.google.android.material.checkbox.MaterialCheckBox
@@ -1228,13 +1228,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Reloj Multicolor"
+                    android:text="@string/clock_multicolor"
                     android:checked="false"/>
                     
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Color de Hora"
+                    android:text="@string/color_hour"
                     android:layout_marginTop="12dp"/>
                 
                 <LinearLayout
@@ -1263,7 +1263,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Cambiar"/>
+                        android:text="@string/change"/>
                     
                 </LinearLayout>
 
@@ -1277,7 +1277,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Color de Minutos"
+                        android:text="@string/color_minutes"
                         android:layout_marginTop="8dp"/>
 
                     <LinearLayout
@@ -1306,13 +1306,13 @@
                             style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Cambiar"/>
+                            android:text="@string/change"/>
                     </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Color de Segundos"
+                        android:text="@string/color_seconds"
                         android:layout_marginTop="8dp"/>
 
                     <LinearLayout
@@ -1341,7 +1341,7 @@
                             style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Cambiar"/>
+                            android:text="@string/change"/>
                     </LinearLayout>
                 </LinearLayout>
 
@@ -1355,7 +1355,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Color de Marcador [ : ]"
+                        android:text="@string/color_colon"
                         android:layout_marginTop="8dp"/>
 
                     <LinearLayout
@@ -1384,13 +1384,13 @@
                             style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Cambiar"/>
+                            android:text="@string/change"/>
                     </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Color AM/PM"
+                        android:text="@string/color_ampm"
                         android:layout_marginTop="8dp"/>
 
                     <LinearLayout
@@ -1419,14 +1419,14 @@
                             style="?attr/materialButtonOutlinedStyle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Cambiar"/>
+                            android:text="@string/change"/>
                     </LinearLayout>
                 </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Color de Fecha"
+                    android:text="@string/color_date"
                     android:layout_marginTop="8dp"/>
                     
                 <LinearLayout
@@ -1455,7 +1455,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Cambiar"/>
+                        android:text="@string/change"/>
                 
                 </LinearLayout>
 
@@ -1487,7 +1487,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Bordes de Fuentes"
+                    android:text="@string/font_borders_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"/>
 
                 <LinearLayout
@@ -1500,7 +1500,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Borde de Hora"/>
+                        android:text="@string/border_hour"/>
 
                     <TextView
                         android:id="@+id/textClockBorderWidth"
@@ -1545,7 +1545,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Cambiar"/>
+                        android:text="@string/change"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -1558,7 +1558,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Borde de Fecha"/>
+                        android:text="@string/border_date"/>
 
                     <TextView
                         android:id="@+id/textDateBorderWidth"
@@ -1603,7 +1603,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Cambiar"/>
+                        android:text="@string/change"/>
                 </LinearLayout>
 
             </LinearLayout>
@@ -1634,14 +1634,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Modo cristal y texturizado"
+                    android:text="@string/crystal_mode_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:layout_marginBottom="4dp"/>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Relleno translúcido solo dentro de la letra, con textura PNG opcional. La transparencia controla el alfa del relleno; el desenfoque difumina el fondo detrás de los glifos. Se combina con color y borde."
+                    android:text="@string/crystal_mode_help"
                     android:textSize="12sp"
                     android:layout_marginBottom="8dp"/>
 
@@ -1649,7 +1649,7 @@
                     android:id="@+id/checkClockCrystal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Activar modo cristal"/>
+                    android:text="@string/enable_crystal"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1662,7 +1662,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Transparencia del cristal"/>
+                        android:text="@string/crystal_transparency"/>
 
                     <TextView
                         android:id="@+id/textClockCrystalBlur"
@@ -1684,7 +1684,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Desenfoque del fondo"/>
+                    android:text="@string/bg_blur_title"/>
 
                 <RadioGroup
                     android:id="@+id/radioClockCrystalDefocus"
@@ -1698,7 +1698,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Off"
+                        android:text="@string/blur_off"
                         android:checked="true"/>
 
                     <RadioButton
@@ -1706,21 +1706,21 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Soft"/>
+                        android:text="@string/blur_soft"/>
 
                     <RadioButton
                         android:id="@+id/radioClockDefocusMid"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Med"/>
+                        android:text="@string/blur_med"/>
 
                     <RadioButton
                         android:id="@+id/radioClockDefocusHigh"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Strong"/>
+                        android:text="@string/blur_strong"/>
                 </RadioGroup>
 
                 <TextView
@@ -1728,7 +1728,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Textura: (ninguna)"
+                    android:text="@string/texture_none"
                     android:textSize="12sp"/>
 
                 <LinearLayout
@@ -1743,14 +1743,14 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Cargar textura PNG"/>
+                        android:text="@string/load_texture_png"/>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonClearClockCrystalTexture"
                         style="@style/Widget.Material3.Button.TextButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Quitar"/>
+                        android:text="@string/remove"/>
                 </LinearLayout>
 
             </LinearLayout>
@@ -1781,14 +1781,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Reflejo y relieve"
+                    android:text="@string/reflection_relief_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:layout_marginBottom="4dp"/>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Espejo vertical con degradado debajo del reloj, y relieve suave en los bordes de la fuente. Se genera junto al bitmap del reloj (bajo consumo)."
+                    android:text="@string/reflection_relief_help"
                     android:textSize="12sp"
                     android:layout_marginBottom="8dp"/>
 
@@ -1796,13 +1796,13 @@
                     android:id="@+id/checkClockReflection"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Efecto reflejo"/>
+                    android:text="@string/effect_reflection"/>
 
                 <com.google.android.material.checkbox.MaterialCheckBox
                     android:id="@+id/checkClockBevel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Relieve (profundidad)"/>
+                    android:text="@string/relief_depth"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1815,7 +1815,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Intensidad del reflejo"/>
+                        android:text="@string/reflection_intensity"/>
 
                     <TextView
                         android:id="@+id/textClockReflectionOpacity"
@@ -1844,7 +1844,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Separación del reflejo"/>
+                        android:text="@string/reflection_gap"/>
 
                     <TextView
                         android:id="@+id/textClockReflectionGap"
@@ -1873,7 +1873,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Cantidad de reflejo"/>
+                        android:text="@string/reflection_amount"/>
 
                     <TextView
                         android:id="@+id/textClockReflectionAmount"
@@ -1902,7 +1902,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Ángulo del relieve"/>
+                        android:text="@string/relief_angle"/>
 
                     <TextView
                         android:id="@+id/textClockBevelAngle"
@@ -1931,7 +1931,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Fuerza del relieve"/>
+                        android:text="@string/relief_strength"/>
 
                     <TextView
                         android:id="@+id/textClockBevelStrength"

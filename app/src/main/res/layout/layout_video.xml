@@ -57,7 +57,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="📺 Video de Fondo"
+                        android:text="@string/video_bg_title"
                         android:textStyle="bold"
                         android:textSize="18sp"/>
 
@@ -76,7 +76,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Cargar Video"/>
+                    android:text="@string/video_load"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonImportGifWallpaper"
@@ -84,7 +84,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Importar Gif"/>
+                    android:text="@string/video_import_gif"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonBlackScreenWallpaper"
@@ -92,7 +92,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Cargar Pantalla Negra"/>
+                    android:text="@string/video_black_screen"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonResetWallpaperVideo"
@@ -100,7 +100,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Eliminar Video (Reset)"
+                    android:text="@string/video_delete_reset"
                     android:textColor="@android:color/white"
                     app:backgroundTint="#B00020"/>
 
@@ -128,7 +128,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Modo de Ajuste"
+                    android:text="@string/fit_mode_title"
                     android:textStyle="bold"
                     android:textSize="16sp"/>
 
@@ -148,7 +148,7 @@
                         android:paddingHorizontal="0dp"
                         android:insetLeft="0dp"
                         android:insetRight="0dp"
-                        android:text="Fit"/>
+                        android:text="@string/fit_fit"/>
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonFill"
@@ -159,7 +159,7 @@
                         android:paddingHorizontal="0dp"
                         android:insetLeft="0dp"
                         android:insetRight="0dp"
-                        android:text="Fill"/>
+                        android:text="@string/fit_fill"/>
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonStretch"
@@ -170,7 +170,7 @@
                         android:paddingHorizontal="0dp"
                         android:insetLeft="0dp"
                         android:insetRight="0dp"
-                        android:text="Stretch"/>
+                        android:text="@string/fit_stretch"/>
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonFree"
@@ -181,7 +181,7 @@
                         android:paddingHorizontal="0dp"
                         android:insetLeft="0dp"
                         android:insetRight="0dp"
-                        android:text="Free"/>
+                        android:text="@string/fit_free"/>
                 
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -210,7 +210,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Modo Libre"
+                    android:text="@string/free_mode_title"
                     android:textStyle="bold"
                     android:textSize="16sp"/>
 
@@ -220,7 +220,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:text="Relación de aspecto"
+                    android:text="@string/aspect_ratio_title"
                     android:textStyle="bold"/>
 
                 <RadioGroup
@@ -232,7 +232,7 @@
                         android:id="@+id/radioAspectOriginal"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Original"/>
+                        android:text="@string/aspect_original"/>
 
                     <RadioButton
                         android:id="@+id/radioAspect16x9"
@@ -284,7 +284,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Zoom"/>
+                        android:text="@string/label_zoom"/>
 
                     <TextView
                         android:id="@+id/textVideoZoomValue"
@@ -313,7 +313,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Posición X"/>
+                        android:text="@string/label_pos_x"/>
 
                     <TextView
                         android:id="@+id/textVideoPosXValue"
@@ -341,7 +341,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Posición Y"/>
+                        android:text="@string/label_pos_y"/>
 
                     <TextView
                         android:id="@+id/textVideoPosYValue"
@@ -379,7 +379,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sonido"
+                    android:text="@string/sound_title"
                     android:textStyle="bold"
                     android:textSize="16sp"/>
         
@@ -401,7 +401,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Volumen"/>
+                        android:text="@string/label_volume"/>
 
                     <TextView
                         android:id="@+id/textBgSoundVolumeValue"
@@ -430,7 +430,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Cargar sonido"/>
+                        android:text="@string/load_sound"/>
                 
                     <Space
                         android:layout_width="8dp"
@@ -442,7 +442,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Reset"/>
+                        android:text="@string/reset"/>
                 
                 </LinearLayout>
         
@@ -453,14 +453,14 @@
                     android:layout_marginTop="8dp"
                     android:ellipsize="middle"
                     android:maxLines="1"
-                    android:text="Ningún sonido seleccionado"/>
+                    android:text="@string/no_sound_selected"/>
                 
                 <TextView
                     android:id="@+id/textBgSoundDuration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Duración: --:--.---"
+                    android:text="@string/duration_placeholder"
                     android:textSize="12sp"/>
         
             </LinearLayout>

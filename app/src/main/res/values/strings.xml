@@ -1,41 +1,313 @@
-<!--
-  Copyright 2026 Román Ignacio Romero (Romaster)
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-
-  Nota: Este proyecto incluye ColorPickerView (skydoves) licenciado bajo Apache 2.0.
--->
-
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default: Español → res/values/strings.xml -->
 <resources>
+    <string name="app_name">Romaster LiveWall Engine</string>
+    <string name="wallpaper_description">Live Wallpaper con video, capas y reloj personalizable.</string>
 
-    <string name="app_name">
-        Romaster LiveWall Engine
-    </string>
+    <!-- Tabs -->
+    <string name="tab_video_bg">📺 Video-BG</string>
+    <string name="tab_video_ol">📽️ Video-OL</string>
+    <string name="tab_playback">▶️ Playback</string>
+    <string name="tab_clock_ol">🕓 Clock-OL</string>
+    <string name="tab_pics_ol">🖼️ Pics-OL</string>
+    <string name="tab_widgets_ol">🧩 Widgets-OL</string>
+    <string name="tab_project">🗃️ Proyecto</string>
+    <string name="tab_settings">⚙️ Settings</string>
 
-    <string name="wallpaper_description">
-        Live Wallpaper con video, capas y reloj personalizable.
-    </string>
+    <!-- Common -->
+    <string name="save">Guardar</string>
+    <string name="save_changes">Guardar Cambios</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ok">Aceptar</string>
+    <string name="close">Cerrar</string>
+    <string name="delete">Eliminar</string>
+    <string name="yes">Sí</string>
+    <string name="no">No</string>
+    <string name="import_action">Importar</string>
+    <string name="export_action">Exportar</string>
+    <string name="reset">Reset</string>
+    <string name="error_generic">Error: %1$s</string>
 
-    <string name="save">
-        Guardar
-    </string>
+    <!-- Project -->
+    <string name="project_card_title">🗃️ Proyecto</string>
+    <string name="import_project">Importar Proyecto</string>
+    <string name="export_project">Exportar Proyecto</string>
+    <string name="new_project">Nuevo Proyecto</string>
+    <string name="select_project_gallery">Galería de Wallpapers 🌎📲</string>
+    <string name="export_progress">Exportando proyecto…</string>
+    <string name="export_success">Proyecto exportado correctamente</string>
+    <string name="export_error">Error al exportar el proyecto</string>
 
-    <string name="import_project">
-        Importar Proyecto
-    </string>
+    <!-- Fonts cleanup -->
+    <string name="clear_fonts">Limpiar Fuentes</string>
+    <string name="clear_fonts_title">Limpiar Fuentes</string>
+    <string name="clear_fonts_message">Se eliminarán las fuentes de texto e íconos que no estén en uso en el reloj ni en los widgets. Las fuentes seleccionadas actualmente se conservan.</string>
+    <string name="clear_fonts_confirm">Se eliminarán fuentes de texto e íconos importadas/descargadas que no estén en uso por el reloj ni por los widgets.\n\nSe conservarán:\n%1$s\n\n¿Continuar?</string>
+    <string name="clear_fonts_keep_text">Texto: %1$s</string>
+    <string name="clear_fonts_keep_icons">Íconos: %1$s</string>
+    <string name="clear_fonts_keep_none">(ninguna)</string>
+    <string name="clear_fonts_none">No había fuentes para eliminar</string>
+    <string name="clear_fonts_done">Se eliminaron %1$d archivo(s) (%2$d texto, %3$d íconos)</string>
 
-    <string name="export_project">
-        Exportar Proyecto
-    </string>
+    <string name="about">Acerca de</string>
+    <string name="device_info_title">📱 Información</string>
+    <string name="label_resolution">Resolución:</string>
+    <string name="label_aspect_ratio">Aspect Ratio:</string>
+    <string name="label_opengl_es">OpenGL ES:</string>
+    <string name="label_device">Dispositivo:</string>
+    <string name="label_android">Android:</string>
 
+    <!-- Settings -->
+    <string name="settings_title">⚙️ Settings</string>
+    <string name="settings_language_card">Idioma / Language</string>
+    <string name="settings_language_button">👁️‍🗨️ Languages</string>
+    <string name="settings_language_dialog_title">Seleccionar idioma</string>
+    <string name="settings_fonts_directory">Directorio de Fuentes</string>
+    <string name="language_spanish">Español [ES]</string>
+    <string name="language_english">English [EN]</string>
+    <string name="language_changed">Idioma actualizado</string>
+
+    <!-- About -->
+    <string name="about_title">Romaster LiveWall Engine</string>
+    <string name="about_description">Motor y editor de live wallpapers para Android.\nVideo, Overlay, capas de imagen, capas de widgets, reloj avanzado y reproducción reactiva al bloqueo del dispositivo.</string>
+    <string name="about_credits">Desarrollado por Román Ignacio Romero (Romaster).\nGracias por usar la app. Si te gusta el proyecto, podés apoyarlo o escribirme.</string>
+    <string name="about_contact_section">Contacto y redes</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_support_section">Apoyar el proyecto</string>
+    <string name="about_bmc_label">🍺  Invítame una cerveza</string>
+    <string name="about_bmc_cd">Buy me a coffee</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nLicencia Apache 2.0</string>
+
+    <!-- Gallery -->
+    <string name="gallery_title">Seleccionar Proyecto</string>
+    <string name="gallery_empty">No hay proyectos publicados todavía.\n\nCuando subas ZIP + PNG a la carpeta LiveWallpapers del repositorio, aparecerán aquí.</string>
+    <string name="gallery_download">Descargar</string>
+    <string name="gallery_redownload">Re-descargar</string>
+    <string name="gallery_apply">Aplicar</string>
+    <string name="gallery_tap_download">Toca Descargar para obtener el proyecto.</string>
+    <string name="gallery_download_fail">No se pudo descargar</string>
+    <string name="gallery_apply_first">Primero descargá el proyecto</string>
+    <string name="gallery_applying">Aplicando proyecto…</string>
+    <string name="gallery_applied">Proyecto aplicado: %1$s</string>
+    <string name="gallery_apply_fail">No se pudo aplicar el proyecto</string>
+    <string name="gallery_download_error">Error al descargar: %1$s</string>
+    <string name="gallery_apply_error">Error al aplicar: %1$s</string>
+
+    <!-- Video BG / OL shared -->
+    <string name="video_bg_title">📺 Video de Fondo</string>
+    <string name="video_ol_title">📽️ Video Overlay</string>
+    <string name="video_load">Cargar Video</string>
+    <string name="overlay_load">Cargar Overlay</string>
+    <string name="video_import_gif">Importar Gif</string>
+    <string name="video_black_screen">Cargar Pantalla Negra</string>
+    <string name="video_delete_reset">Eliminar Video (Reset)</string>
+    <string name="fit_mode_title">Modo de Ajuste</string>
+    <string name="fit_fit">Fit</string>
+    <string name="fit_fill">Fill</string>
+    <string name="fit_stretch">Stretch</string>
+    <string name="fit_free">Free</string>
+    <string name="free_mode_title">Modo Libre</string>
+    <string name="aspect_ratio_title">Relación de aspecto</string>
+    <string name="aspect_original">Original</string>
+    <string name="aspect_screen">Screen</string>
+    <string name="label_zoom">Zoom</string>
+    <string name="label_pos_x">Posición X</string>
+    <string name="label_pos_y">Posición Y</string>
+    <string name="label_rotation">Rotación</string>
+    <string name="sound_title">Sonido</string>
+    <string name="label_volume">Volumen</string>
+    <string name="load_sound">Cargar sonido</string>
+    <string name="no_sound_selected">Ningún sonido seleccionado</string>
+    <string name="duration_placeholder">Duración: --:--.---</string>
+    <string name="visibility_title">Visibilidad</string>
+    <string name="label_opacity">Opacidad</string>
+    <string name="disable_on_lockscreen">Deshabilitar en pantalla de bloqueo</string>
+    <string name="chroma_title">Chroma Key</string>
+    <string name="chroma_enable">Activar Chroma Key</string>
+    <string name="label_color">Color</string>
+    <string name="label_intensity">Intensidad</string>
+    <string name="label_softness">Suavizado</string>
+    <string name="transform_title">Transformación</string>
+    <string name="aspect_card_title">📐 Aspect Ratio</string>
+
+    <!-- Video dialogs / toasts -->
+    <string name="video_imported">Video importado</string>
+    <string name="video_import_error">Error al importar: %1$s</string>
+    <string name="video_rectify_title">Rectificar video</string>
+    <string name="video_rectify_message">¿Querés re-encodear el video a un MP4 ligero (como los GIF) para bucles más suaves sin pausas al reiniciar?
+
+• Sí: procesa el video (puede tardar según duración y resolución).
+• No: lo importa sin cambios (más rápido).</string>
+    <string name="video_rectify_error">Error al rectificar: %1$s</string>
+    <string name="video_black_bg">Fondo: pantalla negra</string>
+    <string name="video_black_ol">Overlay: pantalla negra</string>
+    <string name="video_reset_bg">Video-BG restaurado a valores de fábrica</string>
+    <string name="video_reset_ol">Video-OL restaurado a valores de fábrica</string>
+    <string name="gallery_already_downloaded">Ya descargado. Podés aplicar el proyecto.</string>
+    <string name="gallery_pending">Pendiente de descarga</string>
+    <string name="gallery_downloading">Descargando…</string>
+    <string name="gallery_download_complete">Descarga completa. Ya podés aplicar el proyecto.</string>
+    <string name="gif_transparency_title">Transparencia del GIF</string>
+    <string name="gif_transparency_message">El MP4 no conserva transparencia. ¿Querés elegir un color para rellenar las zonas transparentes (útil si después usás chroma key)?</string>
+    <string name="gallery_saved">Proyecto guardado</string>
+    <string name="video_rectifying">Rectificando video…</string>
+    <string name="gif_converting">Convirtiendo GIF a MP4…</string>
+    <string name="duration_label">Duración: %1$s</string>
+    <string name="chroma_pick_title">Seleccionar color Chroma</string>
+    <string name="color_pick_title">Seleccionar color</string>
+    <string name="color_edit_hex">Editar HEX</string>
+    <string name="color_custom_title">Color personalizado</string>
+    <string name="color_hex_hint">Color HEX</string>
+    <string name="color_hex_helper">Formato: #AARRGGBB</string>
+    <string name="color_hex_invalid">HEX inválido</string>
+    <string name="playback_enable_smart_loop">Habilitar Overlay Loop Inteligente</string>
+    <string name="playback_smart_loop_help">Cuando está desactivado el overlay se reproduce normalmente. Cuando está activado utiliza Cue Locked y Cue Unlocked.</string>
+    <string name="playback_device_sim_title">Simulación del dispositivo</string>
+    <string name="playback_device_sim_help">Permite probar el comportamiento del overlay sin bloquear el teléfono.</string>
+    <string name="playback_device_locked">Dispositivo bloqueado</string>
+    <string name="cue_locked_title">Cue Locked</string>
+    <string name="cue_unlocked_title">Cue Unlocked</string>
+    <string name="mode_loop">Loop</string>
+    <string name="mode_pause">Pausa</string>
+    <string name="edit_ellipsis">Editar...</string>
+    <string name="pingpong_playback">Ping-pong playback</string>
+    <string name="pingpong_locked_help">Reproduce hasta el cue, vuelve en reversa al inicio y repite (0 ↔ cue).</string>
+    <string name="pingpong_unlocked_help">Reproduce hasta el final, vuelve en reversa al cue unlocked y repite (cue ↔ final).</string>
+    <string name="smooth_transition">Transición suave</string>
+    <string name="smooth_mode_normal">Normal</string>
+    <string name="smooth_mode_altern">Altern</string>
+    <string name="smooth_transition_help">Crossfade al reiniciar el bucle para suavizar el salto entre el final y el inicio.</string>
+    <string name="crossfade_time">Crossfade Time</string>
+    <string name="delay_start_title">Configuración de Delay Start</string>
+    <string name="delay_start_help">Tiempo de espera antes de iniciar el Soft Start de cada elemento.</string>
+    <string name="delay_start_clock_blur_note">Reloj con desenfoque activado: comenzará a contar su tiempo de delay después de terminar de mostrarse todos los módulos (Video-BG, Video-OL, Pics-OL).</string>
+    <string name="label_main_video">Video principal</string>
+    <string name="label_video_overlay">Video Overlay</string>
+    <string name="label_clock">Reloj</string>
+    <string name="soft_start_title">Configuración de Soft Start</string>
+    <string name="soft_start_help">Configurá de forma independiente la duración del fade de entrada de cada elemento.</string>
+    <string name="unlock_sound_title">🔊 Sonido al Desbloquear</string>
+    <string name="unlock_sound_help">Se reproduce una sola vez al desbloquear el dispositivo (no en bucle).</string>
+    <string name="edit_cue_locked">Editar Cue Locked</string>
+    <string name="edit_cue_unlocked">Editar Cue Unlocked</string>
+    <string name="crossfade_title_locked">Crossfade Time (Cue Locked)</string>
+    <string name="crossfade_title_unlocked">Crossfade Time (Cue Unlocked)</string>
+    <string name="crossfade_message">Duración del crossfade en milisegundos.
+Máximo permitido para este loop: %1$d ms.</string>
+    <string name="crossfade_min_toast">Ingresá un valor de al menos 50 ms.</string>
+    <string name="crossfade_clamped_toast">Se limitó a %1$d ms (máximo del loop).</string>
+    <string name="delay_dialog_message">Tiempo de espera en milisegundos antes de iniciar el Soft Start.</string>
+    <string name="fade_dialog_message">Duración del fade en milisegundos.</string>
+    <string name="invalid_value_toast">Ingresá un valor válido.</string>
+    <string name="delay_title_video">Delay Video principal</string>
+    <string name="delay_title_overlay">Delay Video Overlay</string>
+    <string name="delay_title_clock">Delay Reloj</string>
+    <string name="fade_title_video">Fade Video principal</string>
+    <string name="fade_title_overlay">Fade Video Overlay</string>
+    <string name="fade_title_clock">Fade Reloj</string>
+    <string name="pingpong_disabled_pause">Ping-pong desactivado: modo Pausa</string>
+    <string name="pingpong_max_interval">Máximo %1$d s de intervalo para ping-pong</string>
+    <string name="pingpong_processing">Procesando reversa…</string>
+    <string name="pingpong_ready">Ping-pong listo</string>
+    <string name="pingpong_error">Error al procesar: %1$s</string>
+    <string name="soft_start_image_title">Soft Start — Capa de Imagen %1$d</string>
+    <string name="delay_start_image_title">Delay Start — Capa de Imagen %1$d</string>
+    <string name="soft_start_widget_title">Soft Start — Widget %1$d</string>
+    <string name="delay_start_widget_title">Delay Start — Widget %1$d</string>
+    <string name="delay_before_soft_message">Tiempo de espera en milisegundos antes del Soft Start.</string>
+    <string name="clock_lock_screen_title">Pantalla de bloqueo</string>
+    <string name="clock_enable_on_lock">Habilitar en Pantalla de bloqueo</string>
+    <string name="clock_time_format">Formato de Hora</string>
+    <string name="clock_date_format">Formato de Fecha</string>
+    <string name="show_expand">mostrar [+]</string>
+    <string name="hide_collapse">ocultar [-]</string>
+    <string name="show_time">Mostrar Hora</string>
+    <string name="show_date">Mostrar Fecha</string>
+    <string name="hhmm_vertical_gap">Separación HH/MM</string>
+    <string name="fonts_title">Fuentes</string>
+    <string name="font_gallery_button">Galería de Fuentes 🌎📲</string>
+    <string name="import_font">Importar fuente</string>
+    <string name="font_hour_hint">Fuente de la Hora</string>
+    <string name="font_date_hint">Fuente de la Fecha</string>
+    <string name="font_variations_title">Variaciones de fuente</string>
+    <string name="font_variations_help">Ejes OpenType (Roboto Flex y otras variables). En fuentes fijas se ignoran.</string>
+    <string name="size_hour_title">Tamaño de Hora</string>
+    <string name="size_date_title">Tamaño de Fecha</string>
+    <string name="label_size">Tamaño</string>
+    <string name="vertical_deform">Deformación Vertical</string>
+    <string name="spacing_time_date_title">Espacio entre hora y fecha</string>
+    <string name="spacing_time_date_help">Define manualmente la separación vertical entre ambos textos.</string>
+    <string name="edit">Editar</string>
+    <string name="overlap_allowed">Superposición admitida</string>
+    <string name="position_title">Posición</string>
+    <string name="label_horizontal">Horizontal</string>
+    <string name="label_vertical">Vertical</string>
+    <string name="center_colon">Centrar hora con marcador [ : ]</string>
+    <string name="clock_behind_vol">Reloj detrás del Video-OL</string>
+    <string name="swap_time_date">Intercambiar Hora 🔀 Fecha</string>
+    <string name="alignment_title">Alineación</string>
+    <string name="align_left">Izquierda</string>
+    <string name="align_center">Centro</string>
+    <string name="align_right">Derecha</string>
+    <string name="clock_colors_title">Colores del Reloj (Hora/Fecha)</string>
+    <string name="clock_multicolor">Reloj Multicolor</string>
+    <string name="color_hour">Color de Hora</string>
+    <string name="color_minutes">Color de Minutos</string>
+    <string name="color_seconds">Color de Segundos</string>
+    <string name="color_colon">Color de Marcador [ : ]</string>
+    <string name="color_ampm">Color AM/PM</string>
+    <string name="color_date">Color de Fecha</string>
+    <string name="change">Cambiar</string>
+    <string name="font_borders_title">Bordes de Fuentes</string>
+    <string name="border_hour">Borde de Hora</string>
+    <string name="border_date">Borde de Fecha</string>
+    <string name="crystal_mode_title">Modo cristal y texturizado</string>
+    <string name="enable_crystal">Activar modo cristal</string>
+    <string name="crystal_transparency">Transparencia del cristal</string>
+    <string name="bg_blur_title">Desenfoque del fondo</string>
+    <string name="blur_off">Off</string>
+    <string name="blur_soft">Soft</string>
+    <string name="blur_med">Med</string>
+    <string name="blur_strong">Strong</string>
+    <string name="texture_none">Textura: (ninguna)</string>
+    <string name="load_texture_png">Cargar textura PNG</string>
+    <string name="remove">Quitar</string>
+    <string name="reflection_relief_title">Reflejo y relieve</string>
+    <string name="reflection_relief_help">Espejo vertical con degradado debajo del reloj, y relieve suave en los bordes de la fuente. Se genera junto al bitmap del reloj (bajo consumo).</string>
+    <string name="effect_reflection">Efecto reflejo</string>
+    <string name="relief_depth">Relieve (profundidad)</string>
+    <string name="reflection_intensity">Intensidad del reflejo</string>
+    <string name="reflection_gap">Separación del reflejo</string>
+    <string name="reflection_amount">Cantidad de reflejo</string>
+    <string name="relief_angle">Ángulo del relieve</string>
+    <string name="relief_strength">Fuerza del relieve</string>
+    <string name="spacing_dialog_title">Espacio entre reloj y fecha</string>
+    <string name="font_axes_info_title">Ejes parámetros (forma del glifo)</string>
+    <string name="font_axes_info_ok">Entendido</string>
+    <string name="font_axes_info_message">Ejes estándar
+• Width (wdth) — Anchura: condensada ↔ expandida (laterales más planos o más anchos).
+• Weight (wght) — Grosor: Light → Regular → Bold → Black.
+• Optical Size (opsz) — Optimiza el dibujo para tamaño chico (UI) o grande (títulos).
+• Grade (GRAD) — “Peso visual” sin cambiar el ancho de avance: más denso o más liviano manteniendo el layout.
+• Slant (slnt) — Inclinación oblicua (no es itálica verdadera).
+
+Ejes paramétricos (forma del glifo)
+• Thick stroke (XOPQ) — Grosor de trazos verticales (palos de H, I, n…).
+• Thin stroke (YOPQ) — Grosor de trazos horizontales (barras de E, H, f…).
+• Counter width (XTRA) — Ancho del contraespacio (huecos internos): más cerrado o más abierto.
+• Uppercase (YTUC) — Altura de mayúsculas.
+• Lowercase (YTLC) — Altura de minúsculas (x-height).
+• Ascender (YTAS) — Altura de ascendentes (b, d, h, l…).
+• Descender (YTDE) — Profundidad de descendentes (g, p, q, y…).
+• Figure height (YTFI) — Altura / proporción de números (muy útil en relojes).
+
+Nota: Todas estas variaciones están disponibles en fuentes variables completas como Roboto Flex. En fuentes fijas o con menos ejes, los controles no soportados se ignoran.</string>
+    <string name="font_gallery_empty">No hay fuentes en la carpeta Fonts del repositorio.</string>
+    <string name="font_imported_ok">Fuente importada</string>
+    <string name="font_import_error">Error al importar fuente: %1$s</string>
+    <string name="texture_loaded">Textura cargada</string>
+    <string name="texture_load_error">No se pudo cargar la textura</string>
+    <string name="texture_label">Textura: %1$s</string>
+    <string name="crystal_mode_help">Relleno translúcido solo dentro de la letra, con textura PNG opcional. La transparencia controla el alfa del relleno; el desenfoque difumina el fondo detrás de los glifos. Se combina con color y borde.</string>
+    <string name="font_installed_named">Fuente instalada: %1$s</string>
 </resources>

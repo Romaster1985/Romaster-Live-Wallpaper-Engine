@@ -50,7 +50,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"
-            android:text="Cerrar"
+            android:text="@string/close"
             android:textColor="@android:color/white"/>
 
         <ScrollView
@@ -71,7 +71,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="Romaster LiveWall Engine"
+                    android:text="@string/about_title"
                     android:textColor="@android:color/white"
                     android:textSize="24sp"
                     android:textStyle="bold"/>
@@ -90,7 +90,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:layout_marginTop="20dp"
-                    android:text="Motor y editor de live wallpapers para Android.\nVideo, Overlay, capas de imagen, capas de widgets, reloj avanzado y reproducción reactiva al bloqueo del dispositivo."
+                    android:text="@string/about_description"
                     android:textColor="@android:color/white"
                     android:textSize="15sp"
                     android:lineSpacingExtra="4dp"/>
@@ -100,7 +100,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:layout_marginTop="16dp"
-                    android:text="Desarrollado por Román Ignacio Romero (Romaster).\nGracias por usar la app. Si te gusta el proyecto, podés apoyarlo o escribirme."
+                    android:text="@string/about_credits"
                     android:textColor="#E0FFFFFF"
                     android:textSize="14sp"
                     android:lineSpacingExtra="3dp"/>
@@ -110,7 +110,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:layout_marginTop="20dp"
-                    android:text="Contacto y redes"
+                    android:text="@string/about_contact_section"
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
@@ -219,7 +219,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:layout_marginTop="8dp"
-                    android:text="Instagram · Threads · YouTube · GitHub&#10;Reddit · Patreon · Gmail"
+                    android:text="@string/about_networks_hint"
                     android:textColor="#B3FFFFFF"
                     android:textSize="12sp"/>
 
@@ -234,7 +234,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="Apoyar el proyecto"
+                    android:text="@string/about_support_section"
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
@@ -245,7 +245,7 @@
                     android:layout_height="72dp"
                     android:layout_marginTop="12dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Buy me a coffee"
+                    android:contentDescription="@string/about_bmc_cd"
                     android:scaleType="fitCenter"
                     android:src="@drawable/about_ic_bmc"
                     android:padding="4dp"/>
@@ -260,7 +260,7 @@
                     android:paddingTop="8dp"
                     android:paddingBottom="8dp"
                     android:background="#FFDD00"
-                    android:text="🍺  Invítame una cerveza"
+                    android:text="@string/about_bmc_label"
                     android:textColor="#000000"
                     android:textSize="15sp"
                     android:textStyle="bold"/>
@@ -270,7 +270,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:layout_marginTop="24dp"
-                    android:text="© 2026 Román Ignacio Romero (Romaster)\nLicencia Apache 2.0"
+                    android:text="@string/about_copyright"
                     android:textColor="#99FFFFFF"
                     android:textSize="12sp"/>
             </LinearLayout>

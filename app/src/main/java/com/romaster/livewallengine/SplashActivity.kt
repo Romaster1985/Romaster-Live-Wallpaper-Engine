@@ -42,6 +42,7 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        LocaleHelper.applyStoredLocale(this)
         setContentView(R.layout.activity_splash)
         // Tiempo visible del splash (ms). Ajustable.
         handler.postDelayed(goNext, SPLASH_DURATION_MS)

@@ -80,7 +80,7 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:padding="24dp"
-            android:text="No hay fuentes en la carpeta Fonts del repositorio."
+            android:text="@string/font_gallery_empty"
             android:textSize="14sp"
             android:visibility="gone"/>
 

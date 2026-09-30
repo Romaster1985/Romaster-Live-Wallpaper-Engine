@@ -207,7 +207,7 @@ class FontGalleryActivity : AppCompatActivity() {
                 wait.dismiss()
                 Toast.makeText(
                     this@FontGalleryActivity,
-                    "Fuente instalada: ${font.fileName}",
+                    getString(R.string.font_installed_named, font.fileName),
                     Toast.LENGTH_SHORT
                 ).show()
                 setResult(Activity.RESULT_OK)
@@ -216,7 +216,7 @@ class FontGalleryActivity : AppCompatActivity() {
                 wait.dismiss()
                 Toast.makeText(
                     this@FontGalleryActivity,
-                    "Error: ${e.message ?: e.javaClass.simpleName}",
+                    getString(R.string.error_generic, e.message ?: e.javaClass.simpleName),
                     Toast.LENGTH_LONG
                 ).show()
             }

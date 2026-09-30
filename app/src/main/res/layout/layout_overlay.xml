@@ -57,7 +57,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="📽️ Video Overlay"
+                        android:text="@string/video_ol_title"
                         android:textStyle="bold"
                         android:textSize="18sp"/>
 
@@ -76,7 +76,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Cargar Overlay"/>
+                    android:text="@string/overlay_load"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonImportGifOverlay"
@@ -84,7 +84,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Importar Gif"/>
+                    android:text="@string/video_import_gif"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonBlackScreenOverlay"
@@ -92,7 +92,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Cargar Pantalla Negra"/>
+                    android:text="@string/video_black_screen"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonResetOverlayVideo"
@@ -100,7 +100,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Eliminar Video (Reset)"
+                    android:text="@string/video_delete_reset"
                     android:textColor="@android:color/white"
                     app:backgroundTint="#B00020"/>
 
@@ -128,7 +128,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Visibilidad"
+                    android:text="@string/visibility_title"
                     android:textStyle="bold"
                     android:textSize="16sp"/>
 
@@ -142,7 +142,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Opacidad"/>
+                        android:text="@string/label_opacity"/>
 
                     <TextView
                         android:id="@+id/textOverlayAlphaValue"
@@ -165,7 +165,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Deshabilitar en pantalla de bloqueo"/>
+                    android:text="@string/disable_on_lockscreen"/>
 
             </LinearLayout>
 
@@ -192,7 +192,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Chroma Key"
+                    android:text="@string/chroma_title"
                     android:textStyle="bold"
                     android:textSize="18sp"/>
         
@@ -201,13 +201,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Activar Chroma Key"/>
+                    android:text="@string/chroma_enable"/>
         
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Color"/>
+                    android:text="@string/label_color"/>
         
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/buttonChromaColor"
@@ -254,7 +254,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Intensidad"/>
+                        android:text="@string/label_intensity"/>
                     <TextView
                         android:id="@+id/textChromaThresholdValue"
                         android:layout_width="wrap_content"
@@ -280,7 +280,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Suavizado"/>
+                        android:text="@string/label_softness"/>
                     <TextView
                         android:id="@+id/textChromaSoftnessValue"
                         android:layout_width="wrap_content"
@@ -320,7 +320,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📐 Aspect Ratio"
+                    android:text="@string/aspect_card_title"
                     android:textStyle="bold"
                     android:textSize="18sp"/>
         
@@ -334,14 +334,14 @@
                         android:id="@+id/radioOverlayAspectOriginal"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Original"
+                        android:text="@string/aspect_original"
                         android:checked="true"/>
         
                     <RadioButton
                         android:id="@+id/radioOverlayAspectScreen"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Screen"/>
+                        android:text="@string/aspect_screen"/>
         
                 </RadioGroup>
         
@@ -368,7 +368,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Transformación"
+                    android:text="@string/transform_title"
                     android:textStyle="bold"
                     android:textSize="16sp"/>
 
@@ -384,7 +384,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Zoom"/>
+                        android:text="@string/label_zoom"/>
 
                     <TextView
                         android:id="@+id/textOverlayZoomValue"
@@ -413,7 +413,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Posición X"/>
+                        android:text="@string/label_pos_x"/>
 
                     <TextView
                         android:id="@+id/textOverlayPosXValue"
@@ -441,7 +441,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Posición Y"/>
+                        android:text="@string/label_pos_y"/>
 
                     <TextView
                         android:id="@+id/textOverlayPosYValue"
@@ -469,7 +469,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Rotación"/>
+                        android:text="@string/label_rotation"/>
 
                     <TextView
                         android:id="@+id/textOverlayRotationValue"
@@ -507,7 +507,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sonido"
+                    android:text="@string/sound_title"
                     android:textStyle="bold"
                     android:textSize="16sp"/>
         
@@ -529,7 +529,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Volumen"/>
+                        android:text="@string/label_volume"/>
 
                     <TextView
                         android:id="@+id/textOverlaySoundVolumeValue"
@@ -559,7 +559,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Cargar sonido"/>
+                        android:text="@string/load_sound"/>
                 
                     <Space
                         android:layout_width="8dp"
@@ -571,7 +571,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Reset"/>
+                        android:text="@string/reset"/>
                 
                 </LinearLayout>
         
@@ -582,14 +582,14 @@
                     android:layout_marginTop="8dp"
                     android:ellipsize="middle"
                     android:maxLines="1"
-                    android:text="Ningún sonido seleccionado"/>
+                    android:text="@string/no_sound_selected"/>
                 
                 <TextView
                     android:id="@+id/textOverlaySoundDuration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Duración: --:--.---"
+                    android:text="@string/duration_placeholder"
                     android:textSize="12sp"/>
         
             </LinearLayout>

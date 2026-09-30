@@ -32,7 +32,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
         app:navigationIcon="?attr/homeAsUpIndicator"
-        app:title="Seleccionar Proyecto"
+        app:title="@string/gallery_title"
         app:titleCentered="false"/>
 
     <FrameLayout
@@ -60,7 +60,7 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:padding="24dp"
-            android:text="No hay proyectos publicados todavía.\n\nCuando subas ZIP + PNG a la carpeta LiveWallpapers del repositorio, aparecerán aquí."
+            android:text="@string/gallery_empty"
             android:textSize="14sp"
             android:visibility="gone"/>
 

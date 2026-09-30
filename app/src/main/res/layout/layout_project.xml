@@ -50,7 +50,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⚙️ Proyecto"
+                    android:text="@string/project_card_title"
                     android:textStyle="bold"
                     android:textSize="18sp"/>
 
@@ -60,7 +60,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Guardar Cambios"/>
+                    android:text="@string/save_changes"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonSelectProject"
@@ -68,7 +68,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Galería de Wallpapers 🌎📲"/>
+                    android:text="@string/select_project_gallery"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonImportProject"
@@ -76,7 +76,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Importar"/>
+                    android:text="@string/import_action"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonExportProject"
@@ -84,7 +84,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Exportar"/>
+                    android:text="@string/export_action"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonNewProject"
@@ -92,110 +92,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Nuevo Proyecto"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonClearFonts"
-                    style="@style/Widget.Material3.Button"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Limpiar Fuentes"
-                    android:textColor="@android:color/white"
-                    app:backgroundTint="#B00020"/>
+                    android:text="@string/new_project"/>
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- ===================================== -->
-        <!-- INFORMACIÓN DEL DISPOSITIVO -->
-        <!-- ===================================== -->
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="3dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📱 Información"
-                    android:textStyle="bold"
-                    android:textSize="18sp"/>
-
-                <TextView
-                    android:id="@+id/textScreenResolution"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="Resolución:"/>
-
-                <TextView
-                    android:id="@+id/textAspectRatio"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Aspect Ratio:"/>
-
-                <TextView
-                    android:id="@+id/textOpenGLVersion"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="OpenGL ES:"/>
-                
-                <TextView
-                    android:id="@+id/textOpenGLRenderer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="OpenGL ES:"/>
-                
-                <TextView
-                    android:id="@+id/textOpenGLVendor"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="OpenGL ES:"/>
-
-                <TextView
-                    android:id="@+id/textDeviceName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Dispositivo:"/>
-
-                <TextView
-                    android:id="@+id/textAndroidVersion"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Android:"/>
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- ===================================== -->
-        <!-- ACERCA DE -->
-        <!-- ===================================== -->
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonAbout"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"
-            android:text="Acerca de"/>
 
     </LinearLayout>
 

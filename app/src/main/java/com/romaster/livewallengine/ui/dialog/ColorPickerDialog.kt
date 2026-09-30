@@ -48,6 +48,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.button.MaterialButton
 
 import com.romaster.livewallengine.R
+import com.romaster.livewallengine.LocaleHelper
 
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import com.skydoves.colorpickerview.ColorPickerView
@@ -65,19 +66,25 @@ object ColorPickerDialog {
         onColorSelected: (String) -> Unit
     
     ) {
+        // Context con locale de la app (título / Editar HEX / botones)
+        val ctx = LocaleHelper.wrap(context)
         
         val view =
             LayoutInflater
-                .from(context)
+                .from(ctx)
                 .inflate(
                     R.layout.dialog_color_picker,
                     null
                 )
         
+        view.findViewById<TextView>(R.id.textColorPickerTitle)?.text =
+            ctx.getString(R.string.color_pick_title)
+
         val buttonHex =
             view.findViewById<MaterialButton>(
                 R.id.buttonEditHex
             )
+        buttonHex.text = ctx.getString(R.string.color_edit_hex)
         
         val preview =
             view.findViewById<View>(
@@ -178,12 +185,12 @@ object ColorPickerDialog {
         
         }
     
-        AlertDialog.Builder(context)
+        AlertDialog.Builder(ctx)
     
             .setView(view)
     
             .setPositiveButton(
-                "Aceptar"
+                ctx.getString(R.string.ok)
             ) { _, _ ->
     
                 onColorSelected(
@@ -192,7 +199,7 @@ object ColorPickerDialog {
             }
     
             .setNegativeButton(
-                "Cancelar",
+                ctx.getString(R.string.cancel),
                 null
             )
     
@@ -208,12 +215,13 @@ object ColorPickerDialog {
         onHexSelected: (String) -> Unit
     
     ) {
+        val ctx = LocaleHelper.wrap(context)
         
         val initialHex =
             normalizeHex(initialColor)
     
         val view = LayoutInflater
-            .from(context)
+            .from(ctx)
             .inflate(
                 R.layout.dialog_hex_input,
                 null
@@ -247,21 +255,21 @@ object ColorPickerDialog {
         lateinit var dialog: AlertDialog
     
         dialog =
-            AlertDialog.Builder(context)
+            AlertDialog.Builder(ctx)
     
                 .setTitle(
-                    "Color personalizado"
+                    ctx.getString(R.string.color_custom_title)
                 )
     
                 .setView(view)
     
                 .setPositiveButton(
-                    "Aceptar",
+                    ctx.getString(R.string.ok),
                     null
                 )
     
                 .setNegativeButton(
-                    "Cancelar",
+                    ctx.getString(R.string.cancel),
                     null
                 )
     
@@ -345,7 +353,7 @@ object ColorPickerDialog {
                         if (valid)
                             null
                         else
-                            "HEX inválido"
+                            ctx.getString(R.string.color_hex_invalid)
     
                     dialog
                         .getButton(

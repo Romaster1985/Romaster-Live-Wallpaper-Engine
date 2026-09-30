@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English → res/values-en/strings.xml -->
+<resources>
+    <string name="app_name">Romaster LiveWall Engine</string>
+    <string name="wallpaper_description">Live wallpaper with video, layers and a customizable clock.</string>
+
+    <string name="tab_video_bg">📺 Video-BG</string>
+    <string name="tab_video_ol">📽️ Video-OL</string>
+    <string name="tab_playback">▶️ Playback</string>
+    <string name="tab_clock_ol">🕓 Clock-OL</string>
+    <string name="tab_pics_ol">🖼️ Pics-OL</string>
+    <string name="tab_widgets_ol">🧩 Widgets-OL</string>
+    <string name="tab_project">🗃️ Project</string>
+    <string name="tab_settings">⚙️ Settings</string>
+
+    <string name="save">Save</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="close">Close</string>
+    <string name="delete">Delete</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="import_action">Import</string>
+    <string name="export_action">Export</string>
+    <string name="reset">Reset</string>
+    <string name="error_generic">Error: %1$s</string>
+
+    <string name="project_card_title">🗃️ Project</string>
+    <string name="import_project">Import Project</string>
+    <string name="export_project">Export Project</string>
+    <string name="new_project">New Project</string>
+    <string name="select_project_gallery">Wallpaper Gallery 🌎📲</string>
+    <string name="export_progress">Exporting project…</string>
+    <string name="export_success">Project exported successfully</string>
+    <string name="export_error">Failed to export project</string>
+
+    <string name="clear_fonts">Clear Fonts</string>
+    <string name="clear_fonts_title">Clear Fonts</string>
+    <string name="clear_fonts_message">Text and icon fonts that are not used by the clock or widgets will be deleted. Currently selected fonts are kept.</string>
+    <string name="clear_fonts_confirm">Imported/downloaded text and icon fonts that are not used by the clock or widgets will be deleted.\n\nThese will be kept:\n%1$s\n\nContinue?</string>
+    <string name="clear_fonts_keep_text">Text: %1$s</string>
+    <string name="clear_fonts_keep_icons">Icons: %1$s</string>
+    <string name="clear_fonts_keep_none">(none)</string>
+    <string name="clear_fonts_none">There were no fonts to delete</string>
+    <string name="clear_fonts_done">Deleted %1$d file(s) (%2$d text, %3$d icons)</string>
+
+    <string name="about">About</string>
+    <string name="device_info_title">📱 Information</string>
+    <string name="label_resolution">Resolution:</string>
+    <string name="label_aspect_ratio">Aspect Ratio:</string>
+    <string name="label_opengl_es">OpenGL ES:</string>
+    <string name="label_device">Device:</string>
+    <string name="label_android">Android:</string>
+
+    <string name="settings_title">⚙️ Settings</string>
+    <string name="settings_language_card">Language</string>
+    <string name="settings_language_button">👁️‍🗨️ Languages</string>
+    <string name="settings_language_dialog_title">Select language</string>
+    <string name="settings_fonts_directory">Fonts Directory</string>
+    <string name="language_spanish">Español [ES]</string>
+    <string name="language_english">English [EN]</string>
+    <string name="language_changed">Language updated</string>
+
+    <string name="about_title">Romaster LiveWall Engine</string>
+    <string name="about_description">Live wallpaper engine and editor for Android.\nVideo, Overlay, image layers, widget layers, advanced clock and lock-screen reactive playback.</string>
+    <string name="about_credits">Developed by Román Ignacio Romero (Romaster).\nThanks for using the app. If you like the project, you can support it or write to me.</string>
+    <string name="about_contact_section">Contact &amp; social</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_support_section">Support the project</string>
+    <string name="about_bmc_label">🍺  Buy me a beer</string>
+    <string name="about_bmc_cd">Buy me a coffee</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nApache 2.0 License</string>
+
+    <string name="gallery_title">Select Project</string>
+    <string name="gallery_empty">No published projects yet.\n\nWhen you upload ZIP + PNG files to the LiveWallpapers folder in the repository, they will appear here.</string>
+    <string name="gallery_download">Download</string>
+    <string name="gallery_redownload">Re-download</string>
+    <string name="gallery_apply">Apply</string>
+    <string name="gallery_tap_download">Tap Download to get the project.</string>
+    <string name="gallery_download_fail">Download failed</string>
+    <string name="gallery_apply_first">Download the project first</string>
+    <string name="gallery_applying">Applying project…</string>
+    <string name="gallery_applied">Project applied: %1$s</string>
+    <string name="gallery_apply_fail">Could not apply project</string>
+    <string name="gallery_download_error">Download error: %1$s</string>
+    <string name="gallery_apply_error">Apply error: %1$s</string>
+
+    <string name="video_bg_title">📺 Background Video</string>
+    <string name="video_ol_title">📽️ Video Overlay</string>
+    <string name="video_load">Load Video</string>
+    <string name="overlay_load">Load Overlay</string>
+    <string name="video_import_gif">Import GIF</string>
+    <string name="video_black_screen">Load Black Screen</string>
+    <string name="video_delete_reset">Delete Video (Reset)</string>
+    <string name="fit_mode_title">Fit Mode</string>
+    <string name="fit_fit">Fit</string>
+    <string name="fit_fill">Fill</string>
+    <string name="fit_stretch">Stretch</string>
+    <string name="fit_free">Free</string>
+    <string name="free_mode_title">Free Mode</string>
+    <string name="aspect_ratio_title">Aspect ratio</string>
+    <string name="aspect_original">Original</string>
+    <string name="aspect_screen">Screen</string>
+    <string name="label_zoom">Zoom</string>
+    <string name="label_pos_x">Position X</string>
+    <string name="label_pos_y">Position Y</string>
+    <string name="label_rotation">Rotation</string>
+    <string name="sound_title">Sound</string>
+    <string name="label_volume">Volume</string>
+    <string name="load_sound">Load sound</string>
+    <string name="no_sound_selected">No sound selected</string>
+    <string name="duration_placeholder">Duration: --:--.---</string>
+    <string name="visibility_title">Visibility</string>
+    <string name="label_opacity">Opacity</string>
+    <string name="disable_on_lockscreen">Disable on lock screen</string>
+    <string name="chroma_title">Chroma Key</string>
+    <string name="chroma_enable">Enable Chroma Key</string>
+    <string name="label_color">Color</string>
+    <string name="label_intensity">Intensity</string>
+    <string name="label_softness">Softness</string>
+    <string name="transform_title">Transform</string>
+    <string name="aspect_card_title">📐 Aspect Ratio</string>
+
+    <string name="video_imported">Video imported</string>
+    <string name="video_import_error">Import error: %1$s</string>
+    <string name="video_rectify_title">Re-encode video</string>
+    <string name="video_rectify_message">Do you want to re-encode the video to a lightweight MP4 (like GIFs) for smoother loops without pause on restart?
+
+• Yes: process the video (may take time depending on length and resolution).
+• No: import as-is (faster).</string>
+    <string name="video_rectify_error">Re-encode error: %1$s</string>
+    <string name="video_black_bg">Background: black screen</string>
+    <string name="video_black_ol">Overlay: black screen</string>
+    <string name="video_reset_bg">Background video restored to defaults</string>
+    <string name="video_reset_ol">Overlay video restored to defaults</string>
+    <string name="gallery_already_downloaded">Already downloaded. You can apply the project.</string>
+    <string name="gallery_pending">Download pending</string>
+    <string name="gallery_downloading">Downloading…</string>
+    <string name="gallery_download_complete">Download complete. You can apply the project.</string>
+    <string name="gif_transparency_title">GIF transparency</string>
+    <string name="gif_transparency_message">MP4 does not keep transparency. Do you want to pick a color to fill transparent areas (useful for chroma key later)?</string>
+    <string name="gallery_saved">Project saved</string>
+    <string name="video_rectifying">Re-encoding video…</string>
+    <string name="gif_converting">Converting GIF to MP4…</string>
+    <string name="duration_label">Duration: %1$s</string>
+    <string name="chroma_pick_title">Select Chroma color</string>
+    <string name="color_pick_title">Select color</string>
+    <string name="color_edit_hex">Edit HEX</string>
+    <string name="color_custom_title">Custom color</string>
+    <string name="color_hex_hint">HEX color</string>
+    <string name="color_hex_helper">Format: #AARRGGBB</string>
+    <string name="color_hex_invalid">Invalid HEX</string>
+    <string name="playback_enable_smart_loop">Enable Smart Overlay Loop</string>
+    <string name="playback_smart_loop_help">When disabled the overlay plays normally. When enabled it uses Cue Locked and Cue Unlocked.</string>
+    <string name="playback_device_sim_title">Device simulation</string>
+    <string name="playback_device_sim_help">Lets you test overlay behavior without locking the phone.</string>
+    <string name="playback_device_locked">Device locked</string>
+    <string name="cue_locked_title">Cue Locked</string>
+    <string name="cue_unlocked_title">Cue Unlocked</string>
+    <string name="mode_loop">Loop</string>
+    <string name="mode_pause">Pause</string>
+    <string name="edit_ellipsis">Edit...</string>
+    <string name="pingpong_playback">Ping-pong playback</string>
+    <string name="pingpong_locked_help">Plays to the cue, reverses to the start and repeats (0 ↔ cue).</string>
+    <string name="pingpong_unlocked_help">Plays to the end, reverses to the unlocked cue and repeats (cue ↔ end).</string>
+    <string name="smooth_transition">Smooth transition</string>
+    <string name="smooth_mode_normal">Normal</string>
+    <string name="smooth_mode_altern">Altern</string>
+    <string name="smooth_transition_help">Crossfade when restarting the loop to soften the jump between end and start.</string>
+    <string name="crossfade_time">Crossfade Time</string>
+    <string name="delay_start_title">Delay Start settings</string>
+    <string name="delay_start_help">Wait time before starting each element Soft Start.</string>
+    <string name="delay_start_clock_blur_note">Clock with blur enabled: its delay countdown starts only after all modules have finished appearing (Video-BG, Video-OL, Pics-OL).</string>
+    <string name="label_main_video">Main video</string>
+    <string name="label_video_overlay">Video Overlay</string>
+    <string name="label_clock">Clock</string>
+    <string name="soft_start_title">Soft Start settings</string>
+    <string name="soft_start_help">Set the fade-in duration independently for each element.</string>
+    <string name="unlock_sound_title">🔊 Unlock Sound</string>
+    <string name="unlock_sound_help">Plays once when the device is unlocked (not looped).</string>
+    <string name="edit_cue_locked">Edit Cue Locked</string>
+    <string name="edit_cue_unlocked">Edit Cue Unlocked</string>
+    <string name="crossfade_title_locked">Crossfade Time (Cue Locked)</string>
+    <string name="crossfade_title_unlocked">Crossfade Time (Cue Unlocked)</string>
+    <string name="crossfade_message">Crossfade duration in milliseconds.
+Maximum allowed for this loop: %1$d ms.</string>
+    <string name="crossfade_min_toast">Enter a value of at least 50 ms.</string>
+    <string name="crossfade_clamped_toast">Limited to %1$d ms (loop maximum).</string>
+    <string name="delay_dialog_message">Wait time in milliseconds before starting Soft Start.</string>
+    <string name="fade_dialog_message">Fade duration in milliseconds.</string>
+    <string name="invalid_value_toast">Enter a valid value.</string>
+    <string name="delay_title_video">Delay Main video</string>
+    <string name="delay_title_overlay">Delay Video Overlay</string>
+    <string name="delay_title_clock">Delay Clock</string>
+    <string name="fade_title_video">Fade Main video</string>
+    <string name="fade_title_overlay">Fade Video Overlay</string>
+    <string name="fade_title_clock">Fade Clock</string>
+    <string name="pingpong_disabled_pause">Ping-pong disabled: Pause mode</string>
+    <string name="pingpong_max_interval">Maximum %1$d s interval for ping-pong</string>
+    <string name="pingpong_processing">Processing reverse…</string>
+    <string name="pingpong_ready">Ping-pong ready</string>
+    <string name="pingpong_error">Processing error: %1$s</string>
+    <string name="soft_start_image_title">Soft Start — Image layer %1$d</string>
+    <string name="delay_start_image_title">Delay Start — Image layer %1$d</string>
+    <string name="soft_start_widget_title">Soft Start — Widget %1$d</string>
+    <string name="delay_start_widget_title">Delay Start — Widget %1$d</string>
+    <string name="delay_before_soft_message">Wait time in milliseconds before Soft Start.</string>
+    <string name="clock_lock_screen_title">Lock screen</string>
+    <string name="clock_enable_on_lock">Enable on lock screen</string>
+    <string name="clock_time_format">Time format</string>
+    <string name="clock_date_format">Date format</string>
+    <string name="show_expand">show [+]</string>
+    <string name="hide_collapse">hide [-]</string>
+    <string name="show_time">Show time</string>
+    <string name="show_date">Show date</string>
+    <string name="hhmm_vertical_gap">HH/MM spacing</string>
+    <string name="fonts_title">Fonts</string>
+    <string name="font_gallery_button">Font Gallery 🌎📲</string>
+    <string name="import_font">Import font</string>
+    <string name="font_hour_hint">Hour font</string>
+    <string name="font_date_hint">Date font</string>
+    <string name="font_variations_title">Font variations</string>
+    <string name="font_variations_help">OpenType axes (Roboto Flex and other variables). Ignored on fixed fonts.</string>
+    <string name="size_hour_title">Hour size</string>
+    <string name="size_date_title">Date size</string>
+    <string name="label_size">Size</string>
+    <string name="vertical_deform">Vertical deformation</string>
+    <string name="spacing_time_date_title">Space between time and date</string>
+    <string name="spacing_time_date_help">Manually set the vertical gap between both texts.</string>
+    <string name="edit">Edit</string>
+    <string name="overlap_allowed">Allow overlap</string>
+    <string name="position_title">Position</string>
+    <string name="label_horizontal">Horizontal</string>
+    <string name="label_vertical">Vertical</string>
+    <string name="center_colon">Center time on colon [ : ]</string>
+    <string name="clock_behind_vol">Clock behind Video-OL</string>
+    <string name="swap_time_date">Swap Time 🔀 Date</string>
+    <string name="alignment_title">Alignment</string>
+    <string name="align_left">Left</string>
+    <string name="align_center">Center</string>
+    <string name="align_right">Right</string>
+    <string name="clock_colors_title">Clock colors (Time/Date)</string>
+    <string name="clock_multicolor">Multicolor clock</string>
+    <string name="color_hour">Hour color</string>
+    <string name="color_minutes">Minutes color</string>
+    <string name="color_seconds">Seconds color</string>
+    <string name="color_colon">Colon color [ : ]</string>
+    <string name="color_ampm">AM/PM color</string>
+    <string name="color_date">Date color</string>
+    <string name="change">Change</string>
+    <string name="font_borders_title">Font borders</string>
+    <string name="border_hour">Hour border</string>
+    <string name="border_date">Date border</string>
+    <string name="crystal_mode_title">Crystal mode and texture</string>
+    <string name="enable_crystal">Enable crystal mode</string>
+    <string name="crystal_transparency">Crystal transparency</string>
+    <string name="bg_blur_title">Background blur</string>
+    <string name="blur_off">Off</string>
+    <string name="blur_soft">Soft</string>
+    <string name="blur_med">Med</string>
+    <string name="blur_strong">Strong</string>
+    <string name="texture_none">Texture: (none)</string>
+    <string name="load_texture_png">Load PNG texture</string>
+    <string name="remove">Remove</string>
+    <string name="reflection_relief_title">Reflection and relief</string>
+    <string name="reflection_relief_help">Vertical mirror with gradient under the clock, and soft relief on glyph edges. Built with the clock bitmap (low cost).</string>
+    <string name="effect_reflection">Reflection effect</string>
+    <string name="relief_depth">Relief (depth)</string>
+    <string name="reflection_intensity">Reflection intensity</string>
+    <string name="reflection_gap">Reflection gap</string>
+    <string name="reflection_amount">Reflection amount</string>
+    <string name="relief_angle">Relief angle</string>
+    <string name="relief_strength">Relief strength</string>
+    <string name="spacing_dialog_title">Space between clock and date</string>
+    <string name="font_axes_info_title">Parameter axes (glyph shape)</string>
+    <string name="font_axes_info_ok">Got it</string>
+    <string name="font_axes_info_message">Standard axes
+• Width (wdth) — Width: condensed ↔ expanded (flatter or wider sides).
+• Weight (wght) — Weight: Light → Regular → Bold → Black.
+• Optical Size (opsz) — Optimizes drawing for small (UI) or large (titles) sizes.
+• Grade (GRAD) — Visual weight without changing advance width: denser or lighter while keeping layout.
+• Slant (slnt) — Oblique slant (not a true italic).
+
+Parametric axes (glyph shape)
+• Thick stroke (XOPQ) — Thickness of vertical strokes (stems of H, I, n…).
+• Thin stroke (YOPQ) — Thickness of horizontal strokes (bars of E, H, f…).
+• Counter width (XTRA) — Counter width (inner gaps): tighter or more open.
+• Uppercase (YTUC) — Cap height.
+• Lowercase (YTLC) — x-height.
+• Ascender (YTAS) — Ascender height (b, d, h, l…).
+• Descender (YTDE) — Descender depth (g, p, q, y…).
+• Figure height (YTFI) — Figure height / proportion (very useful for clocks).
+
+Note: All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.</string>
+    <string name="font_gallery_empty">No fonts in the repository Fonts folder.</string>
+    <string name="font_imported_ok">Font imported</string>
+    <string name="font_import_error">Font import error: %1$s</string>
+    <string name="texture_loaded">Texture loaded</string>
+    <string name="texture_load_error">Could not load texture</string>
+    <string name="texture_label">Texture: %1$s</string>
+    <string name="crystal_mode_help">Translucent fill only inside the glyph, with optional PNG texture. Transparency controls fill alpha; blur softens the background behind glyphs. Combines with color and border.</string>
+    <string name="font_installed_named">Font installed: %1$s</string>
+</resources>
