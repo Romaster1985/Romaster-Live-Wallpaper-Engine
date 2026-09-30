@@ -130,6 +130,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var panelClock: View
     
     private lateinit var panelProject: View
+    private lateinit var panelSettings: View
     
     private var exportPreviewBitmap: Bitmap? = null
     private var pendingImageLayerId: String? = null
@@ -171,6 +172,7 @@ class MainActivity : AppCompatActivity() {
         try {
     
             super.onCreate(savedInstanceState)
+            LocaleHelper.applyStoredLocale(this)
             
             FileLogger.startNewSession(this)
             FileLogger.writeDeviceInfo(this)
@@ -209,6 +211,9 @@ class MainActivity : AppCompatActivity() {
     
             FileLogger.log(this, "7 - setupProjectTab")
             setupProjectTab()
+
+            FileLogger.log(this, "7b - setupSettingsTab")
+            setupSettingsTab()
     
             setupColorButtons()
     
@@ -254,42 +259,48 @@ class MainActivity : AppCompatActivity() {
         panelWidgets = findViewById(R.id.panelWidgets)
     
         panelProject = findViewById(R.id.panelProject)
+        panelSettings = findViewById(R.id.panelSettings)
     
         tabLayout.removeAllTabs()
     
         tabLayout.addTab(
             tabLayout.newTab()
-                .setText("📺 Video-BG")
+                .setText(getString(R.string.tab_video_bg))
         )
     
         tabLayout.addTab(
             tabLayout.newTab()
-                .setText("📽️ Video-OL")
+                .setText(getString(R.string.tab_video_ol))
         )
         
         tabLayout.addTab(
             tabLayout.newTab()
-                .setText("▶️ Playback")
+                .setText(getString(R.string.tab_playback))
         )
     
         tabLayout.addTab(
             tabLayout.newTab()
-                .setText("🕓 Clock-OL")
+                .setText(getString(R.string.tab_clock_ol))
         )
 
         tabLayout.addTab(
             tabLayout.newTab()
-                .setText("🖼️ Pics-OL")
+                .setText(getString(R.string.tab_pics_ol))
         )
 
         tabLayout.addTab(
             tabLayout.newTab()
-                .setText("🧩 Widgets-OL")
+                .setText(getString(R.string.tab_widgets_ol))
         )
     
         tabLayout.addTab(
             tabLayout.newTab()
-                .setText("⚙️ Proyecto")
+                .setText(getString(R.string.tab_project))
+        )
+
+        tabLayout.addTab(
+            tabLayout.newTab()
+                .setText(getString(R.string.tab_settings))
         )
     
         // Una línea + scroll horizontal (no comprimir ni partir texto)
@@ -304,6 +315,7 @@ class MainActivity : AppCompatActivity() {
         panelPics.visibility = View.GONE
         panelWidgets.visibility = View.GONE
         panelProject.visibility = View.GONE
+        panelSettings.visibility = View.GONE
     
         tabLayout.addOnTabSelectedListener(
     
@@ -320,6 +332,7 @@ class MainActivity : AppCompatActivity() {
                     panelPics.visibility = View.GONE
                     panelWidgets.visibility = View.GONE
                     panelProject.visibility = View.GONE
+                    panelSettings.visibility = View.GONE
     
                     when (tab.position) {
                         0 -> panelVideo.visibility = View.VISIBLE
@@ -329,6 +342,7 @@ class MainActivity : AppCompatActivity() {
                         4 -> panelPics.visibility = View.VISIBLE
                         5 -> panelWidgets.visibility = View.VISIBLE
                         6 -> panelProject.visibility = View.VISIBLE
+                        7 -> panelSettings.visibility = View.VISIBLE
                     }
                 }
     
@@ -686,7 +700,7 @@ class MainActivity : AppCompatActivity() {
         if (interval > ReverseVideoProcessor.MAX_INTERVAL_MS) {
             Toast.makeText(
                 this,
-                "Máximo ${ReverseVideoProcessor.MAX_INTERVAL_MS / 1000} s de intervalo para ping-pong",
+                getString(R.string.pingpong_max_interval, ReverseVideoProcessor.MAX_INTERVAL_MS / 1000),
                 Toast.LENGTH_LONG
             ).show()
             uncheckPingPongSilently(locked)
@@ -703,7 +717,7 @@ class MainActivity : AppCompatActivity() {
             setPadding(48, 32, 48, 16)
         }
         val label = TextView(this).apply {
-            text = "Procesando reversa…"
+            text = getString(R.string.pingpong_processing)
             textSize = 16f
         }
         val bar = ProgressBar(
@@ -765,7 +779,7 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
                 Toast.makeText(
                     this@MainActivity,
-                    "Ping-pong listo",
+                    getString(R.string.pingpong_ready),
                     Toast.LENGTH_SHORT
                 ).show()
                 updatePreviewProject()
@@ -775,7 +789,7 @@ class MainActivity : AppCompatActivity() {
                 clearPingPong(locked)
                 Toast.makeText(
                     this@MainActivity,
-                    "Error al procesar: ${e.message ?: e.javaClass.simpleName}",
+                    getString(R.string.pingpong_error, e.message ?: e.javaClass.simpleName),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -1014,7 +1028,7 @@ class MainActivity : AppCompatActivity() {
                 loadingUI = false
                 Toast.makeText(
                     this,
-                    "Ping-pong desactivado: modo Pausa",
+                    getString(R.string.pingpong_disabled_pause),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -1079,7 +1093,7 @@ class MainActivity : AppCompatActivity() {
                 loadingUI = false
                 Toast.makeText(
                     this,
-                    "Ping-pong desactivado: modo Pausa",
+                    getString(R.string.pingpong_disabled_pause),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -1101,7 +1115,7 @@ class MainActivity : AppCompatActivity() {
                 ProjectManager.getProject()
         
             showFadeDurationDialog(
-                title = "Fade Video principal",
+                title = getString(R.string.fade_title_video),
                 currentValue =
                     project.videoFadeDurationMs,
                 target =
@@ -1117,7 +1131,7 @@ class MainActivity : AppCompatActivity() {
                 ProjectManager.getProject()
         
             showFadeDurationDialog(
-                title = "Fade Video Overlay",
+                title = getString(R.string.fade_title_overlay),
                 currentValue =
                     project.overlayFadeDurationMs,
                 target =
@@ -1133,7 +1147,7 @@ class MainActivity : AppCompatActivity() {
                 ProjectManager.getProject()
         
             showFadeDurationDialog(
-                title = "Fade Reloj",
+                title = getString(R.string.fade_title_clock),
                 currentValue =
                     project.clockFadeDurationMs,
                 target =
@@ -1147,15 +1161,15 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.buttonVideoDelayStart).setOnClickListener {
             val project = ProjectManager.getProject()
-            showDelayStartDialog("Delay Video principal", project.videoDelayStartMs, DelayTarget.VIDEO)
+            showDelayStartDialog(getString(R.string.delay_title_video), project.videoDelayStartMs, DelayTarget.VIDEO)
         }
         findViewById<MaterialButton>(R.id.buttonOverlayDelayStart).setOnClickListener {
             val project = ProjectManager.getProject()
-            showDelayStartDialog("Delay Video Overlay", project.overlayDelayStartMs, DelayTarget.OVERLAY)
+            showDelayStartDialog(getString(R.string.delay_title_overlay), project.overlayDelayStartMs, DelayTarget.OVERLAY)
         }
         findViewById<MaterialButton>(R.id.buttonClockDelayStart).setOnClickListener {
             val project = ProjectManager.getProject()
-            showDelayStartDialog("Delay Reloj", project.clockDelayStartMs, DelayTarget.CLOCK)
+            showDelayStartDialog(getString(R.string.delay_title_clock), project.clockDelayStartMs, DelayTarget.CLOCK)
         }
     
     }
@@ -1245,12 +1259,12 @@ class MainActivity : AppCompatActivity() {
             else R.drawable.baseline_volume_up_24
         )
         findViewById<TextView>(R.id.textUnlockSoundFile).text =
-            project.unlockSoundDisplayName ?: "Ningún sonido seleccionado"
+            project.unlockSoundDisplayName ?: getString(R.string.no_sound_selected)
         findViewById<TextView>(R.id.textUnlockSoundDuration).text =
             if (project.unlockSoundDuration > 0L)
-                "Duración: ${AudioStorage.formatDuration(project.unlockSoundDuration)}"
+                getString(R.string.duration_label, AudioStorage.formatDuration(project.unlockSoundDuration))
             else
-                "Duración: --:--.---"
+                getString(R.string.duration_placeholder)
     
     
         // =====================================================
@@ -1429,9 +1443,9 @@ class MainActivity : AppCompatActivity() {
     
             .setTitle(
                 if (locked)
-                    "Editar Cue Locked"
+                    getString(R.string.edit_cue_locked)
                 else
-                    "Editar Cue Unlocked"
+                    getString(R.string.edit_cue_unlocked)
             )
     
             .setView(
@@ -1439,12 +1453,12 @@ class MainActivity : AppCompatActivity() {
             )
     
             .setNegativeButton(
-                "Cancelar",
+                getString(R.string.cancel),
                 null
             )
     
             .setPositiveButton(
-                "Aceptar"
+                getString(R.string.ok)
             ) { _, _ ->
     
                 val milliseconds =
@@ -1569,13 +1583,13 @@ class MainActivity : AppCompatActivity() {
         }
         AlertDialog.Builder(this)
             .setTitle(title)
-            .setMessage("Tiempo de espera en milisegundos antes de iniciar el Soft Start.")
+            .setMessage(getString(R.string.delay_dialog_message))
             .setView(container)
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
                 val value = input.text.toString().toLongOrNull()
                 if (value == null || value < 0L) {
-                    Toast.makeText(this, "Ingresá un valor válido.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.invalid_value_toast), Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
                 val project = ProjectManager.getProject()
@@ -1614,19 +1628,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(if (locked) "Crossfade Time (Cue Locked)" else "Crossfade Time (Cue Unlocked)")
-            .setMessage(
-                "Duración del crossfade en milisegundos.\n" +
-                "Máximo permitido para este loop: ${maxMs} ms."
-            )
+            .setTitle(if (locked) getString(R.string.crossfade_title_locked) else getString(R.string.crossfade_title_unlocked))
+            .setMessage(getString(R.string.crossfade_message, maxMs))
             .setView(input)
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
                 val value = input.text.toString().toLongOrNull()
                 if (value == null || value < 50L) {
                     Toast.makeText(
                         this,
-                        "Ingresá un valor de al menos 50 ms.",
+                        getString(R.string.crossfade_min_toast),
                         Toast.LENGTH_SHORT
                     ).show()
                     return@setPositiveButton
@@ -1644,7 +1655,7 @@ class MainActivity : AppCompatActivity() {
                 if (clamped != value) {
                     Toast.makeText(
                         this,
-                        "Se limitó a ${clamped} ms (máximo del loop).",
+                        getString(R.string.crossfade_clamped_toast, clamped),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -1691,15 +1702,15 @@ private fun showFadeDurationDialog(
         AlertDialog.Builder(this)
             .setTitle(title)
             .setMessage(
-                "Duración del fade en milisegundos."
+                getString(R.string.fade_dialog_message)
             )
             .setView(container)
             .setNegativeButton(
-                "Cancelar",
+                getString(R.string.cancel),
                 null
             )
             .setPositiveButton(
-                "Aceptar"
+                getString(R.string.ok)
             ) { _, _ ->
     
                 val value =
@@ -1714,7 +1725,7 @@ private fun showFadeDurationDialog(
     
                     Toast.makeText(
                         this,
-                        "Ingresá un valor válido.",
+                        getString(R.string.invalid_value_toast),
                         Toast.LENGTH_SHORT
                     ).show()
     
@@ -1778,7 +1789,7 @@ private fun showFadeDurationDialog(
         AlertDialog.Builder(this)
     
             .setTitle(
-                "Espacio entre reloj y fecha"
+                getString(R.string.spacing_dialog_title)
             )
     
             .setView(
@@ -1786,12 +1797,12 @@ private fun showFadeDurationDialog(
             )
     
             .setNegativeButton(
-                "Cancelar",
+                getString(R.string.cancel),
                 null
             )
     
             .setPositiveButton(
-                "Aceptar"
+                getString(R.string.ok)
             ) { _, _ ->
     
                 val value =
@@ -2107,7 +2118,7 @@ private fun showFadeDurationDialog(
         }
 
         root.addView(TextView(this).apply {
-            text = "Widget $displayIndex"
+            text = getString(R.string.widget_title, displayIndex)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
@@ -2130,7 +2141,7 @@ private fun showFadeDurationDialog(
                 null,
                 com.google.android.material.R.attr.materialButtonOutlinedStyle
             ).apply {
-                text = "Fórmula / Texto"
+                text = getString(R.string.widget_formula_btn)
                 isAllCaps = false
                 setOnClickListener {
                     val cur = live() ?: return@setOnClickListener
@@ -2145,7 +2156,7 @@ private fun showFadeDurationDialog(
                 null,
                 com.google.android.material.R.attr.materialButtonOutlinedStyle
             ).apply {
-                text = "Importar Fuentes"
+                text = getString(R.string.widget_import_fonts)
                 isAllCaps = false
                 setOnClickListener {
                     showImportFontsDialog(layerId)
@@ -2157,18 +2168,19 @@ private fun showFadeDurationDialog(
         // Fuente de Íconos != "Ninguna" ⇒ modo íconos; "Ninguna" ⇒ fuente de texto
         root.addView(
             buildWidgetFontDropdown(
-                hint = "Fuente de Texto",
-                items = listOf("Fuente predeterminada") +
+                hint = getString(R.string.widget_font_text_hint),
+                items = listOf(getString(R.string.widget_font_default)) +
                     FontStorage.getInstalledFonts(this),
-                selected = layer.fontName?.takeIf { it.isNotBlank() } ?: "Fuente predeterminada"
+                selected = layer.fontName?.takeIf { it.isNotBlank() } ?: getString(R.string.widget_font_default)
             ) { chosen ->
                 live()?.fontName =
-                    if (chosen == "Fuente predeterminada") null else chosen
+                    if (chosen == getString(R.string.widget_font_default)) null else chosen
                 notifyWidgetLayersChanged()
             }
         )
 
-        val iconItems = mutableListOf("Ninguna")
+        val noneLabel = getString(R.string.widget_font_none)
+        val iconItems = mutableListOf(noneLabel)
         try {
             iconItems.addAll(
                 com.romaster.livewallengine.font.IconFontStorage.listInstalled(this)
@@ -2177,12 +2189,12 @@ private fun showFadeDurationDialog(
         }
         root.addView(
             buildWidgetFontDropdown(
-                hint = "Fuente de Íconos",
+                hint = getString(R.string.widget_font_icon_hint),
                 items = iconItems,
-                selected = layer.iconFontName?.takeIf { it.isNotBlank() } ?: "Ninguna"
+                selected = layer.iconFontName?.takeIf { it.isNotBlank() } ?: noneLabel
             ) { chosen ->
                 val w = live()
-                if (chosen == "Ninguna") {
+                if (chosen == noneLabel) {
                     w?.iconFontName = null
                     w?.useIconFont = false
                 } else {
@@ -2200,7 +2212,7 @@ private fun showFadeDurationDialog(
             else android.view.View.GONE
         }
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
-            text = "Habilitar Variaciones de Fuentes"
+            text = getString(R.string.widget_enable_variations)
             isChecked = layer.enableFontVariations
             setOnCheckedChangeListener { _, checked ->
                 live()?.enableFontVariations = checked
@@ -2274,7 +2286,7 @@ private fun showFadeDurationDialog(
             null,
             com.google.android.material.R.attr.materialButtonOutlinedStyle
         ).apply {
-            text = "Color texto"
+            text = getString(R.string.widget_color_text)
             isAllCaps = false
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginEnd = (6 * density).toInt()
@@ -2295,7 +2307,7 @@ private fun showFadeDurationDialog(
             null,
             com.google.android.material.R.attr.materialButtonOutlinedStyle
         ).apply {
-            text = "Color borde"
+            text = getString(R.string.widget_color_border)
             isAllCaps = false
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginStart = (6 * density).toInt()
@@ -2363,7 +2375,7 @@ private fun showFadeDurationDialog(
                 null,
                 com.google.android.material.R.attr.materialButtonOutlinedStyle
             ).apply {
-                text = "Alineación de Fuentes"
+                text = getString(R.string.widget_align_fonts)
                 isAllCaps = false
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -2376,7 +2388,7 @@ private fun showFadeDurationDialog(
         )
 
         addSliderRow(
-            "Tamaño de texto",
+            getString(R.string.label_text_size),
             0f, 800f,
             layer.textSize.coerceIn(0f, 800f),
             64f,
@@ -2384,7 +2396,7 @@ private fun showFadeDurationDialog(
         ) { live()?.textSize = it }
 
         addSliderRow(
-            "Borde",
+            getString(R.string.label_border_width),
             0f, 50f,
             layer.borderWidth.coerceIn(0f, 50f),
             0f,
@@ -2392,7 +2404,7 @@ private fun showFadeDurationDialog(
         ) { live()?.borderWidth = it }
 
         addSliderRow(
-            "Opacidad",
+            getString(R.string.label_transparency),
             0f, 100f,
             (layer.opacity * 100f).coerceIn(0f, 100f),
             100f,
@@ -2400,7 +2412,7 @@ private fun showFadeDurationDialog(
         ) { live()?.opacity = it / 100f }
 
         addSliderRow(
-            "Posición X",
+            getString(R.string.label_pos_x),
             0f, 100f,
             (layer.x * 100f).coerceIn(0f, 100f),
             50f,
@@ -2408,7 +2420,7 @@ private fun showFadeDurationDialog(
         ) { live()?.x = it / 100f }
 
         addSliderRow(
-            "Posición Y",
+            getString(R.string.label_pos_y),
             0f, 100f,
             (layer.y * 100f).coerceIn(0f, 100f),
             35f,
@@ -2416,7 +2428,7 @@ private fun showFadeDurationDialog(
         ) { live()?.y = it / 100f }
 
         addSliderRow(
-            "Rotación",
+            getString(R.string.label_rotation),
             -180f, 180f,
             layer.rotation.coerceIn(-180f, 180f),
             0f,
@@ -2424,7 +2436,7 @@ private fun showFadeDurationDialog(
         ) { live()?.rotation = it }
 
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
-            text = "Deshabilitar en pantalla de bloqueo"
+            text = getString(R.string.disable_on_lockscreen)
             isChecked = layer.disableOnLockScreen
             setOnCheckedChangeListener { _, checked ->
                 live()?.disableOnLockScreen = checked
@@ -2433,7 +2445,7 @@ private fun showFadeDurationDialog(
         })
 
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
-            text = "Deshabilitar en Launcher (Desbloqueado)"
+            text = getString(R.string.disable_on_launcher)
             isChecked = layer.disableOnLauncher
             setOnCheckedChangeListener { _, checked ->
                 live()?.disableOnLauncher = checked
@@ -2442,7 +2454,7 @@ private fun showFadeDurationDialog(
         })
 
         root.addView(MaterialButton(this).apply {
-            text = "Seleccionar ubicación de capa"
+            text = getString(R.string.pics_select_layer_pos)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -2456,7 +2468,7 @@ private fun showFadeDurationDialog(
                 null,
                 com.google.android.material.R.attr.materialButtonOutlinedStyle
             ).apply {
-                text = "Reestablecer Asignaciones de Íconos"
+                text = getString(R.string.widget_reset_icon_map)
                 isAllCaps = false
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -2467,7 +2479,7 @@ private fun showFadeDurationDialog(
                     ProjectManager.saveProject(ProjectManager.getProject())
                     android.widget.Toast.makeText(
                         this@MainActivity,
-                        "Asignaciones de íconos reestablecidas",
+                        getString(R.string.widget_reset_icon_map_done),
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                     notifyWidgetLayersChanged()
@@ -2476,7 +2488,7 @@ private fun showFadeDurationDialog(
         )
 
         root.addView(MaterialButton(this).apply {
-            text = "Eliminar capa"
+            text = getString(R.string.pics_delete_layer)
             setBackgroundColor(0xFFB00020.toInt())
             setTextColor(0xFFFFFFFF.toInt())
             layoutParams = LinearLayout.LayoutParams(
@@ -2553,83 +2565,83 @@ private fun showFadeDurationDialog(
 
         val sections = listOf(
             PresetSection(
-                "Fecha y hora",
+                getString(R.string.preset_section_datetime),
                 listOf(
-                    PresetItem("Hora HH:MM", "\$df(hh:mm)\$", "12:30"),
-                    PresetItem("Hora HH:MM:SS", "\$df(hh:mm:ss)\$", "12:30:45"),
+                    PresetItem(getString(R.string.preset_time_hhmm), "\$df(hh:mm)\$", "12:30"),
+                    PresetItem(getString(R.string.preset_time_hhmmss), "\$df(hh:mm:ss)\$", "12:30:45"),
                     PresetItem(
-                        "Fecha completa (1 línea)",
+                        getString(R.string.preset_date_full),
                         "\$df(EEEE), df(dd) df(MMM) df(yyyy)\$",
                         "jueves, 17 sep. 2026"
                     ),
                     PresetItem(
-                        "Fecha en columnas",
+                        getString(R.string.preset_date_cols),
                         "\$df(EEEE)\$\n\$df(dd)\$\n\$df(MMM)\$\n\$df(yyyy)\$",
-                        "Una línea por campo"
+                        getString(R.string.preset_date_cols_desc)
                     ),
-                    PresetItem("Día de la semana", "\$df(EEEE)\$"),
-                    PresetItem("Día del mes", "\$df(dd)\$"),
-                    PresetItem("Mes corto", "\$df(MMM)\$"),
-                    PresetItem("Año", "\$df(yyyy)\$"),
+                    PresetItem(getString(R.string.preset_weekday), "\$df(EEEE)\$"),
+                    PresetItem(getString(R.string.preset_day_month), "\$df(dd)\$"),
+                    PresetItem(getString(R.string.preset_month_short), "\$df(MMM)\$"),
+                    PresetItem(getString(R.string.preset_year), "\$df(yyyy)\$"),
                     PresetItem("Año + 4", "\$df(yyyy)+4\$", "Ej. 2030")
                 )
             ),
             PresetSection(
-                "Batería",
+                getString(R.string.preset_section_battery),
                 listOf(
-                    PresetItem("Nivel %", "\$bi(level)\$%", "90%"),
+                    PresetItem(getString(R.string.preset_bat_level), "\$bi(level)\$%", "90%"),
                     PresetItem("Nivel (número)", "\$bi(level)\$"),
-                    PresetItem("Cargando (0/1)", "\$bi(charging)\$"),
-                    PresetItem("Temperatura °C", "\$bi(temp)\$"),
-                    PresetItem("Voltaje mV", "\$bi(volt)\$"),
+                    PresetItem(getString(R.string.preset_bat_charging), "\$bi(charging)\$"),
+                    PresetItem(getString(R.string.preset_bat_temp), "\$bi(temp)\$"),
+                    PresetItem(getString(R.string.preset_bat_volt), "\$bi(volt)\$"),
                     PresetItem(
-                        "Hora + batería",
+                        getString(R.string.preset_time_bat),
                         "\$df(hh:mm)\$  ·  \$bi(level)\$%",
                         "12:30  ·  90%"
                     )
                 )
             ),
             PresetSection(
-                "Condicionales",
+                getString(R.string.preset_section_conditionals),
                 listOf(
                     PresetItem(
-                        "Batería baja",
+                        getString(R.string.preset_bat_low),
                         "\$if(bi(level)<20, LOW, OK)\$",
-                        "Si nivel < 20 → LOW"
+                        getString(R.string.preset_bat_low_desc)
                     ),
                     PresetItem(
-                        "Cargando",
+                        getString(R.string.preset_charging_txt),
                         "\$if(bi(charging)=1, CHG, )\$",
-                        "Texto si está cargando"
+                        getString(R.string.preset_charging_desc)
                     ),
                     PresetItem(
-                        "AM / PM",
+                        getString(R.string.preset_ampm),
                         "\$if(df(H)<12, AM, PM)\$"
                     ),
                     PresetItem(
-                        "AND (batería y hora)",
+                        getString(R.string.preset_and),
                         "\$if(bi(level)<20 & df(H)>=22, LOW NIGHT, OK)\$",
-                        "level<20 AND hora>=22"
+                        getString(R.string.preset_and_desc)
                     ),
                     PresetItem(
-                        "OR (cargando o baja)",
+                        getString(R.string.preset_or),
                         "\$if(bi(charging)=1 | bi(level)<15, ALERT, )\$",
-                        "charging OR level<15"
+                        getString(R.string.preset_or_desc)
                     )
                 )
             ),
             PresetSection(
-                "Clima (Open-Meteo)",
+                getString(R.string.preset_section_weather),
                 listOf(
-                    PresetItem("Temperatura °C", "\$wi(temp)\$°", "21°"),
-                    PresetItem("Temperatura °F", "\$wi(tempf)\$°F"),
-                    PresetItem("Condición", "\$wi(cond)\$", "Rain"),
-                    PresetItem("Humedad %", "\$wi(humidity)\$%"),
-                    PresetItem("Viento km/h", "\$wi(wind)\$"),
-                    PresetItem("Código WMO", "\$wi(code)\$"),
-                    PresetItem("Clave ícono", "\$wi(icon)\$", "rain / clear / …"),
+                    PresetItem(getString(R.string.preset_temp_c), "\$wi(temp)\$°", "21°"),
+                    PresetItem(getString(R.string.preset_temp_f), "\$wi(tempf)\$°F"),
+                    PresetItem(getString(R.string.preset_cond), "\$wi(cond)\$", "Rain"),
+                    PresetItem(getString(R.string.preset_humidity), "\$wi(humidity)\$%"),
+                    PresetItem(getString(R.string.preset_wind), "\$wi(wind)\$"),
+                    PresetItem(getString(R.string.preset_wmo), "\$wi(code)\$"),
+                    PresetItem(getString(R.string.preset_icon_key), "\$wi(icon)\$", "rain / clear / …"),
                     PresetItem(
-                        "Temp + condición",
+                        getString(R.string.preset_temp_cond),
                         "\$wi(temp)\$° \$wi(cond)\$"
                     )
                 )
@@ -2648,18 +2660,18 @@ private fun showFadeDurationDialog(
         scroll.addView(box)
 
         box.addView(TextView(this).apply {
-            text = "Vista previa"
+            text = getString(R.string.formula_preview)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
         box.addView(livePreview)
         box.addView(TextView(this).apply {
-            text = "Editor de fórmula"
+            text = getString(R.string.formula_editor)
             setPadding(0, (12 * density).toInt(), 0, 0)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
         box.addView(input)
         box.addView(TextView(this).apply {
-            text = "Ejemplos (tocar para insertar en el cursor)"
+            text = getString(R.string.formula_examples)
             setPadding(0, (12 * density).toInt(), 0, (4 * density).toInt())
             textSize = 12f
         })
@@ -2711,7 +2723,7 @@ private fun showFadeDurationDialog(
                     null,
                     com.google.android.material.R.attr.materialButtonOutlinedStyle
                 ).apply {
-                    text = "← Volver a categorías"
+                    text = getString(R.string.formula_back_categories)
                     isAllCaps = false
                     setOnClickListener { showSections() }
                 }
@@ -2755,10 +2767,10 @@ private fun showFadeDurationDialog(
         }
 
         AlertDialog.Builder(this)
-            .setTitle("Fórmula / Texto")
+            .setTitle(getString(R.string.formula_dialog_title))
             .setView(scroll)
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
                 layer.formula = input.text.toString()
                 previewTv.text = try {
                     FormulaEngine.evaluate(layer.formula, this)
@@ -2786,14 +2798,14 @@ private fun showFadeDurationDialog(
             values.add(n)
         }
         AlertDialog.Builder(this)
-            .setTitle("Fuente de íconos")
+            .setTitle(getString(R.string.icon_font_dialog_title))
             .setItems(labels.toTypedArray()) { _, which ->
                 when (val v = values[which]) {
                     "__GALLERY__" -> openIconFontGallery(onPicked)
                     else -> onPicked(v)
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -2949,7 +2961,7 @@ private fun showFadeDurationDialog(
 
         // Contenedor con todos los radios para poder desmarcar por id
         val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Alineación de fuentes")
+            .setTitle(getString(R.string.align_fonts_title))
             .setView(root)
             .setPositiveButton("OK", null)
             .create()
@@ -2976,13 +2988,13 @@ private fun showFadeDurationDialog(
 
     private fun showImportFontsDialog(layerId: String) {
         val options = arrayOf(
-            "Importar Fuente de Texto (Local)",
-            "Galería de Fuentes 🌎📲",
-            "Importar Fuente de Íconos (Local)",
-            "Galería de Íconos 🌎📲"
+            getString(R.string.import_font_text_local),
+            getString(R.string.import_font_gallery),
+            getString(R.string.import_icon_font_local),
+            getString(R.string.import_icon_gallery)
         )
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Importar Fuentes")
+            .setTitle(getString(R.string.import_fonts_title))
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
@@ -3002,7 +3014,7 @@ private fun showFadeDurationDialog(
                         pendingIconTtfBytes = null
                         android.widget.Toast.makeText(
                             this,
-                            "Cargar TTF",
+                            getString(R.string.toast_load_ttf),
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                         openIconFontFilePicker(isJson = false)
@@ -3022,7 +3034,7 @@ private fun showFadeDurationDialog(
                     }
                 }
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -3093,7 +3105,7 @@ private fun showFadeDurationDialog(
             pendingIconTtfBytes = bytes
             android.widget.Toast.makeText(
                 this,
-                "Cargar json",
+                getString(R.string.toast_load_json),
                 android.widget.Toast.LENGTH_SHORT
             ).show()
             openIconFontFilePicker(isJson = true)
@@ -3136,7 +3148,7 @@ private fun showFadeDurationDialog(
             if (!jsonBase.equals(ttfBase, ignoreCase = true)) {
                 android.widget.Toast.makeText(
                     this,
-                    "Error al cargar: Los nombres de los archivos no coinciden",
+                    getString(R.string.icon_names_mismatch),
                     android.widget.Toast.LENGTH_LONG
                 ).show()
                 return
@@ -3165,7 +3177,7 @@ private fun showFadeDurationDialog(
             )
             android.widget.Toast.makeText(
                 this,
-                "Fuente de Íconos cargada",
+                getString(R.string.icon_font_loaded),
                 android.widget.Toast.LENGTH_SHORT
             ).show()
             rebuildWidgetLayerCards()
@@ -3209,7 +3221,7 @@ private fun showFadeDurationDialog(
             .setItems(labels.toTypedArray()) { _, which ->
                 onPicked(values[which])
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -3278,7 +3290,7 @@ private fun showFadeDurationDialog(
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             texts.addView(TextView(this).apply {
-                text = "Capa de Imagen ${index + 1}"
+                text = getString(R.string.layer_label_image, index + 1)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             val valueTv = TextView(this).apply {
@@ -3289,7 +3301,7 @@ private fun showFadeDurationDialog(
             texts.addView(valueTv)
             row.addView(texts)
             row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = "Editar..."
+                text = getString(R.string.edit_ellipsis)
                 setOnClickListener {
                     showImageLayerFadeDialog(layer.id, valueTv)
                 }
@@ -3313,14 +3325,14 @@ private fun showFadeDurationDialog(
         }
         val idx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
         AlertDialog.Builder(this)
-            .setTitle("Soft Start — Capa de Imagen $idx")
+            .setTitle(getString(R.string.soft_start_image_title, idx))
             .setMessage("Duración del fade en milisegundos.")
             .setView(box)
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
                 val value = input.text.toString().toLongOrNull()
                 if (value == null || value < 0L) {
-                    Toast.makeText(this, "Ingresá un valor válido.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.invalid_value_toast), Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
                 layer.fadeDurationMs = value
@@ -3347,7 +3359,7 @@ private fun showFadeDurationDialog(
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             texts.addView(TextView(this).apply {
-                text = "Capa de Imagen ${index + 1}"
+                text = getString(R.string.layer_label_image, index + 1)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             val valueTv = TextView(this).apply {
@@ -3358,7 +3370,7 @@ private fun showFadeDurationDialog(
             texts.addView(valueTv)
             row.addView(texts)
             row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = "Editar..."
+                text = getString(R.string.edit_ellipsis)
                 setOnClickListener {
                     showImageLayerDelayDialog(layer.id, valueTv)
                 }
@@ -3382,14 +3394,14 @@ private fun showFadeDurationDialog(
         }
         val idx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
         AlertDialog.Builder(this)
-            .setTitle("Delay Start — Capa de Imagen $idx")
-            .setMessage("Tiempo de espera en milisegundos antes del Soft Start.")
+            .setTitle(getString(R.string.delay_start_image_title, idx))
+            .setMessage(getString(R.string.delay_before_soft_message))
             .setView(box)
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
                 val value = input.text.toString().toLongOrNull()
                 if (value == null || value < 0L) {
-                    Toast.makeText(this, "Ingresá un valor válido.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.invalid_value_toast), Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
                 layer.delayStartMs = value
@@ -3418,7 +3430,7 @@ private fun showFadeDurationDialog(
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             texts.addView(TextView(this).apply {
-                text = "Widget ${index + 1}"
+                text = getString(R.string.widget_title, index + 1)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             val valueTv = TextView(this).apply {
@@ -3429,7 +3441,7 @@ private fun showFadeDurationDialog(
             texts.addView(valueTv)
             row.addView(texts)
             row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = "Editar..."
+                text = getString(R.string.edit_ellipsis)
                 setOnClickListener {
                     showWidgetLayerFadeDialog(layer.id, valueTv)
                 }
@@ -3447,11 +3459,11 @@ private fun showFadeDurationDialog(
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
         AlertDialog.Builder(this)
-            .setTitle("Soft Start — Widget $idx")
+            .setTitle(getString(R.string.soft_start_widget_title, idx))
             .setMessage("Duración del fade-in en milisegundos.")
             .setView(input)
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
                 val value = input.text.toString().toLongOrNull()?.coerceAtLeast(0L) ?: return@setPositiveButton
                 layer.fadeDurationMs = value
                 valueTv.text = "$value ms"
@@ -3478,7 +3490,7 @@ private fun showFadeDurationDialog(
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             texts.addView(TextView(this).apply {
-                text = "Widget ${index + 1}"
+                text = getString(R.string.widget_title, index + 1)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             val valueTv = TextView(this).apply {
@@ -3489,7 +3501,7 @@ private fun showFadeDurationDialog(
             texts.addView(valueTv)
             row.addView(texts)
             row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = "Editar..."
+                text = getString(R.string.edit_ellipsis)
                 setOnClickListener {
                     showWidgetLayerDelayDialog(layer.id, valueTv)
                 }
@@ -3507,11 +3519,11 @@ private fun showFadeDurationDialog(
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
         AlertDialog.Builder(this)
-            .setTitle("Delay Start — Widget $idx")
-            .setMessage("Tiempo de espera en milisegundos antes del Soft Start.")
+            .setTitle(getString(R.string.delay_start_widget_title, idx))
+            .setMessage(getString(R.string.delay_before_soft_message))
             .setView(input)
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
                 val value = input.text.toString().toLongOrNull()?.coerceAtLeast(0L) ?: return@setPositiveButton
                 layer.delayStartMs = value
                 valueTv.text = "$value ms"
@@ -3548,7 +3560,7 @@ private fun showFadeDurationDialog(
 
         // Título
         root.addView(TextView(this).apply {
-            text = "Capa de imagen $displayIndex"
+            text = getString(R.string.pics_layer_title, displayIndex)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
@@ -3559,7 +3571,7 @@ private fun showFadeDurationDialog(
             setPadding(0, pad, 0, 0)
         }
         val btnLoad = com.google.android.material.button.MaterialButton(this).apply {
-            text = "Cargar imagen"
+            text = getString(R.string.pics_load_image)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginEnd = (6 * density).toInt()
             }
@@ -3574,13 +3586,13 @@ private fun showFadeDurationDialog(
                     addCategory(Intent.CATEGORY_OPENABLE)
                 }
                 startActivityForResult(
-                    Intent.createChooser(intent, "Seleccionar imagen"),
+                    Intent.createChooser(intent, getString(R.string.pics_select_image)),
                     REQUEST_IMAGE_LAYER
                 )
             }
         }
         val btnDel = com.google.android.material.button.MaterialButton(this).apply {
-            text = "Eliminar capa"
+            text = getString(R.string.pics_delete_layer)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginStart = (6 * density).toInt()
             }
@@ -3594,7 +3606,7 @@ private fun showFadeDurationDialog(
 
         // Archivo actual
         root.addView(TextView(this).apply {
-            text = "Archivo: ${layer.fileName ?: "(ninguno)"}"
+            text = getString(R.string.pics_file_label, layer.fileName ?: getString(R.string.pics_file_none))
             textSize = 12f
             setPadding(0, (8 * density).toInt(), 0, 0)
             tag = "file_${layer.id}"
@@ -3602,7 +3614,7 @@ private fun showFadeDurationDialog(
 
         // Igual que Video-OL / Widgets-OL: destildado = visible en bloqueo
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
-            text = "Deshabilitar en pantalla de bloqueo"
+            text = getString(R.string.disable_on_lockscreen)
             isChecked = layer.disableOnLockScreen
             setPadding(0, (8 * density).toInt(), 0, 0)
             setOnCheckedChangeListener { _, checked ->
@@ -3614,7 +3626,7 @@ private fun showFadeDurationDialog(
         })
 
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
-            text = "Deshabilitar en Launcher (Desbloqueado)"
+            text = getString(R.string.disable_on_launcher)
             isChecked = layer.disableOnLauncher
             setPadding(0, (4 * density).toInt(), 0, 0)
             setOnCheckedChangeListener { _, checked ->
@@ -3627,7 +3639,7 @@ private fun showFadeDurationDialog(
 
         // Ubicación en el stack de capas
         val btnPos = com.google.android.material.button.MaterialButton(this).apply {
-            text = "Seleccionar ubicación de capa"
+            text = getString(R.string.pics_select_layer_pos)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -3680,19 +3692,19 @@ private fun showFadeDurationDialog(
             }
         }
 
-        addSliderRow("Transparencia", 0f, 100f, layer.opacity * 100f, 100f, { "${it.toInt()} %" }) {
+        addSliderRow(getString(R.string.label_transparency), 0f, 100f, layer.opacity * 100f, 100f, { "${it.toInt()} %" }) {
             liveLayer()?.opacity = it / 100f
         }
-        addSliderRow("Posición X", 0f, 100f, layer.x * 100f, 50f, { it.toInt().toString() }) {
+        addSliderRow(getString(R.string.label_pos_x), 0f, 100f, layer.x * 100f, 50f, { it.toInt().toString() }) {
             liveLayer()?.x = it / 100f
         }
-        addSliderRow("Posición Y", 0f, 100f, layer.y * 100f, 50f, { it.toInt().toString() }) {
+        addSliderRow(getString(R.string.label_pos_y), 0f, 100f, layer.y * 100f, 50f, { it.toInt().toString() }) {
             liveLayer()?.y = it / 100f
         }
-        addSliderRow("Zoom", 10f, 800f, (layer.zoom * 100f).coerceIn(10f, 800f), 100f, { "${it.toInt()} %" }) {
+        addSliderRow(getString(R.string.label_zoom), 10f, 800f, (layer.zoom * 100f).coerceIn(10f, 800f), 100f, { "${it.toInt()} %" }) {
             liveLayer()?.zoom = it / 100f
         }
-        addSliderRow("Rotación", -180f, 180f, layer.rotation.coerceIn(-180f, 180f), 0f, { "${it.toInt()}°" }) {
+        addSliderRow(getString(R.string.label_rotation), -180f, 180f, layer.rotation.coerceIn(-180f, 180f), 0f, { "${it.toInt()}°" }) {
             liveLayer()?.rotation = it
         }
 
@@ -3730,7 +3742,7 @@ private fun showFadeDurationDialog(
         }
 
         val note = TextView(this).apply {
-            text = "Usá Subir / Bajar para mover la capa actual en el orden de dibujo (de atrás hacia adelante)."
+            text = getString(R.string.pics_layer_pos_note)
             textSize = 13f
             setPadding(0, 0, 0, (12 * density).toInt())
         }
@@ -3745,7 +3757,7 @@ private fun showFadeDurationDialog(
         fun refreshList() {
             listBox.removeAllViews()
             for (id in working) {
-                val label = LayerStack.label(id, project)
+                val label = LayerStack.label(this, id, project)
                 val tv = TextView(this).apply {
                     text = label
                     textSize = 16f
@@ -3753,7 +3765,7 @@ private fun showFadeDurationDialog(
                     if (id == layerId) {
                         setTextColor(0xFFD32F2F.toInt())
                         setTypeface(typeface, android.graphics.Typeface.BOLD)
-                        text = "$label  · actual"
+                        text = getString(R.string.pics_layer_current, label)
                     }
                 }
                 listBox.addView(tv)
@@ -3803,8 +3815,8 @@ private fun showFadeDurationDialog(
 
         val btnUp = iconMoveButton(
             R.drawable.ic_arrow_upward_24,
-            "Subir",
-            "Subir capa"
+            getString(R.string.pics_move_up),
+            getString(R.string.pics_move_up_cd)
         ) {
             val i = working.indexOf(layerId)
             if (i > 0) {
@@ -3815,8 +3827,8 @@ private fun showFadeDurationDialog(
         }
         val btnDown = iconMoveButton(
             R.drawable.ic_arrow_downward_24,
-            "Bajar",
-            "Bajar capa"
+            getString(R.string.pics_move_down),
+            getString(R.string.pics_move_down_cd)
         ) {
             val i = working.indexOf(layerId)
             if (i >= 0 && i < working.lastIndex) {
@@ -3831,10 +3843,10 @@ private fun showFadeDurationDialog(
 
         val titleIdx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
         AlertDialog.Builder(this)
-            .setTitle("Ubicación Capa de Imagen $titleIdx")
+            .setTitle(getString(R.string.pics_layer_pos_title, titleIdx))
             .setView(container)
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Aceptar") { _, _ ->
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
                 project.layerStack.clear()
                 project.layerStack.addAll(working)
                 // Mantener coherencia VOL/CLOCK con el switch actual
@@ -3844,8 +3856,49 @@ private fun showFadeDurationDialog(
                 )
                 editor.save()
                 notifyImageLayersChanged()
-                Toast.makeText(this, "Orden de capas actualizado", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.pics_order_updated), Toast.LENGTH_SHORT).show()
             }
+            .show()
+    }
+
+    
+    private fun setupSettingsTab() {
+        findViewById<MaterialButton>(R.id.buttonLanguages).setOnClickListener {
+            showLanguageDialog()
+        }
+        findViewById<MaterialButton>(R.id.buttonClearFonts).setOnClickListener {
+            confirmClearUnusedFonts()
+        }
+        findViewById<MaterialButton>(R.id.buttonAbout).setOnClickListener {
+            startActivity(Intent(this, AboutActivity::class.java))
+        }
+    }
+
+    private fun showLanguageDialog() {
+        val languages = arrayOf(
+            getString(R.string.language_spanish),
+            getString(R.string.language_english)
+        )
+        val tags = arrayOf(LocaleHelper.LANG_ES, LocaleHelper.LANG_EN)
+        val current = LocaleHelper.getLanguage(this)
+        val checked = tags.indexOf(current).coerceAtLeast(0)
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.settings_language_dialog_title)
+            .setSingleChoiceItems(languages, checked) { dialog, which ->
+                val selected = tags[which]
+                if (selected != LocaleHelper.getLanguage(this)) {
+                    LocaleHelper.setLanguage(this, selected)
+                    android.widget.Toast.makeText(
+                        this,
+                        R.string.language_changed,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    recreate()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -3962,13 +4015,6 @@ private fun showFadeDurationDialog(
         
         }
 
-        findViewById<MaterialButton>(R.id.buttonClearFonts).setOnClickListener {
-            confirmClearUnusedFonts()
-        }
-
-        findViewById<MaterialButton>(R.id.buttonAbout).setOnClickListener {
-            startActivity(Intent(this, AboutActivity::class.java))
-        }
     }
     
     private fun setupButtons() {
@@ -4237,7 +4283,7 @@ private fun showFadeDurationDialog(
         val content = findViewById<android.view.View>(contentId) ?: return
         fun apply(expanded: Boolean) {
             content.visibility = if (expanded) android.view.View.VISIBLE else android.view.View.GONE
-            button.text = if (expanded) "ocultar [-]" else "mostrar [+]"
+            button.text = if (expanded) getString(R.string.hide_collapse) else getString(R.string.show_expand)
         }
         // Respetar visibility del XML (por defecto gone)
         apply(content.visibility == android.view.View.VISIBLE)
@@ -4254,31 +4300,29 @@ private fun showFadeDurationDialog(
     }
 
     private fun showFontVariationsInfoDialog() {
-        val message = """
-Ejes estándar
-• Width (wdth) — Anchura: condensada ↔ expandida (laterales más planos o más anchos).
-• Weight (wght) — Grosor: Light → Regular → Bold → Black.
-• Optical Size (opsz) — Optimiza el dibujo para tamaño chico (UI) o grande (títulos).
-• Grade (GRAD) — “Peso visual” sin cambiar el ancho de avance: más denso o más liviano manteniendo el layout.
-• Slant (slnt) — Inclinación oblicua (no es itálica verdadera).
-
-Ejes paramétricos (forma del glifo)
-• Thick stroke (XOPQ) — Grosor de trazos verticales (palos de H, I, n…).
-• Thin stroke (YOPQ) — Grosor de trazos horizontales (barras de E, H, f…).
-• Counter width (XTRA) — Ancho del contraespacio (huecos internos): más cerrado o más abierto.
-• Uppercase (YTUC) — Altura de mayúsculas.
-• Lowercase (YTLC) — Altura de minúsculas (x-height).
-• Ascender (YTAS) — Altura de ascendentes (b, d, h, l…).
-• Descender (YTDE) — Profundidad de descendentes (g, p, q, y…).
-• Figure height (YTFI) — Altura / proporción de números (muy útil en relojes).
-
-Nota: Todas estas variaciones están disponibles en fuentes variables completas como Roboto Flex. En fuentes fijas o con menos ejes, los controles no soportados se ignoran.
-""".trimIndent()
+        val html = androidx.core.text.HtmlCompat.fromHtml(
+            getString(R.string.font_axes_info_message),
+            androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
+        val padding = (20 * resources.displayMetrics.density).toInt()
+        val scroll = android.widget.ScrollView(this).apply {
+            isFillViewport = true
+        }
+        val textView = android.widget.TextView(this).apply {
+            text = html
+            textSize = 14.5f
+            setTextColor(android.graphics.Color.parseColor("#E6FFFFFF"))
+            setLineSpacing(0f, 1.12f)
+            setPadding(padding, padding / 2, padding, padding)
+            // Mejor legibilidad de viñetas
+            setTextIsSelectable(true)
+        }
+        scroll.addView(textView)
 
         AlertDialog.Builder(this)
-            .setTitle("Ejes parámetros (forma del glifo)")
-            .setMessage(message)
-            .setPositiveButton("Entendido", null)
+            .setTitle(getString(R.string.font_axes_info_title))
+            .setView(scroll)
+            .setPositiveButton(getString(R.string.font_axes_info_ok), null)
             .show()
     }
     
@@ -4515,8 +4559,8 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         }
         findViewById<Slider>(R.id.sliderUnlockSoundVolume).value = 100f
         findViewById<TextView>(R.id.textUnlockSoundVolumeValue).text = "100"
-        findViewById<TextView>(R.id.textUnlockSoundFile).text = "Ningún sonido seleccionado"
-        findViewById<TextView>(R.id.textUnlockSoundDuration).text = "Duración: --:--.---"
+        findViewById<TextView>(R.id.textUnlockSoundFile).text = getString(R.string.no_sound_selected)
+        findViewById<TextView>(R.id.textUnlockSoundDuration).text = getString(R.string.duration_placeholder)
         findViewById<ImageView>(R.id.imageUnlockSoundIcon)
             .setImageResource(R.drawable.baseline_volume_up_24)
         ProjectManager.saveProject(project)
@@ -4555,12 +4599,12 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         findViewById<TextView>(
             R.id.textBgSoundFile
         ).text =
-            "Ningún sonido seleccionado"
+            getString(R.string.no_sound_selected)
     
         findViewById<TextView>(
             R.id.textBgSoundDuration
         ).text =
-            "Duración: --:--.---"
+            getString(R.string.duration_placeholder)
         
         editor.save()
     
@@ -4589,12 +4633,12 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         findViewById<TextView>(
             R.id.textOverlaySoundFile
         ).text =
-            "Ningún sonido seleccionado"
+            getString(R.string.no_sound_selected)
     
         findViewById<TextView>(
             R.id.textOverlaySoundDuration
         ).text =
-            "Duración: --:--.---"
+            getString(R.string.duration_placeholder)
         
         editor.save()
     
@@ -4627,7 +4671,7 @@ Nota: Todas estas variaciones están disponibles en fuentes variables completas 
         ).isChecked = clock.crystalMode
 
         findViewById<TextView>(R.id.textClockCrystalTexture).text =
-            "Textura: ${clock.crystalTextureFile ?: "(ninguna)"}"
+            getString(R.string.texture_label, clock.crystalTextureFile ?: "(ninguna)")
 
         findViewById<com.google.android.material.slider.Slider>(
             R.id.sliderClockCrystalBlur
@@ -5008,7 +5052,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
 
         findViewById<MaterialButton>(R.id.buttonClearClockCrystalTexture).setOnClickListener {
             ProjectManager.getProject().clock.crystalTextureFile = null
-            findViewById<TextView>(R.id.textClockCrystalTexture).text = "Textura: (ninguna)"
+            findViewById<TextView>(R.id.textClockCrystalTexture).text = getString(R.string.texture_none)
             editor.save()
             updatePreviewProject()
         }
@@ -5229,7 +5273,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                         editor.save()
                         updatePreviewProject()
                     } catch (e: Exception) {
-                        Toast.makeText(this, "No se pudo cargar la textura", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.texture_load_error), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -5247,12 +5291,12 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                             editor.save()
                             rebuildImageLayerCards()
                             notifyImageLayersChanged(reloadTextures = true)
-                            Toast.makeText(this, "Imagen cargada", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this, getString(R.string.image_loaded), Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
                         Toast.makeText(
                             this,
-                            "Error al cargar imagen: ${e.message}",
+                            getString(R.string.image_load_error, e.message ?: e.javaClass.simpleName),
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -5331,11 +5375,9 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 findViewById<TextView>(
                     R.id.textBgSoundDuration
                 ).text =
-                    "Duración: ${
-                        AudioStorage.formatDuration(
+                    getString(R.string.duration_label, AudioStorage.formatDuration(
                             duration
-                        )
-                    }"
+                        ))
     
                 ProjectManager.saveProject(
                     project
@@ -5391,11 +5433,9 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 findViewById<TextView>(
                     R.id.textOverlaySoundDuration
                 ).text =
-                    "Duración: ${
-                        AudioStorage.formatDuration(
+                    getString(R.string.duration_label, AudioStorage.formatDuration(
                             duration
-                        )
-                    }"
+                        ))
     
                 ProjectManager.saveProject(
                     project
@@ -5419,7 +5459,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 project.unlockSoundDuration = duration
                 findViewById<TextView>(R.id.textUnlockSoundFile).text = displayName
                 findViewById<TextView>(R.id.textUnlockSoundDuration).text =
-                    "Duración: ${AudioStorage.formatDuration(duration)}"
+                    getString(R.string.duration_label, AudioStorage.formatDuration(duration))
                 ProjectManager.saveProject(project)
                 editor.save()
             }
@@ -5434,7 +5474,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                     setPadding(48, 32, 48, 16)
                 }
                 val label = TextView(this).apply {
-                    text = "Exportando proyecto…"
+                    text = getString(R.string.export_progress)
                     textSize = 16f
                 }
                 val bar = ProgressBar(
@@ -5485,13 +5525,13 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                     if (ok) {
                         Toast.makeText(
                             this@MainActivity,
-                            "Proyecto exportado correctamente",
+                            getString(R.string.export_success),
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
                         Toast.makeText(
                             this@MainActivity,
-                            "Error al exportar el proyecto",
+                            getString(R.string.export_error),
                             Toast.LENGTH_LONG
                         ).show()
                     }
@@ -5638,7 +5678,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             R.id.textOverlaySoundFile
         ).text =
             overlay.soundDisplayName
-                ?: "Ningún sonido seleccionado"
+                ?: getString(R.string.no_sound_selected)
         
         findViewById<TextView>(
             R.id.textOverlaySoundDuration
@@ -5646,15 +5686,13 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         
             if (overlay.soundDuration > 0L)
         
-                "Duración: ${
-                    AudioStorage.formatDuration(
+                getString(R.string.duration_label, AudioStorage.formatDuration(
                         overlay.soundDuration
-                    )
-                }"
+                    ))
         
             else
         
-                "Duración: --:--.---"
+                getString(R.string.duration_placeholder)
     }
     
     private fun loadVideoLayerSettings() {
@@ -5796,7 +5834,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             R.id.textBgSoundFile
         ).text =
             layer.soundDisplayName
-                ?: "Ningún sonido seleccionado"
+                ?: getString(R.string.no_sound_selected)
     
         findViewById<TextView>(
             R.id.textBgSoundDuration
@@ -5806,15 +5844,13 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 layer.soundDuration > 0
             )
     
-                "Duración: ${
-                    AudioStorage.formatDuration(
+                getString(R.string.duration_label, AudioStorage.formatDuration(
                         layer.soundDuration
-                    )
-                }"
+                    ))
     
             else
     
-                "Duración: --:--.---"
+                getString(R.string.duration_placeholder)
         
         updateVideoModeUI()
     
@@ -6003,24 +6039,19 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             .toSet()
 
         val keepMsg = buildString {
-            if (keepText.isNotEmpty()) append("Texto: ${keepText.joinToString(", ")}")
+            if (keepText.isNotEmpty()) append(getString(R.string.clear_fonts_keep_text, keepText.joinToString(", ")))
             if (keepIcons.isNotEmpty()) {
                 if (isNotEmpty()) append("\n")
-                append("Íconos: ${keepIcons.joinToString(", ")}")
+                append(getString(R.string.clear_fonts_keep_icons, keepIcons.joinToString(", ")))
             }
-            if (isEmpty()) append("(ninguna)")
+            if (isEmpty()) append(getString(R.string.clear_fonts_keep_none))
         }
 
         AlertDialog.Builder(this)
-            .setTitle("Limpiar Fuentes")
-            .setMessage(
-                "Se eliminarán fuentes de texto e íconos importadas/descargadas que no estén " +
-                    "en uso por el reloj ni por los widgets.\n\n" +
-                    "Se conservarán:\n$keepMsg\n\n" +
-                    "¿Continuar?"
-            )
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Eliminar") { _, _ ->
+            .setTitle(R.string.clear_fonts_title)
+            .setMessage(getString(R.string.clear_fonts_confirm, keepMsg))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ ->
                 val deletedText = FontStorage.clearUnusedFonts(this, keepText)
                 val deletedIcons = try {
                     com.romaster.livewallengine.font.IconFontStorage.clearUnused(this, keepIcons)
@@ -6035,8 +6066,8 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 val total = deletedText + deletedIcons
                 Toast.makeText(
                     this,
-                    if (total == 0) "No había fuentes para eliminar"
-                    else "Se eliminaron $total archivo(s) ($deletedText texto, $deletedIcons íconos)",
+                    if (total == 0) getString(R.string.clear_fonts_none)
+                    else getString(R.string.clear_fonts_done, total, deletedText, deletedIcons),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -6179,17 +6210,12 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
      */
     private fun offerVideoImport(uri: Uri, isOverlay: Boolean) {
         AlertDialog.Builder(this)
-            .setTitle("Rectificar video")
-            .setMessage(
-                "¿Querés re-encodear el video a un MP4 ligero (como los GIF) " +
-                    "para bucles más suaves sin pausas al reiniciar?\n\n" +
-                    "• Sí: procesa el video (puede tardar según duración y resolución).\n" +
-                    "• No: lo importa sin cambios (más rápido)."
-            )
-            .setPositiveButton("Sí") { _, _ ->
+            .setTitle(R.string.video_rectify_title)
+            .setMessage(getString(R.string.video_rectify_message))
+            .setPositiveButton(R.string.yes) { _, _ ->
                 importVideoWithTranscode(uri, isOverlay)
             }
-            .setNegativeButton("No") { _, _ ->
+            .setNegativeButton(R.string.no) { _, _ ->
                 importVideoDirect(uri, isOverlay)
             }
             .setCancelable(true)
@@ -6204,11 +6230,11 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 VideoStorage.importWallpaperVideo(this, uri)
             }
             applyImportedVideo(path, isOverlay)
-            Toast.makeText(this, "Video importado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.video_imported), Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(
                 this,
-                "Error al importar: ${e.message ?: e.javaClass.simpleName}",
+                getString(R.string.video_import_error, e.message ?: e.javaClass.simpleName),
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -6227,7 +6253,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             setPadding(48, 32, 48, 16)
         }
         val label = TextView(this).apply {
-            text = "Rectificando video…"
+            text = getString(R.string.video_rectifying)
             textSize = 16f
         }
         val bar = ProgressBar(
@@ -6280,7 +6306,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                 dialog.dismiss()
                 Toast.makeText(
                     this@MainActivity,
-                    "Error al rectificar: ${e.message ?: e.javaClass.simpleName}",
+                    getString(R.string.video_rectify_error, e.message ?: e.javaClass.simpleName),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -6315,7 +6341,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             applyImportedVideo(path, isOverlay)
             Toast.makeText(
                 this,
-                if (isOverlay) "Overlay: pantalla negra" else "Fondo: pantalla negra",
+                if (isOverlay) getString(R.string.video_black_ol) else getString(R.string.video_black_bg),
                 Toast.LENGTH_SHORT
             ).show()
         } catch (e: Exception) {
@@ -6383,14 +6409,14 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             findViewById<WallpaperPreviewView>(R.id.previewView).reloadPlayers()
             Toast.makeText(
                 this,
-                if (isOverlay) "Video-OL restaurado a valores de fábrica"
-                else "Video-BG restaurado a valores de fábrica",
+                if (isOverlay) getString(R.string.video_reset_ol)
+                else getString(R.string.video_reset_bg),
                 Toast.LENGTH_SHORT
             ).show()
         } catch (e: Exception) {
             Toast.makeText(
                 this,
-                "Error: ${e.message ?: e.javaClass.simpleName}",
+                getString(R.string.error_generic, e.message ?: e.javaClass.simpleName),
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -6403,13 +6429,9 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
      */
     private fun importGifAsVideo(uri: android.net.Uri, isOverlay: Boolean) {
         AlertDialog.Builder(this)
-            .setTitle("Transparencia del GIF")
-            .setMessage(
-                "El MP4 no conserva transparencia. " +
-                    "¿Querés elegir un color para rellenar las zonas transparentes " +
-                    "(útil si después usás chroma key)?"
-            )
-            .setPositiveButton("Sí") { _, _ ->
+            .setTitle(R.string.gif_transparency_title)
+            .setMessage(getString(R.string.gif_transparency_message))
+            .setPositiveButton(R.string.yes) { _, _ ->
                 // Mismo selector que tipografías / colores del reloj
                 ColorPickerDialog.show(
                     this,
@@ -6423,11 +6445,11 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                     startGifConversion(uri, isOverlay, fill)
                 }
             }
-            .setNegativeButton("No") { _, _ ->
+            .setNegativeButton(R.string.no) { _, _ ->
                 // Fondo negro (comportamiento anterior)
                 startGifConversion(uri, isOverlay, android.graphics.Color.BLACK)
             }
-            .setNeutralButton("Cancelar", null)
+            .setNeutralButton(getString(R.string.cancel), null)
             .show()
     }
 
@@ -6448,7 +6470,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             setPadding(48, 32, 48, 16)
         }
         val label = TextView(this).apply {
-            text = "Convirtiendo GIF a MP4…"
+            text = getString(R.string.gif_converting)
             textSize = 16f
         }
         val bar = ProgressBar(
@@ -7047,11 +7069,11 @@ clock.enabled =
         // Actualizar UI
         // ---------------------------------
     
+        // Device info content always in English (only card title is localized)
         findViewById<TextView>(
             R.id.textScreenResolution
         ).text =
-            "Resolución: ${height} × ${width} px"
-    
+            "Resolution: ${height} × ${width} px"
     
         findViewById<TextView>(
             R.id.textAspectRatio
@@ -7059,7 +7081,6 @@ clock.enabled =
             "Aspect Ratio: " +
                     "$aspectHeight:$aspectWidth " +
                     "(${String.format("%.3f", aspectRatio)})"
-    
     
         findViewById<TextView>(
             R.id.textOpenGLVersion
@@ -7079,13 +7100,12 @@ clock.enabled =
         findViewById<TextView>(
             R.id.textDeviceName
         ).text =
-            "Dispositivo: $deviceName"
-    
+            "Device: $deviceName"
     
         findViewById<TextView>(
             R.id.textAndroidVersion
         ).text =
-            "Versión Android: Android $androidVersion " +
+            "Android Version: Android $androidVersion " +
                     "(API $apiLevel)"
     }
     

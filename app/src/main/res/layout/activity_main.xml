@@ -105,6 +105,15 @@
                 android:visibility="gone"
                 layout="@layout/layout_project"/>
 
+            <!-- ========================= -->
+            <!-- Settings -->
+            <!-- ========================= -->
+
+            <include
+                android:id="@+id/panelSettings"
+                android:visibility="gone"
+                layout="@layout/layout_settings"/>
+
         </FrameLayout>
 
     </LinearLayout>

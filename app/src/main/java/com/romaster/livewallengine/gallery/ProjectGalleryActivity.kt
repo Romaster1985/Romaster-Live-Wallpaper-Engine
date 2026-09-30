@@ -122,11 +122,11 @@ class ProjectGalleryActivity : AppCompatActivity() {
         // (mismo espíritu que Importar: abrir stream, no exigir re-descarga)
         val alreadyPresent = AppDirectories.galleryZipPresent(this, project.zipFileName)
         if (alreadyPresent) {
-            status.text = "Ya descargado. Podés aplicar el proyecto."
+            status.text = getString(R.string.gallery_already_downloaded)
             buttonApply.isEnabled = true
-            buttonDownload.text = "Re-descargar"
+            buttonDownload.text = getString(R.string.gallery_redownload)
         } else {
-            status.text = "Pendiente de descarga"
+            status.text = getString(R.string.gallery_pending)
             buttonApply.isEnabled = false
         }
 
@@ -168,7 +168,7 @@ class ProjectGalleryActivity : AppCompatActivity() {
             buttonDownload.isEnabled = false
             buttonApply.isEnabled = false
             progressBar.visibility = View.VISIBLE
-            status.text = "Descargando…"
+            status.text = getString(R.string.gallery_downloading)
 
             lifecycleScope.launch {
                 try {
@@ -190,13 +190,13 @@ class ProjectGalleryActivity : AppCompatActivity() {
                     }
 
                     progressBar.visibility = View.GONE
-                    status.text = "Descarga completa. Ya podés aplicar el proyecto."
+                    status.text = getString(R.string.gallery_download_complete)
                     buttonApply.isEnabled = true
                     buttonDownload.isEnabled = true
-                    buttonDownload.text = "Re-descargar"
+                    buttonDownload.text = getString(R.string.gallery_redownload)
                     Toast.makeText(
                         this@ProjectGalleryActivity,
-                        "Proyecto guardado",
+                        getString(R.string.gallery_saved),
                         Toast.LENGTH_SHORT
                     ).show()
                 } catch (e: Exception) {
@@ -211,10 +211,10 @@ class ProjectGalleryActivity : AppCompatActivity() {
                         buttonApply.isEnabled = true
                     }
                     status.text =
-                        "Error al descargar: ${e.message ?: e.javaClass.simpleName}"
+                        getString(R.string.gallery_download_error, e.message ?: e.javaClass.simpleName)
                     Toast.makeText(
                         this@ProjectGalleryActivity,
-                        "No se pudo descargar",
+                        getString(R.string.gallery_download_fail),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -225,14 +225,14 @@ class ProjectGalleryActivity : AppCompatActivity() {
             if (!AppDirectories.galleryZipPresent(this, project.zipFileName)) {
                 Toast.makeText(
                     this,
-                    "Primero descargá el proyecto",
+                    getString(R.string.gallery_apply_first),
                     Toast.LENGTH_SHORT
                 ).show()
                 return@setOnClickListener
             }
 
             buttonApply.isEnabled = false
-            status.text = "Aplicando proyecto…"
+            status.text = getString(R.string.gallery_applying)
 
             lifecycleScope.launch {
                 try {
@@ -254,7 +254,7 @@ class ProjectGalleryActivity : AppCompatActivity() {
 
                     Toast.makeText(
                         this@ProjectGalleryActivity,
-                        "Proyecto aplicado: ${project.name}",
+                        getString(R.string.gallery_applied, project.name),
                         Toast.LENGTH_SHORT
                     ).show()
 
@@ -264,10 +264,10 @@ class ProjectGalleryActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     buttonApply.isEnabled = true
                     status.text =
-                        "Error al aplicar: ${e.message ?: e.javaClass.simpleName}"
+                        getString(R.string.gallery_apply_error, e.message ?: e.javaClass.simpleName)
                     Toast.makeText(
                         this@ProjectGalleryActivity,
-                        "No se pudo aplicar el proyecto",
+                        getString(R.string.gallery_apply_fail),
                         Toast.LENGTH_SHORT
                     ).show()
                 }

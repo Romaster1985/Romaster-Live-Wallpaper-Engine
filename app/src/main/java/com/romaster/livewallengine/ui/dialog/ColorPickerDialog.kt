@@ -48,6 +48,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.button.MaterialButton
 
 import com.romaster.livewallengine.R
+import com.romaster.livewallengine.LocaleHelper
 
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import com.skydoves.colorpickerview.ColorPickerView
@@ -65,6 +66,9 @@ object ColorPickerDialog {
         onColorSelected: (String) -> Unit
     
     ) {
+        // Solo para strings localizados. Inflate + AlertDialog DEBEN usar
+        // el Context de la Activity (tema/token); createConfigurationContext crashea.
+        val str = LocaleHelper.wrap(context)
         
         val view =
             LayoutInflater
@@ -74,10 +78,14 @@ object ColorPickerDialog {
                     null
                 )
         
+        view.findViewById<TextView>(R.id.textColorPickerTitle)?.text =
+            str.getString(R.string.color_pick_title)
+
         val buttonHex =
             view.findViewById<MaterialButton>(
                 R.id.buttonEditHex
             )
+        buttonHex?.text = str.getString(R.string.color_edit_hex)
         
         val preview =
             view.findViewById<View>(
@@ -183,7 +191,7 @@ object ColorPickerDialog {
             .setView(view)
     
             .setPositiveButton(
-                "Aceptar"
+                str.getString(R.string.ok)
             ) { _, _ ->
     
                 onColorSelected(
@@ -192,7 +200,7 @@ object ColorPickerDialog {
             }
     
             .setNegativeButton(
-                "Cancelar",
+                str.getString(R.string.cancel),
                 null
             )
     
@@ -208,6 +216,7 @@ object ColorPickerDialog {
         onHexSelected: (String) -> Unit
     
     ) {
+        val str = LocaleHelper.wrap(context)
         
         val initialHex =
             normalizeHex(initialColor)
@@ -250,18 +259,18 @@ object ColorPickerDialog {
             AlertDialog.Builder(context)
     
                 .setTitle(
-                    "Color personalizado"
+                    str.getString(R.string.color_custom_title)
                 )
     
                 .setView(view)
     
                 .setPositiveButton(
-                    "Aceptar",
+                    str.getString(R.string.ok),
                     null
                 )
     
                 .setNegativeButton(
-                    "Cancelar",
+                    str.getString(R.string.cancel),
                     null
                 )
     
@@ -345,7 +354,7 @@ object ColorPickerDialog {
                         if (valid)
                             null
                         else
-                            "HEX inválido"
+                            str.getString(R.string.color_hex_invalid)
     
                     dialog
                         .getButton(

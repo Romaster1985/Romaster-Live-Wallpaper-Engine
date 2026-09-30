@@ -45,6 +45,7 @@ import android.widget.TextView
 
 import com.google.android.material.slider.Slider
 import com.romaster.livewallengine.R
+import com.romaster.livewallengine.LocaleHelper
 import com.romaster.livewallengine.storage.StorageManager
 import com.romaster.livewallengine.video.VideoStorage
 import com.skydoves.colorpickerview.ColorEnvelope
@@ -179,18 +180,19 @@ class ChromaColorPickerDialog(
                 textHex.text = envelope.hexCode
             }
         )
+        val str = LocaleHelper.wrap(context)
         AlertDialog.Builder(context)
             .setTitle(
-                "Seleccionar color Chroma"
+                str.getString(R.string.chroma_pick_title)
             )
             .setView(view)
             .setNegativeButton(
-                "Cancelar"
+                str.getString(R.string.cancel)
             ) { _, _ ->
                 retriever.release()
             }
             .setPositiveButton(
-                "Aceptar"
+                str.getString(R.string.ok)
             ) { _, _ ->
                 retriever.release()
                 onColorSelected(

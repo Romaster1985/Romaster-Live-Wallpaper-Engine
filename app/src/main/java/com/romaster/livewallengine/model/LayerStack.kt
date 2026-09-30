@@ -18,6 +18,9 @@
 
 package com.romaster.livewallengine.model
 
+import android.content.Context
+import com.romaster.livewallengine.R
+
 /**
  * Orden global de composición (de atrás hacia adelante).
  * Tokens fijos: [ID_VBG], [ID_VOL], [ID_CLOCK]
@@ -106,17 +109,17 @@ object LayerStack {
         }
     }
 
-    fun label(id: String, project: WallpaperProject): String {
+    fun label(context: Context, id: String, project: WallpaperProject): String {
         return when (id) {
-            ID_VBG -> "Video-BG"
-            ID_VOL -> "Video-OL"
-            ID_CLOCK -> "Clock-OL"
+            ID_VBG -> context.getString(R.string.layer_label_vbg)
+            ID_VOL -> context.getString(R.string.layer_label_vol)
+            ID_CLOCK -> context.getString(R.string.layer_label_clock)
             else -> {
                 val idx = project.imageLayers.indexOfFirst { it.id == id }
-                if (idx >= 0) return "Capa de Imagen ${idx + 1}"
+                if (idx >= 0) return context.getString(R.string.layer_label_image, idx + 1)
                 val wIdx = project.widgetLayers.indexOfFirst { it.id == id }
-                if (wIdx >= 0) return "Widget ${wIdx + 1}"
-                "Capa"
+                if (wIdx >= 0) return context.getString(R.string.layer_label_widget, wIdx + 1)
+                context.getString(R.string.layer_label_generic)
             }
         }
     }

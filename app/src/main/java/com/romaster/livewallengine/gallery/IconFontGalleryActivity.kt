@@ -79,7 +79,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
         setContentView(R.layout.activity_font_gallery)
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbarGallery)
-        toolbar.title = "Galería de íconos"
+        toolbar.title = getString(R.string.icon_gallery_title)
         toolbar.setNavigationOnClickListener { finish() }
 
         recycler = findViewById(R.id.recyclerGallery)
@@ -87,7 +87,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
         textEmpty = findViewById(R.id.textGalleryEmpty)
         textError = findViewById(R.id.textGalleryError)
         editSearch = findViewById(R.id.editFontSearch)
-        editSearch.hint = "Buscar fuente de íconos…"
+        editSearch.hint = getString(R.string.icon_gallery_search_hint)
 
         val cacheDir = File(cacheDir, "icon_font_gallery")
         cacheDir.mkdirs()
@@ -138,7 +138,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
                 editSearch.isEnabled = true
                 if (list.isEmpty()) {
                     textEmpty.visibility = View.VISIBLE
-                    textEmpty.text = "No hay pares TTF+JSON en la carpeta Icons del repositorio."
+                    textEmpty.text = getString(R.string.icon_gallery_empty)
                     recycler.visibility = View.GONE
                 } else {
                     applyFilter(editSearch.text?.toString().orEmpty())
@@ -146,7 +146,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 progress.visibility = View.GONE
                 textError.visibility = View.VISIBLE
-                textError.text = "Error: ${e.message ?: e.javaClass.simpleName}"
+                textError.text = getString(R.string.error_generic, e.message ?: e.javaClass.simpleName)
             }
         }
     }
@@ -165,9 +165,9 @@ class IconFontGalleryActivity : AppCompatActivity() {
             recycler.visibility = View.GONE
             textEmpty.visibility = View.VISIBLE
             textEmpty.text = if (q.isEmpty()) {
-                "No hay fuentes de íconos en Icons/."
+                getString(R.string.icon_gallery_empty_short)
             } else {
-                "Ninguna coincide con \"$q\"."
+                getString(R.string.icon_gallery_no_match, q)
             }
         } else {
             textEmpty.visibility = View.GONE
@@ -180,7 +180,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
         val density = resources.displayMetrics.density
         val loading = AlertDialog.Builder(this)
             .setTitle(item.name)
-            .setMessage("Cargando glifos…")
+            .setMessage(getString(R.string.icon_loading_glyphs))
             .setCancelable(true)
             .create()
         loading.show()
@@ -225,7 +225,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
 
                 if (glyphs.isEmpty()) {
                     grid.addView(TextView(this@IconFontGalleryActivity).apply {
-                        text = "No se encontraron glifos en el JSON."
+                        text = getString(R.string.icon_glyphs_not_found)
                         setPadding((8 * density).toInt(), (16 * density).toInt(), 0, 0)
                     })
                 } else {
@@ -301,7 +301,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
                 val container = LinearLayout(this@IconFontGalleryActivity).apply {
                     orientation = LinearLayout.VERTICAL
                     addView(TextView(this@IconFontGalleryActivity).apply {
-                        text = "${glyphs.size} íconos — toca un glifo para asignar a un estado climático, o Instalar"
+                        text = getString(R.string.icon_browse_message, glyphs.size)
                         textSize = 13f
                         setPadding(
                             (16 * density).toInt(),
@@ -316,8 +316,8 @@ class IconFontGalleryActivity : AppCompatActivity() {
                 AlertDialog.Builder(this@IconFontGalleryActivity)
                     .setTitle(item.name)
                     .setView(container)
-                    .setNegativeButton("Cancelar", null)
-                    .setPositiveButton("Instalar") { _, _ ->
+                    .setNegativeButton(getString(R.string.cancel), null)
+                    .setPositiveButton(getString(R.string.icon_install_action)) { _, _ ->
                         install(item, cacheDir)
                     }
                     .show()
@@ -325,7 +325,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
                 loading.dismiss()
                 Toast.makeText(
                     this@IconFontGalleryActivity,
-                    "Error: ${e.message ?: e.javaClass.simpleName}",
+                    getString(R.string.error_generic, e.message ?: e.javaClass.simpleName),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -350,7 +350,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
         }
         val layer = ProjectManager.getProject().widgetLayers.find { it.id == layerId }
         if (layer == null) {
-            Toast.makeText(this, "Widget no encontrado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.icon_widget_not_found), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -477,7 +477,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
             )
             addView(preview)
             addView(TextView(this@IconFontGalleryActivity).apply {
-                text = "Asignar nombre de ícono a:"
+                text = getString(R.string.icon_assign_title)
                 textSize = 16f
                 this.typeface = Typeface.DEFAULT_BOLD
                 setTextColor(0xFFFFFFFF.toInt())
@@ -501,13 +501,13 @@ class IconFontGalleryActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
     private fun install(item: GalleryIconFontItem, cacheDir: File) {
         val wait = AlertDialog.Builder(this)
-            .setMessage("Instalando íconos…")
+            .setMessage(getString(R.string.icon_installing))
             .setCancelable(false)
             .create()
         wait.show()
@@ -548,7 +548,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
                 }
                 Toast.makeText(
                     this@IconFontGalleryActivity,
-                    "Íconos instalados: ${item.name}",
+                    getString(R.string.icon_installed_named, item.name),
                     Toast.LENGTH_SHORT
                 ).show()
                 setResult(
@@ -560,7 +560,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
                 wait.dismiss()
                 Toast.makeText(
                     this@IconFontGalleryActivity,
-                    "Error: ${e.message ?: e.javaClass.simpleName}",
+                    getString(R.string.error_generic, e.message ?: e.javaClass.simpleName),
                     Toast.LENGTH_LONG
                 ).show()
             }

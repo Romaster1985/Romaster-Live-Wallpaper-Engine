@@ -120,17 +120,17 @@ class FontGalleryActivity : AppCompatActivity() {
                 if (fonts.isEmpty()) {
                     textEmpty.visibility = View.VISIBLE
                     textEmpty.text =
-                        "No hay fuentes en la carpeta Fonts del repositorio."
+                        getString(R.string.font_gallery_empty)
                 } else {
                     applyFilter(editSearch.text?.toString().orEmpty())
                 }
             } catch (e: Exception) {
                 progress.visibility = View.GONE
                 textError.visibility = View.VISIBLE
-                textError.text =
-                    "No se pudo cargar la galería de fuentes.\n\n" +
-                        "${e.message ?: e.javaClass.simpleName}\n\n" +
-                        "Comprobá la conexión e intentá de nuevo."
+                textError.text = getString(
+                    R.string.font_gallery_load_error,
+                    e.message ?: e.javaClass.simpleName
+                )
             }
         }
     }
@@ -159,9 +159,9 @@ class FontGalleryActivity : AppCompatActivity() {
             textEmpty.visibility = View.VISIBLE
             textEmpty.text =
                 if (q.isEmpty()) {
-                    "No hay fuentes en la carpeta Fonts del repositorio."
+                    getString(R.string.font_gallery_empty)
                 } else {
-                    "Ninguna fuente coincide con \"$q\"."
+                    getString(R.string.font_gallery_no_match, q)
                 }
         } else {
             textEmpty.visibility = View.GONE
@@ -173,9 +173,9 @@ class FontGalleryActivity : AppCompatActivity() {
     private fun confirmInstall(font: GalleryFont, cacheDir: File) {
         AlertDialog.Builder(this)
             .setTitle(font.name)
-            .setMessage("¿Instalar esta fuente en la app?")
-            .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Instalar") { _, _ ->
+            .setMessage(getString(R.string.font_install_confirm))
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(getString(R.string.font_install_action)) { _, _ ->
                 installFont(font, cacheDir)
             }
             .show()
@@ -183,7 +183,7 @@ class FontGalleryActivity : AppCompatActivity() {
 
     private fun installFont(font: GalleryFont, cacheDir: File) {
         val wait = AlertDialog.Builder(this)
-            .setMessage("Instalando fuente…")
+            .setMessage(getString(R.string.font_installing))
             .setCancelable(false)
             .create()
         wait.show()
@@ -207,7 +207,7 @@ class FontGalleryActivity : AppCompatActivity() {
                 wait.dismiss()
                 Toast.makeText(
                     this@FontGalleryActivity,
-                    "Fuente instalada: ${font.fileName}",
+                    getString(R.string.font_installed_named, font.fileName),
                     Toast.LENGTH_SHORT
                 ).show()
                 setResult(Activity.RESULT_OK)
@@ -216,7 +216,7 @@ class FontGalleryActivity : AppCompatActivity() {
                 wait.dismiss()
                 Toast.makeText(
                     this@FontGalleryActivity,
-                    "Error: ${e.message ?: e.javaClass.simpleName}",
+                    getString(R.string.error_generic, e.message ?: e.javaClass.simpleName),
                     Toast.LENGTH_LONG
                 ).show()
             }

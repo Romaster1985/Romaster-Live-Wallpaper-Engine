@@ -32,7 +32,7 @@
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
         app:navigationIcon="?attr/homeAsUpIndicator"
-        app:title="Galería de Fuentes 🌎📲"
+        app:title="@string/font_gallery_title"
         app:titleCentered="false"/>
 
     <com.google.android.material.textfield.TextInputLayout
@@ -44,7 +44,7 @@
         android:layout_marginEnd="12dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="4dp"
-        android:hint="Buscar fuente…">
+        android:hint="@string/font_gallery_search_hint">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editFontSearch"
@@ -80,7 +80,7 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:padding="24dp"
-            android:text="No hay fuentes en la carpeta Fonts del repositorio."
+            android:text="@string/font_gallery_empty"
             android:textSize="14sp"
             android:visibility="gone"/>
 

@@ -44,8 +44,8 @@
         android:id="@+id/layoutHex"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Color HEX"
-        app:helperText="Formato: #AARRGGBB">
+        android:hint="@string/color_hex_hint"
+        app:helperText="@string/color_hex_helper">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editHex"

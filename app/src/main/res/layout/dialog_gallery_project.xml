@@ -49,7 +49,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:textSize="13sp"
-        android:text="Toca Descargar para obtener el proyecto."/>
+        android:text="@string/gallery_tap_download"/>
 
     <ProgressBar
         android:id="@+id/progressDialogDownload"
@@ -73,7 +73,7 @@
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Descargar"/>
+            android:text="@string/gallery_download"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonDialogApply"
@@ -82,7 +82,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:enabled="false"
-            android:text="Aplicar"/>
+            android:text="@string/gallery_apply"/>
 
     </LinearLayout>
 
@@ -99,7 +99,7 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cerrar"/>
+            android:text="@string/close"/>
 
     </LinearLayout>
 

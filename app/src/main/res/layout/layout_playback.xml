@@ -50,13 +50,13 @@
                     android:id="@+id/checkEnableOverlayLoop"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Habilitar Overlay Loop Inteligente"/>
+                    android:text="@string/playback_enable_smart_loop"/>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Cuando está desactivado el overlay se reproduce normalmente. Cuando está activado utiliza Cue Locked y Cue Unlocked."
+                    android:text="@string/playback_smart_loop_help"
                     android:textSize="12sp"/>
 
             </LinearLayout>
@@ -82,21 +82,21 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Simulación del dispositivo"
+                    android:text="@string/playback_device_sim_title"
                     android:textStyle="bold"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Permite probar el comportamiento del overlay sin bloquear el teléfono."/>
+                    android:text="@string/playback_device_sim_help"/>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switchPreviewLocked"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Dispositivo bloqueado"/>
+                    android:text="@string/playback_device_locked"/>
 
             </LinearLayout>
 
@@ -121,7 +121,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Cue Locked"
+                    android:text="@string/cue_locked_title"
                     android:textStyle="bold"/>
                 
                 <com.google.android.material.button.MaterialButtonToggleGroup
@@ -137,14 +137,14 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Loop"/>
+                        android:text="@string/mode_loop"/>
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonCueLockedPause"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Pausa"/>
+                        android:text="@string/mode_pause"/>
                 
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -171,7 +171,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Editar..."/>
+                    android:text="@string/edit_ellipsis"/>
 
                 <com.google.android.material.slider.Slider
                     android:id="@+id/sliderCueLocked"
@@ -187,13 +187,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Ping-pong playback"/>
+                    android:text="@string/pingpong_playback"/>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Reproduce hasta el cue, vuelve en reversa al inicio y repite (0 ↔ cue)."
+                    android:text="@string/pingpong_locked_help"
                     android:textSize="12sp"/>
 
                 <CheckBox
@@ -201,7 +201,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Transición suave"/>
+                    android:text="@string/smooth_transition"/>
 
                 <RadioGroup
                     android:id="@+id/radioGroupCueLockedSmoothMode"
@@ -217,21 +217,21 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:checked="true"
-                        android:text="Normal"/>
+                        android:text="@string/smooth_mode_normal"/>
 
                     <RadioButton
                         android:id="@+id/radioCueLockedSmoothAltern"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Altern"/>
+                        android:text="@string/smooth_mode_altern"/>
                 </RadioGroup>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Crossfade al reiniciar el bucle para suavizar el salto entre el final y el inicio."
+                    android:text="@string/smooth_transition_help"
                     android:textSize="12sp"/>
 
                 <LinearLayout
@@ -255,7 +255,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Crossfade Time"/>
+                        android:text="@string/crossfade_time"/>
                 </LinearLayout>
 
             </LinearLayout>
@@ -280,7 +280,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Cue Unlocked"
+                    android:text="@string/cue_unlocked_title"
                     android:textStyle="bold"/>
                 
                 <com.google.android.material.button.MaterialButtonToggleGroup
@@ -296,14 +296,14 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Loop"/>
+                        android:text="@string/mode_loop"/>
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonCueUnlockedPause"
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Pausa"/>
+                        android:text="@string/mode_pause"/>
                 
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -330,7 +330,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Editar..."/>
+                    android:text="@string/edit_ellipsis"/>
 
                 <com.google.android.material.slider.Slider
                     android:id="@+id/sliderCueUnlocked"
@@ -349,13 +349,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Ping-pong playback"/>
+                    android:text="@string/pingpong_playback"/>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Reproduce hasta el final, vuelve en reversa al cue unlocked y repite (cue ↔ final)."
+                    android:text="@string/pingpong_unlocked_help"
                     android:textSize="12sp"/>
 
                 <CheckBox
@@ -363,7 +363,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="Transición suave"/>
+                    android:text="@string/smooth_transition"/>
 
                 <RadioGroup
                     android:id="@+id/radioGroupCueUnlockedSmoothMode"
@@ -379,21 +379,21 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:checked="true"
-                        android:text="Normal"/>
+                        android:text="@string/smooth_mode_normal"/>
 
                     <RadioButton
                         android:id="@+id/radioCueUnlockedSmoothAltern"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Altern"/>
+                        android:text="@string/smooth_mode_altern"/>
                 </RadioGroup>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Crossfade al reiniciar el bucle para suavizar el salto entre el final y el inicio."
+                    android:text="@string/smooth_transition_help"
                     android:textSize="12sp"/>
 
                 <LinearLayout
@@ -417,7 +417,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Crossfade Time"/>
+                        android:text="@string/crossfade_time"/>
                 </LinearLayout>
 
             </LinearLayout>
@@ -445,7 +445,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Configuración de Delay Start"
+                    android:text="@string/delay_start_title"
                     android:textSize="18sp"
                     android:textStyle="bold"/>
 
@@ -453,14 +453,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Tiempo de espera antes de iniciar el Soft Start de cada elemento."
+                    android:text="@string/delay_start_help"
                     android:textSize="12sp"/>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Reloj con desenfoque activado: comenzará a contar su tiempo de delay después de terminar de mostrarse todos los módulos (Video-BG, Video-OL, Pics-OL)."
+                    android:text="@string/delay_start_clock_blur_note"
                     android:textSize="12sp"
                     android:textColor="?android:attr/textColorSecondary"/>
 
@@ -481,7 +481,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Video principal"
+                            android:text="@string/label_main_video"
                             android:textStyle="bold"/>
 
                         <TextView
@@ -498,7 +498,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Editar..."/>
+                        android:text="@string/edit_ellipsis"/>
                 </LinearLayout>
 
                 <!-- VIDEO OVERLAY -->
@@ -518,7 +518,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Video Overlay"
+                            android:text="@string/label_video_overlay"
                             android:textStyle="bold"/>
 
                         <TextView
@@ -535,7 +535,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Editar..."/>
+                        android:text="@string/edit_ellipsis"/>
                 </LinearLayout>
 
                 <!-- RELOJ -->
@@ -555,7 +555,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Reloj"
+                            android:text="@string/label_clock"
                             android:textStyle="bold"/>
 
                         <TextView
@@ -572,7 +572,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Editar..."/>
+                        android:text="@string/edit_ellipsis"/>
                 </LinearLayout>
 
                 <!-- Capas de imagen — se rellena en runtime -->
@@ -615,7 +615,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Configuración de Soft Start"
+                    android:text="@string/soft_start_title"
                     android:textSize="18sp"
                     android:textStyle="bold"/>
         
@@ -623,7 +623,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Configurá de forma independiente la duración del fade de entrada de cada elemento."
+                    android:text="@string/soft_start_help"
                     android:textSize="12sp"/>
         
         
@@ -647,7 +647,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Video principal"
+                            android:text="@string/label_main_video"
                             android:textStyle="bold"/>
         
                         <TextView
@@ -665,7 +665,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Editar..."/>
+                        android:text="@string/edit_ellipsis"/>
         
                 </LinearLayout>
         
@@ -690,7 +690,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Video Overlay"
+                            android:text="@string/label_video_overlay"
                             android:textStyle="bold"/>
         
                         <TextView
@@ -708,7 +708,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Editar..."/>
+                        android:text="@string/edit_ellipsis"/>
         
                 </LinearLayout>
         
@@ -733,7 +733,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Reloj"
+                            android:text="@string/label_clock"
                             android:textStyle="bold"/>
         
                         <TextView
@@ -751,7 +751,7 @@
                         style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Editar..."/>
+                        android:text="@string/edit_ellipsis"/>
         
                 </LinearLayout>
 
@@ -794,14 +794,14 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🔊 Sonido al Desbloquear"
+                    android:text="@string/unlock_sound_title"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:layout_marginBottom="4dp"/>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Se reproduce una sola vez al desbloquear el dispositivo (no en bucle)."
+                    android:text="@string/unlock_sound_help"
                     android:textSize="12sp"
                     android:layout_marginBottom="12dp"/>
 
@@ -822,7 +822,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Volumen"/>
+                        android:text="@string/label_volume"/>
 
                     <TextView
                         android:id="@+id/textUnlockSoundVolumeValue"
@@ -852,7 +852,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Cargar sonido"/>
+                        android:text="@string/load_sound"/>
 
                     <Space
                         android:layout_width="8dp"
@@ -864,7 +864,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Reset"/>
+                        android:text="@string/reset"/>
                 </LinearLayout>
 
                 <TextView
@@ -874,14 +874,14 @@
                     android:layout_marginTop="8dp"
                     android:ellipsize="middle"
                     android:maxLines="1"
-                    android:text="Ningún sonido seleccionado"/>
+                    android:text="@string/no_sound_selected"/>
 
                 <TextView
                     android:id="@+id/textUnlockSoundDuration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Duración: --:--.---"/>
+                    android:text="@string/duration_placeholder"/>
 
             </LinearLayout>
 
