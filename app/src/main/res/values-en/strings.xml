@@ -417,4 +417,25 @@ Check your connection and try again.</string>
     <string name="icon_glyphs_not_found">No glyphs found in the JSON.</string>
     <string name="icon_browse_message">%1$d icons — tap a glyph to assign a weather state, or Install</string>
     <string name="icon_install_action">Install</string>
+
+    <!-- Weather $wi(cond)$ labels -->
+    <string name="weather_cond_clear">clear sky</string>
+    <string name="weather_cond_mostly_clear">mostly clear</string>
+    <string name="weather_cond_partly_cloudy">partly cloudy</string>
+    <string name="weather_cond_cloudy">cloudy</string>
+    <string name="weather_cond_fog">fog</string>
+    <string name="weather_cond_drizzle">drizzle</string>
+    <string name="weather_cond_freezing_drizzle">freezing drizzle</string>
+    <string name="weather_cond_rain">rain</string>
+    <string name="weather_cond_heavy_rain">heavy rain</string>
+    <string name="weather_cond_freezing_rain">freezing rain</string>
+    <string name="weather_cond_snow">snow</string>
+    <string name="weather_cond_heavy_snow">heavy snow</string>
+    <string name="weather_cond_showers">showers</string>
+    <string name="weather_cond_heavy_showers">heavy showers</string>
+    <string name="weather_cond_snow_showers">snow showers</string>
+    <string name="weather_cond_heavy_snow_showers">heavy snow showers</string>
+    <string name="weather_cond_thunderstorm">thunderstorm</string>
+    <string name="weather_cond_thunderstorm_hail">thunderstorm with hail</string>
+    <string name="weather_cond_unknown">unknown</string>
 </resources>

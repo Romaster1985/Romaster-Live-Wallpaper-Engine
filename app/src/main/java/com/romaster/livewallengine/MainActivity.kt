@@ -2505,6 +2505,22 @@ private fun showFadeDurationDialog(
         return card
     }
 
+    /** Botones de presets de fórmula: esquinas poco redondeadas y texto que no se corta. */
+    private fun styleFormulaPresetButton(btn: MaterialButton, density: Float) {
+        val r = 6f * density
+        btn.shapeAppearanceModel = btn.shapeAppearanceModel.toBuilder()
+            .setAllCornerSizes(r)
+            .build()
+        btn.cornerRadius = r.toInt()
+        btn.gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+        btn.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+        val h = (14 * density).toInt()
+        val v = (12 * density).toInt()
+        btn.setPadding(h, v, h, v)
+        btn.minHeight = (52 * density).toInt()
+        btn.includeFontPadding = true
+    }
+
     private fun showWidgetFormulaDialog(layer: WidgetLayer, previewTv: TextView) {
         val density = resources.displayMetrics.density
         // Cursor recordado: al tocar un preset el EditText pierde el foco.
@@ -2728,6 +2744,7 @@ private fun showFadeDurationDialog(
                 ).apply {
                     text = getString(R.string.formula_back_categories)
                     isAllCaps = false
+                    styleFormulaPresetButton(this, density)
                     setOnClickListener { showSections() }
                 }
             )
@@ -2748,7 +2765,7 @@ private fun showFadeDurationDialog(
                             append('\n')
                             append(item.formula)
                         }
-                        textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+                        styleFormulaPresetButton(this, density)
                         setOnClickListener { insertAtCursor(item.formula) }
                     }
                 )
@@ -2764,6 +2781,7 @@ private fun showFadeDurationDialog(
                 ).apply {
                     text = section.title
                     isAllCaps = false
+                    styleFormulaPresetButton(this, density)
                     setOnClickListener { showSection(section) }
                 }
             )

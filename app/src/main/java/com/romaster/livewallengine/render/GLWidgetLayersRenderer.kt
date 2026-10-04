@@ -28,6 +28,7 @@ import android.opengl.GLES20
 import android.opengl.Matrix
 import android.os.SystemClock
 import com.romaster.livewallengine.formula.FormulaEngine
+import com.romaster.livewallengine.LocaleHelper
 import com.romaster.livewallengine.font.FontManager
 import com.romaster.livewallengine.font.IconFontStorage
 import com.romaster.livewallengine.model.TextAlignment
@@ -99,7 +100,7 @@ class GLWidgetLayersRenderer {
     """.trimIndent()
 
     fun initialize(ctx: Context, width: Int, height: Int) {
-        context = ctx.applicationContext
+        context = LocaleHelper.wrap(ctx.applicationContext)
         screenW = width.coerceAtLeast(1)
         screenH = height.coerceAtLeast(1)
 

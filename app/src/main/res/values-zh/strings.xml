@@ -384,4 +384,25 @@
     <string name="icon_glyphs_not_found">JSON 中未找到字形。</string>
     <string name="icon_browse_message">共 %1$d 个图标 — 点按字形以分配天气状态，或安装</string>
     <string name="icon_install_action">安装</string>
+
+    <!-- Weather $wi(cond)$ labels -->
+    <string name="weather_cond_clear">晴</string>
+    <string name="weather_cond_mostly_clear">大部晴朗</string>
+    <string name="weather_cond_partly_cloudy">局部多云</string>
+    <string name="weather_cond_cloudy">多云</string>
+    <string name="weather_cond_fog">雾</string>
+    <string name="weather_cond_drizzle">毛毛雨</string>
+    <string name="weather_cond_freezing_drizzle">冻毛毛雨</string>
+    <string name="weather_cond_rain">雨</string>
+    <string name="weather_cond_heavy_rain">大雨</string>
+    <string name="weather_cond_freezing_rain">冻雨</string>
+    <string name="weather_cond_snow">雪</string>
+    <string name="weather_cond_heavy_snow">大雪</string>
+    <string name="weather_cond_showers">阵雨</string>
+    <string name="weather_cond_heavy_showers">强阵雨</string>
+    <string name="weather_cond_snow_showers">阵雪</string>
+    <string name="weather_cond_heavy_snow_showers">强阵雪</string>
+    <string name="weather_cond_thunderstorm">雷暴</string>
+    <string name="weather_cond_thunderstorm_hail">雷暴伴冰雹</string>
+    <string name="weather_cond_unknown">未知</string>
 </resources>

@@ -59,6 +59,12 @@ object WeatherProvider {
 
     fun get(): Snapshot = cache.get()
 
+    /** Invalida el cache (p. ej. al cambiar idioma) para forzar refresh. */
+    fun invalidate() {
+        cache.set(Snapshot())
+    }
+
+
     /** Dispara refresh si el cache expiró. Seguro llamar desde cualquier hilo. */
     fun ensureFresh(context: Context) {
         val snap = cache.get()
@@ -105,7 +111,7 @@ object WeatherProvider {
         }
     }
 
-    fun field(name: String): String {
+    fun field(name: String, context: Context? = null): String {
         val s = cache.get()
         return when (name.lowercase(Locale.ROOT)) {
             "temp", "tempc", "temp_c" -> formatNum(s.tempC)
@@ -114,7 +120,7 @@ object WeatherProvider {
             "humidity", "hum" -> s.humidity.toString()
             "wind" -> formatNum(s.windKmh)
             "code" -> s.code.toString()
-            "cond", "condition" -> s.condition
+            "cond", "condition" -> localizeCondition(context, s.condition)
             "icon" -> s.iconKey
             else -> ""
         }
@@ -165,33 +171,67 @@ object WeatherProvider {
     }
 
     /**
-     * WMO weather codes → (condición legible, clave de ícono KLWP).
-     *
-     * Claves de ícono exactas de KLWP ($wi(icon)$):
-     * UNKNOWN, TORNADO, TSTORM, TSHOWER, SHOWER, RAIN, SLEET,
-     * LSNOW, SNOW, HAIL, FOG, WINDY, PCLOUDY, MCLOUDY, CLEAR
+     * WMO → (clave de condición para strings weather_cond_*, clave de ícono KLWP).
+     * La etiqueta visible se resuelve en [field] según el idioma de la app.
      */
     private fun mapCode(code: Int): Pair<String, String> {
         return when (code) {
-            0 -> "cielo claro" to "CLEAR"
-            1 -> "mayormente despejado" to "PCLOUDY"
-            2 -> "parcialmente nublado" to "PCLOUDY"
-            3 -> "nublado" to "MCLOUDY"
-            45, 48 -> "niebla" to "FOG"
-            51, 53, 55 -> "llovizna" to "RAIN"
-            56, 57 -> "llovizna helada" to "SLEET"
-            61, 63 -> "lluvia" to "RAIN"
-            65 -> "lluvia intensa" to "RAIN"
-            66, 67 -> "lluvia helada" to "SLEET"
-            71, 73 -> "nieve" to "SNOW"
-            75, 77 -> "nieve intensa" to "SNOW"
-            80 -> "chubascos" to "SHOWER"
-            81, 82 -> "chubascos intensos" to "SHOWER"
-            85 -> "chubascos de nieve" to "LSNOW"
-            86 -> "chubascos de nieve intensos" to "LSNOW"
-            95 -> "tormenta" to "TSTORM"
-            96, 99 -> "tormenta con granizo" to "HAIL"
-            else -> "desconocido" to "UNKNOWN"
+            0 -> "clear" to "CLEAR"
+            1 -> "mostly_clear" to "PCLOUDY"
+            2 -> "partly_cloudy" to "PCLOUDY"
+            3 -> "cloudy" to "MCLOUDY"
+            45, 48 -> "fog" to "FOG"
+            51, 53, 55 -> "drizzle" to "RAIN"
+            56, 57 -> "freezing_drizzle" to "SLEET"
+            61, 63 -> "rain" to "RAIN"
+            65 -> "heavy_rain" to "RAIN"
+            66, 67 -> "freezing_rain" to "SLEET"
+            71, 73 -> "snow" to "SNOW"
+            75, 77 -> "heavy_snow" to "SNOW"
+            80 -> "showers" to "SHOWER"
+            81, 82 -> "heavy_showers" to "SHOWER"
+            85 -> "snow_showers" to "LSNOW"
+            86 -> "heavy_snow_showers" to "LSNOW"
+            95 -> "thunderstorm" to "TSTORM"
+            96, 99 -> "thunderstorm_hail" to "HAIL"
+            else -> "unknown" to "UNKNOWN"
         }
     }
+
+    /**
+     * Etiqueta de condición en el idioma de la app (resources).
+     * Acepta claves nuevas (clear, rain, …) y textos legacy en español
+     * que pudieran quedar en el cache de clima.
+     */
+    fun localizeCondition(context: Context?, key: String): String {
+        if (key.isEmpty() || key == "—" || key == "-") return key
+        if (context == null) return key
+        val resolved = LEGACY_CONDITION_KEYS[key] ?: key
+        val resName = "weather_cond_$resolved"
+        val id = context.resources.getIdentifier(resName, "string", context.packageName)
+        return if (id != 0) context.getString(id) else key
+    }
+
+    /** Textos en español de builds anteriores → clave estable. */
+    private val LEGACY_CONDITION_KEYS: Map<String, String> = mapOf(
+        "cielo claro" to "clear",
+        "mayormente despejado" to "mostly_clear",
+        "parcialmente nublado" to "partly_cloudy",
+        "nublado" to "cloudy",
+        "niebla" to "fog",
+        "llovizna" to "drizzle",
+        "llovizna helada" to "freezing_drizzle",
+        "lluvia" to "rain",
+        "lluvia intensa" to "heavy_rain",
+        "lluvia helada" to "freezing_rain",
+        "nieve" to "snow",
+        "nieve intensa" to "heavy_snow",
+        "chubascos" to "showers",
+        "chubascos intensos" to "heavy_showers",
+        "chubascos de nieve" to "snow_showers",
+        "chubascos de nieve intensos" to "heavy_snow_showers",
+        "tormenta" to "thunderstorm",
+        "tormenta con granizo" to "thunderstorm_hail",
+        "desconocido" to "unknown"
+    )
 }

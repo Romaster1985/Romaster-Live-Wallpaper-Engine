@@ -384,4 +384,25 @@
     <string name="icon_glyphs_not_found">Aucun glyphe trouvé dans le JSON.</string>
     <string name="icon_browse_message">%1$d icônes — touchez un glyphe pour l\'attribuer à un état météo, ou Installer</string>
     <string name="icon_install_action">Installer</string>
+
+    <!-- Weather $wi(cond)$ labels -->
+    <string name="weather_cond_clear">ciel dégagé</string>
+    <string name="weather_cond_mostly_clear">peu nuageux</string>
+    <string name="weather_cond_partly_cloudy">partiellement nuageux</string>
+    <string name="weather_cond_cloudy">nuageux</string>
+    <string name="weather_cond_fog">brouillard</string>
+    <string name="weather_cond_drizzle">bruine</string>
+    <string name="weather_cond_freezing_drizzle">bruine verglaçante</string>
+    <string name="weather_cond_rain">pluie</string>
+    <string name="weather_cond_heavy_rain">pluie forte</string>
+    <string name="weather_cond_freezing_rain">pluie verglaçante</string>
+    <string name="weather_cond_snow">neige</string>
+    <string name="weather_cond_heavy_snow">neige abondante</string>
+    <string name="weather_cond_showers">averses</string>
+    <string name="weather_cond_heavy_showers">fortes averses</string>
+    <string name="weather_cond_snow_showers">averses de neige</string>
+    <string name="weather_cond_heavy_snow_showers">fortes averses de neige</string>
+    <string name="weather_cond_thunderstorm">orage</string>
+    <string name="weather_cond_thunderstorm_hail">orage avec grêle</string>
+    <string name="weather_cond_unknown">inconnu</string>
 </resources>

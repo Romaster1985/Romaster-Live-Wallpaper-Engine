@@ -384,4 +384,25 @@
     <string name="icon_glyphs_not_found">В JSON не найдены глифы.</string>
     <string name="icon_browse_message">%1$d иконок — нажмите глиф, чтобы назначить состоянию погоды, или Установить</string>
     <string name="icon_install_action">Установить</string>
+
+    <!-- Weather $wi(cond)$ labels -->
+    <string name="weather_cond_clear">ясно</string>
+    <string name="weather_cond_mostly_clear">преимущественно ясно</string>
+    <string name="weather_cond_partly_cloudy">переменная облачность</string>
+    <string name="weather_cond_cloudy">облачно</string>
+    <string name="weather_cond_fog">туман</string>
+    <string name="weather_cond_drizzle">морось</string>
+    <string name="weather_cond_freezing_drizzle">изморозь</string>
+    <string name="weather_cond_rain">дождь</string>
+    <string name="weather_cond_heavy_rain">сильный дождь</string>
+    <string name="weather_cond_freezing_rain">ледяной дождь</string>
+    <string name="weather_cond_snow">снег</string>
+    <string name="weather_cond_heavy_snow">сильный снег</string>
+    <string name="weather_cond_showers">ливни</string>
+    <string name="weather_cond_heavy_showers">сильные ливни</string>
+    <string name="weather_cond_snow_showers">снежные ливни</string>
+    <string name="weather_cond_heavy_snow_showers">сильные снежные ливни</string>
+    <string name="weather_cond_thunderstorm">гроза</string>
+    <string name="weather_cond_thunderstorm_hail">гроза с градом</string>
+    <string name="weather_cond_unknown">неизвестно</string>
 </resources>

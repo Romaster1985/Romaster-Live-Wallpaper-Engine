@@ -384,4 +384,25 @@
     <string name="icon_glyphs_not_found">Keine Glyphen in der JSON gefunden.</string>
     <string name="icon_browse_message">%1$d Symbole — Glyphe antippen, um einem Wetterzustand zuzuweisen, oder Installieren</string>
     <string name="icon_install_action">Installieren</string>
+
+    <!-- Weather $wi(cond)$ labels -->
+    <string name="weather_cond_clear">klarer Himmel</string>
+    <string name="weather_cond_mostly_clear">meist klar</string>
+    <string name="weather_cond_partly_cloudy">teilweise bewölkt</string>
+    <string name="weather_cond_cloudy">bewölkt</string>
+    <string name="weather_cond_fog">Nebel</string>
+    <string name="weather_cond_drizzle">Nieselregen</string>
+    <string name="weather_cond_freezing_drizzle">gefrierender Nieselregen</string>
+    <string name="weather_cond_rain">Regen</string>
+    <string name="weather_cond_heavy_rain">starker Regen</string>
+    <string name="weather_cond_freezing_rain">Gefrierregen</string>
+    <string name="weather_cond_snow">Schnee</string>
+    <string name="weather_cond_heavy_snow">starker Schneefall</string>
+    <string name="weather_cond_showers">Schauer</string>
+    <string name="weather_cond_heavy_showers">starke Schauer</string>
+    <string name="weather_cond_snow_showers">Schneeschauer</string>
+    <string name="weather_cond_heavy_snow_showers">starke Schneeschauer</string>
+    <string name="weather_cond_thunderstorm">Gewitter</string>
+    <string name="weather_cond_thunderstorm_hail">Gewitter mit Hagel</string>
+    <string name="weather_cond_unknown">unbekannt</string>
 </resources>

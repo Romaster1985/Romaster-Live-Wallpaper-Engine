@@ -467,7 +467,7 @@ object FormulaEngine {
 
     private fun evalWeather(field: String, context: Context?): String {
         context?.let { WeatherProvider.ensureFresh(it) }
-        return WeatherProvider.field(field)
+        return WeatherProvider.field(field, context)
     }
 
     private fun indexOfOp(s: String, op: String): Int {

@@ -384,4 +384,25 @@
     <string name="icon_glyphs_not_found">JSONにグリフが見つかりません。</string>
     <string name="icon_browse_message">%1$d 個のアイコン — グリフをタップして天気状態に割り当てるか、インストール</string>
     <string name="icon_install_action">インストール</string>
+
+    <!-- Weather $wi(cond)$ labels -->
+    <string name="weather_cond_clear">快晴</string>
+    <string name="weather_cond_mostly_clear">ほぼ晴れ</string>
+    <string name="weather_cond_partly_cloudy">一部曇り</string>
+    <string name="weather_cond_cloudy">曇り</string>
+    <string name="weather_cond_fog">霧</string>
+    <string name="weather_cond_drizzle">霧雨</string>
+    <string name="weather_cond_freezing_drizzle">着氷性の霧雨</string>
+    <string name="weather_cond_rain">雨</string>
+    <string name="weather_cond_heavy_rain">大雨</string>
+    <string name="weather_cond_freezing_rain">着氷性の雨</string>
+    <string name="weather_cond_snow">雪</string>
+    <string name="weather_cond_heavy_snow">大雪</string>
+    <string name="weather_cond_showers">にわか雨</string>
+    <string name="weather_cond_heavy_showers">激しいにわか雨</string>
+    <string name="weather_cond_snow_showers">にわか雪</string>
+    <string name="weather_cond_heavy_snow_showers">激しいにわか雪</string>
+    <string name="weather_cond_thunderstorm">雷雨</string>
+    <string name="weather_cond_thunderstorm_hail">雷雨と雹</string>
+    <string name="weather_cond_unknown">不明</string>
 </resources>

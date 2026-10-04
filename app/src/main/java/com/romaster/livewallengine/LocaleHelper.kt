@@ -23,6 +23,7 @@ import android.content.res.Configuration
 import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import com.romaster.livewallengine.weather.WeatherProvider
 import java.util.Locale
 
 /**
@@ -98,6 +99,8 @@ object LocaleHelper {
         AppCompatDelegate.setApplicationLocales(
             LocaleListCompat.forLanguageTags(tag)
         )
+        // Clima: etiquetas $wi(cond)$ dependen del idioma → refrescar cache
+        WeatherProvider.invalidate()
     }
 
     fun languageDisplayName(tag: String): String {

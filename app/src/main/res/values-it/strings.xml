@@ -384,4 +384,25 @@
     <string name="icon_glyphs_not_found">Nessun glifo trovato nel JSON.</string>
     <string name="icon_browse_message">%1$d icone — tocca un glifo per assegnarlo a uno stato meteo, oppure Installa</string>
     <string name="icon_install_action">Installa</string>
+
+    <!-- Weather $wi(cond)$ labels -->
+    <string name="weather_cond_clear">cielo sereno</string>
+    <string name="weather_cond_mostly_clear">prevalentemente sereno</string>
+    <string name="weather_cond_partly_cloudy">parzialmente nuvoloso</string>
+    <string name="weather_cond_cloudy">nuvoloso</string>
+    <string name="weather_cond_fog">nebbia</string>
+    <string name="weather_cond_drizzle">pioggerella</string>
+    <string name="weather_cond_freezing_drizzle">pioggerella gelata</string>
+    <string name="weather_cond_rain">pioggia</string>
+    <string name="weather_cond_heavy_rain">pioggia intensa</string>
+    <string name="weather_cond_freezing_rain">pioggia gelata</string>
+    <string name="weather_cond_snow">neve</string>
+    <string name="weather_cond_heavy_snow">neve intensa</string>
+    <string name="weather_cond_showers">rovesci</string>
+    <string name="weather_cond_heavy_showers">rovesci intensi</string>
+    <string name="weather_cond_snow_showers">rovesci di neve</string>
+    <string name="weather_cond_heavy_snow_showers">rovesci di neve intensi</string>
+    <string name="weather_cond_thunderstorm">temporale</string>
+    <string name="weather_cond_thunderstorm_hail">temporale con grandine</string>
+    <string name="weather_cond_unknown">sconosciuto</string>
 </resources>

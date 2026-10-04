@@ -426,4 +426,25 @@ Comprobá la conexión e intentá de nuevo.</string>
     <string name="icon_glyphs_not_found">No se encontraron glifos en el JSON.</string>
     <string name="icon_browse_message">%1$d íconos — toca un glifo para asignar a un estado climático, o Instalar</string>
     <string name="icon_install_action">Instalar</string>
+
+    <!-- Weather $wi(cond)$ labels -->
+    <string name="weather_cond_clear">cielo claro</string>
+    <string name="weather_cond_mostly_clear">mayormente despejado</string>
+    <string name="weather_cond_partly_cloudy">parcialmente nublado</string>
+    <string name="weather_cond_cloudy">nublado</string>
+    <string name="weather_cond_fog">niebla</string>
+    <string name="weather_cond_drizzle">llovizna</string>
+    <string name="weather_cond_freezing_drizzle">llovizna helada</string>
+    <string name="weather_cond_rain">lluvia</string>
+    <string name="weather_cond_heavy_rain">lluvia intensa</string>
+    <string name="weather_cond_freezing_rain">lluvia helada</string>
+    <string name="weather_cond_snow">nieve</string>
+    <string name="weather_cond_heavy_snow">nieve intensa</string>
+    <string name="weather_cond_showers">chubascos</string>
+    <string name="weather_cond_heavy_showers">chubascos intensos</string>
+    <string name="weather_cond_snow_showers">chubascos de nieve</string>
+    <string name="weather_cond_heavy_snow_showers">chubascos de nieve intensos</string>
+    <string name="weather_cond_thunderstorm">tormenta</string>
+    <string name="weather_cond_thunderstorm_hail">tormenta con granizo</string>
+    <string name="weather_cond_unknown">desconocido</string>
 </resources>
