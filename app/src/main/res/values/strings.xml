@@ -7,12 +7,12 @@
     <!-- Tabs -->
     <string name="tab_video_bg">📺 Video-BG</string>
     <string name="tab_video_ol">📽️ Video-OL</string>
-    <string name="tab_playback">▶️ Playback</string>
-    <string name="tab_clock_ol">🕓 Clock-OL</string>
-    <string name="tab_pics_ol">🖼️ Pics-OL</string>
+    <string name="tab_playback">▶️ Reproducción</string>
+    <string name="tab_clock_ol">🕓 Reloj-OL</string>
+    <string name="tab_pics_ol">🖼️ Imágenes-OL</string>
     <string name="tab_widgets_ol">🧩 Widgets-OL</string>
     <string name="tab_project">🗃️ Proyecto</string>
-    <string name="tab_settings">⚙️ Settings</string>
+    <string name="tab_settings">⚙️ Ajustes</string>
 
     <!-- Common -->
     <string name="save">Guardar</string>

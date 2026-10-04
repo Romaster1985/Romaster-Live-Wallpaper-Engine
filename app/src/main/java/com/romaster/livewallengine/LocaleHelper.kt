@@ -24,25 +24,55 @@ import androidx.core.os.LocaleListCompat
 
 /**
  * Preferencia de idioma de la app (independiente del idioma del sistema).
- * Usa AppCompat [AppCompatDelegate.setApplicationLocales] + recursos
- * `values/` (ES por defecto) y `values-en/` (inglés).
+ * Recursos: values/ (ES por defecto) y values-<tag>/ para el resto.
+ *
+ * Lista en orden alfabético por abreviatura:
+ * AR, CN, DE, EN, ES, FR, IT, JP, RU
  */
 object LocaleHelper {
 
     private const val PREFS = "app_settings"
     private const val KEY_LANGUAGE = "language"
 
-    const val LANG_ES = "es"
+    const val LANG_AR = "ar"
+    const val LANG_ZH = "zh" // 中文 [CN]
+    const val LANG_DE = "de"
     const val LANG_EN = "en"
+    const val LANG_ES = "es"
+    const val LANG_FR = "fr"
+    const val LANG_IT = "it"
+    const val LANG_JA = "ja" // 日本語 [JP]
+    const val LANG_RU = "ru"
+
+    data class LanguageOption(
+        val tag: String,
+        /** Nombre en el idioma propio + abreviatura, p.ej. "日本語 [JP]" */
+        val label: String
+    )
+
+    /** Orden alfabético por abreviatura: AR → CN → DE → EN → ES → FR → IT → JP → RU */
+    val SUPPORTED: List<LanguageOption> = listOf(
+        LanguageOption(LANG_AR, "العربية [AR]"),
+        LanguageOption(LANG_ZH, "中文 [CN]"),
+        LanguageOption(LANG_DE, "Deutsch [DE]"),
+        LanguageOption(LANG_EN, "English [EN]"),
+        LanguageOption(LANG_ES, "Español [ES]"),
+        LanguageOption(LANG_FR, "Français [FR]"),
+        LanguageOption(LANG_IT, "Italiano [IT]"),
+        LanguageOption(LANG_JA, "日本語 [JP]"),
+        LanguageOption(LANG_RU, "Русский [RU]")
+    )
+
+    private val SUPPORTED_TAGS: Set<String> = SUPPORTED.map { it.tag }.toSet()
 
     fun getLanguage(context: Context): String {
-        return context.applicationContext
+        val stored = context.applicationContext
             .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_LANGUAGE, LANG_ES)
             ?: LANG_ES
+        return if (stored in SUPPORTED_TAGS) stored else LANG_ES
     }
 
-    /** Aplica el locale guardado (llamar al inicio de la app). */
     fun applyStoredLocale(context: Context) {
         val tag = getLanguage(context)
         val locales = LocaleListCompat.forLanguageTags(tag)
@@ -51,15 +81,8 @@ object LocaleHelper {
         }
     }
 
-    /**
-     * Guarda el idioma y lo aplica. La Activity que llama debería
-     * hacer [android.app.Activity.recreate] si no se recrea sola.
-     */
     fun setLanguage(context: Context, languageTag: String) {
-        val tag = when (languageTag) {
-            LANG_EN -> LANG_EN
-            else -> LANG_ES
-        }
+        val tag = if (languageTag in SUPPORTED_TAGS) languageTag else LANG_ES
         context.applicationContext
             .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
@@ -70,17 +93,16 @@ object LocaleHelper {
         )
     }
 
-    fun languageDisplayName(context: Context, languageTag: String): String {
-        return when (languageTag) {
-            LANG_EN -> context.getString(R.string.language_english)
-            else -> context.getString(R.string.language_spanish)
-        }
+    fun languageDisplayName(tag: String): String {
+        return SUPPORTED.find { it.tag == tag }?.label
+            ?: SUPPORTED.find { it.tag == LANG_ES }!!.label
     }
 
-    /**
-     * Context con el locale de la app (útil para diálogos / inflate
-     * cuando el Context base no refleja aún AppCompatDelegate).
-     */
+    @Suppress("UNUSED_PARAMETER")
+    fun languageDisplayName(context: Context, languageTag: String): String {
+        return languageDisplayName(languageTag)
+    }
+
     fun wrap(context: Context): Context {
         val tag = getLanguage(context)
         val locale = java.util.Locale.forLanguageTag(tag)

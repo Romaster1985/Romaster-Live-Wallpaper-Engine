@@ -3875,13 +3875,11 @@ private fun showFadeDurationDialog(
     }
 
     private fun showLanguageDialog() {
-        val languages = arrayOf(
-            getString(R.string.language_spanish),
-            getString(R.string.language_english)
-        )
-        val tags = arrayOf(LocaleHelper.LANG_ES, LocaleHelper.LANG_EN)
+        val options = LocaleHelper.SUPPORTED
+        val languages = options.map { it.label }.toTypedArray()
+        val tags = options.map { it.tag }.toTypedArray()
         val current = LocaleHelper.getLanguage(this)
-        val checked = tags.indexOf(current).coerceAtLeast(0)
+        val checked = tags.indexOf(current).let { if (it >= 0) it else tags.indexOf(LocaleHelper.LANG_ES) }.coerceAtLeast(0)
 
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(R.string.settings_language_dialog_title)
