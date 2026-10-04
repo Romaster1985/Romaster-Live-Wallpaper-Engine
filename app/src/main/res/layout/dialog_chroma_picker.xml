@@ -75,10 +75,19 @@
 
         <TextView
             android:id="@+id/textSelectedHex"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="#00FF00"
             android:layout_marginStart="12dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonEditHex"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:text="@string/color_edit_hex"/>
 
     </LinearLayout>
 

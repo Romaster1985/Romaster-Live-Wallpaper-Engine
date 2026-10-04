@@ -207,7 +207,7 @@ object ColorPickerDialog {
             .show()
     }
     
-    private fun showHexEditor(
+    fun showHexEditor(
 
         context: Context,
     
