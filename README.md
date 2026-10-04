@@ -8,7 +8,7 @@
 
 > Crea fondos animados con varias capas, chroma key, audio independiente, ping-pong, crossfade de loops, soft start, widgets de hora/batería/clima y comportamientos distintos cuando el teléfono está bloqueado o desbloqueado.
 
-**Versión actual:** `1.0.0-alpha3` (versionCode 3)
+**Versión actual:** `1.0.0-alpha4` (versionCode 4)
 
 <p align="center">
   <img src="pictures/imagen_1.png" alt="Editor con preview en vivo" width="280"/>
@@ -288,11 +288,13 @@ Claves de clima (`$wi(icon)$`) alineadas con KLWP:
 ---
 
 
-### Idiomas (ES / EN)
+### Idiomas
 
-- Selector de idioma en la pestaña **Settings** (Español / English)
-- Interfaz completa del editor, diálogos, toasts, galerías de wallpapers/fuentes/íconos y textos de progreso
+- Selector de idioma en la pestaña **Settings**
+- Idiomas: **Deutsch [DE]**, **English [EN]**, **Español [ES]**, **Français [FR]**, **Italiano [IT]**, **日本語 [JP]**, **Português [BR]**, **Русский [RU]**, **中文 [CN]**
+- Interfaz del editor, diálogos, toasts, galerías y textos de progreso traducidos
 - Cambio de idioma en caliente (recreación de Activity)
+- Condición climática `$wi(cond)$` traducida al idioma de la app (claves WMO + strings)
 - Etiquetas técnicas del panel de información del dispositivo se mantienen en inglés
 
 ### Chroma key (Video-OL)
@@ -317,6 +319,16 @@ Claves de clima (`$wi(icon)$`) alineadas con KLWP:
 
 
 ## Historial de versiones
+
+### 1.0.0-alpha4
+
+- **Más idiomas**: DE, EN, ES, FR, IT, JA, PT-BR, RU, ZH (selector ordenado alfabéticamente por etiqueta)
+- Portugués de Brasil **[BR]** añadido
+- Árabe retirado temporalmente (problemas de RTL / espejo de UI)
+- **`$wi(cond)$` localizado** según el idioma de la app (antes fijo en español)
+- Render de widgets en preview/wallpaper respeta el locale de la app (`LocaleHelper.wrap`)
+- Invalidación del cache de clima al cambiar de idioma
+- Botones de presets de fórmulas menos redondeados (esquinas ~6 dp) para evitar texto cortado
 
 ### 1.0.0-alpha3
 
