@@ -8,7 +8,7 @@
 
 > Crea fondos animados con varias capas, chroma key, audio independiente, ping-pong, crossfade de loops, soft start, widgets de hora/batería/clima y comportamientos distintos cuando el teléfono está bloqueado o desbloqueado.
 
-**Versión actual:** `1.0.0-alpha2` (versionCode 2)
+**Versión actual:** `1.0.0-alpha3` (versionCode 3)
 
 <p align="center">
   <img src="pictures/imagen_1.png" alt="Editor con preview en vivo" width="280"/>
@@ -287,6 +287,22 @@ Claves de clima (`$wi(icon)$`) alineadas con KLWP:
 
 ---
 
+
+### Idiomas (ES / EN)
+
+- Selector de idioma en la pestaña **Settings** (Español / English)
+- Interfaz completa del editor, diálogos, toasts, galerías de wallpapers/fuentes/íconos y textos de progreso
+- Cambio de idioma en caliente (recreación de Activity)
+- Etiquetas técnicas del panel de información del dispositivo se mantienen en inglés
+
+### Chroma key (Video-OL)
+
+- Selector de color sobre frames del video overlay
+- Botón **Editar HEX** para introducir el color manualmente
+- Muestreo denso de frames (`OPTION_CLOSEST`) al mover el slider de tiempo
+
+---
+
 ## Stack técnico
 
 - **Kotlin** + AndroidX (AppCompat, Material 3)  
@@ -296,6 +312,26 @@ Claves de clima (`$wi(icon)$`) alineadas con KLWP:
 - **ColorPickerView** (Skydoves)  
 - Procesado en segundo plano del reloj (bitmap buffer) y blur de backdrop  
 - Ciclo de vida del surface con generaciones de **RenderThread**  
+
+---
+
+
+## Historial de versiones
+
+### 1.0.0-alpha3
+
+- **Localización ES/EN** de casi toda la UI (tabs, diálogos, galerías, toasts, presets de fórmulas)
+- Tab **Settings**: idioma, limpiar fuentes, información del dispositivo, Acerca de
+- Mejoras en **Chroma color picker**: edición HEX y más frames al scrub del video
+- Diálogo de ejes de fuentes variables con texto enriquecido (HTML + scroll)
+- Correcciones de crashes en color picker / chroma picker (contexto de diálogos, Material Slider)
+
+### 1.0.0-alpha2
+
+- Widgets-OL (fórmulas, clima Open-Meteo, fuentes de íconos)
+- Crossfade de loops (Normal / Altern), ping-pong, soft/delay start ampliado
+- Reloj: cristal, reflejo, blur, fuentes variables, formato vertical HH/MM
+- Galerías de proyectos, fuentes e íconos (repo de temas)
 
 ---
 

@@ -21,9 +21,9 @@ android {
 
         targetSdk = 36
 
-        versionCode = 2
+        versionCode = 3
 
-        versionName = "1.0.0-alpha2"
+        versionName = "1.0.0-alpha3"
     }
 
     buildTypes {
