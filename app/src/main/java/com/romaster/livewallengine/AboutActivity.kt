@@ -38,9 +38,20 @@ class AboutActivity : AppCompatActivity() {
 
     private var videoView: VideoView? = null
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+
+
+        super.attachBaseContext(com.romaster.livewallengine.LocaleHelper.wrap(newBase))
+
+
+    }
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_about)
+        com.romaster.livewallengine.LocaleHelper.applyLtrLayout(this)
 
         videoView = findViewById(R.id.videoAboutBackground)
         setupBackgroundVideo()

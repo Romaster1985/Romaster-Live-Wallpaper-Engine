@@ -22,6 +22,7 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.content.Intent
 import android.net.Uri
+import android.content.Context
 import android.os.Bundle
 import android.os.Build
 import android.view.View
@@ -167,12 +168,15 @@ class MainActivity : AppCompatActivity() {
     
     var durationMs: Long = 0L
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         try {
-    
-            super.onCreate(savedInstanceState)
             LocaleHelper.applyStoredLocale(this)
+            super.onCreate(savedInstanceState)
             
             FileLogger.startNewSession(this)
             FileLogger.writeDeviceInfo(this)
@@ -180,6 +184,7 @@ class MainActivity : AppCompatActivity() {
             
             FileLogger.log(this, "1 - setContentView")
             setContentView(R.layout.activity_main)
+            LocaleHelper.applyLtrLayout(this)
     
             loadDeviceInformation()
             

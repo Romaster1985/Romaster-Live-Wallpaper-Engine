@@ -52,9 +52,20 @@ class FontGalleryActivity : AppCompatActivity() {
     /** Lista completa del repo (sin filtrar). */
     private var allFonts: List<GalleryFont> = emptyList()
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+
+
+        super.attachBaseContext(com.romaster.livewallengine.LocaleHelper.wrap(newBase))
+
+
+    }
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_font_gallery)
+        com.romaster.livewallengine.LocaleHelper.applyLtrLayout(this)
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbarGallery)
         toolbar.setNavigationOnClickListener { finish() }

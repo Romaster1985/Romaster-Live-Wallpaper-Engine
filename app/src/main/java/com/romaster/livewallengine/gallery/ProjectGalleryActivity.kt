@@ -52,9 +52,20 @@ class ProjectGalleryActivity : AppCompatActivity() {
     private lateinit var textError: TextView
     private lateinit var adapter: GalleryProjectAdapter
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+
+
+        super.attachBaseContext(com.romaster.livewallengine.LocaleHelper.wrap(newBase))
+
+
+    }
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gallery)
+        com.romaster.livewallengine.LocaleHelper.applyLtrLayout(this)
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbarGallery)
         toolbar.setNavigationOnClickListener { finish() }

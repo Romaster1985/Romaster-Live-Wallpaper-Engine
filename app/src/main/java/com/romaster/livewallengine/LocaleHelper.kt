@@ -18,16 +18,24 @@
 
 package com.romaster.livewallengine
 
+import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
+import android.os.LocaleList
+import android.view.View
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import java.util.Locale
 
 /**
  * Preferencia de idioma de la app (independiente del idioma del sistema).
- * Recursos: values/ (ES por defecto) y values-<tag>/ para el resto.
  *
- * Lista en orden alfabético por abreviatura:
- * AR, CN, DE, EN, ES, FR, IT, JP, RU
+ * Importante sobre el árabe y otros idiomas RTL:
+ * - Se cargan los strings del locale (p.ej. values-ar/).
+ * - La UI **no** se espeja: el layout se fuerza siempre a LTR.
+ *   El texto árabe sigue leyéndose de derecha a izquierda dentro de cada
+ *   TextView gracias al algoritmo bidireccional de Unicode, sin invertir
+ *   tabs, sliders ni la estructura de la app.
  */
 object LocaleHelper {
 
@@ -103,12 +111,28 @@ object LocaleHelper {
         return languageDisplayName(languageTag)
     }
 
+    /**
+     * Context con el locale de la app para recursos/strings, pero con
+     * dirección de layout **siempre LTR** (no espeja la UI en árabe).
+     */
     fun wrap(context: Context): Context {
         val tag = getLanguage(context)
-        val locale = java.util.Locale.forLanguageTag(tag)
-        val config = android.content.res.Configuration(context.resources.configuration)
+        val locale = Locale.forLanguageTag(tag)
+        val config = Configuration(context.resources.configuration)
         config.setLocale(locale)
-        config.setLocales(android.os.LocaleList(locale))
+        config.setLocales(LocaleList(locale))
+        // Forzar LTR aunque el idioma sea RTL (árabe, etc.)
+        config.setLayoutDirection(Locale.ENGLISH)
         return context.createConfigurationContext(config)
+    }
+
+    /**
+     * Fuerza LTR en la ventana de una Activity (tabs, sliders, menús, etc.).
+     * Llamar tras [Activity.setContentView].
+     */
+    fun applyLtrLayout(activity: Activity) {
+        activity.window?.decorView?.layoutDirection = View.LAYOUT_DIRECTION_LTR
+        activity.findViewById<View>(android.R.id.content)?.layoutDirection =
+            View.LAYOUT_DIRECTION_LTR
     }
 }

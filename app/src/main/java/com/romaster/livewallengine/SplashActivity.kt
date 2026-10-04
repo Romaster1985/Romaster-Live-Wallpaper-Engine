@@ -40,10 +40,21 @@ class SplashActivity : AppCompatActivity() {
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+
+
+        super.attachBaseContext(com.romaster.livewallengine.LocaleHelper.wrap(newBase))
+
+
+    }
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         LocaleHelper.applyStoredLocale(this)
         setContentView(R.layout.activity_splash)
+        com.romaster.livewallengine.LocaleHelper.applyLtrLayout(this)
         // Tiempo visible del splash (ms). Ajustable.
         handler.postDelayed(goNext, SPLASH_DURATION_MS)
     }
