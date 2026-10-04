@@ -54,8 +54,7 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         LocaleHelper.applyStoredLocale(this)
         setContentView(R.layout.activity_splash)
-        com.romaster.livewallengine.LocaleHelper.applyLtrLayout(this)
-        // Tiempo visible del splash (ms). Ajustable.
+// Tiempo visible del splash (ms). Ajustable.
         handler.postDelayed(goNext, SPLASH_DURATION_MS)
     }
 

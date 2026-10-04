@@ -18,31 +18,29 @@
 
 package com.romaster.livewallengine
 
-import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
 import android.os.LocaleList
-import android.view.View
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import java.util.Locale
 
 /**
  * Preferencia de idioma de la app (independiente del idioma del sistema).
+ * Recursos: values/ (ES por defecto) y values-<tag>/ para el resto.
  *
- * Importante sobre el árabe y otros idiomas RTL:
- * - Se cargan los strings del locale (p.ej. values-ar/).
- * - La UI **no** se espeja: el layout se fuerza siempre a LTR.
- *   El texto árabe sigue leyéndose de derecha a izquierda dentro de cada
- *   TextView gracias al algoritmo bidireccional de Unicode, sin invertir
- *   tabs, sliders ni la estructura de la app.
+ * Lista en orden alfabético por abreviatura:
+ * BR, CN, DE, EN, ES, FR, IT, JP, RU
+ *
+ * Portugués de Brasil usa el tag BCP-47 [pt-BR] y la carpeta
+ * res/values-pt-rBR/.
  */
 object LocaleHelper {
 
     private const val PREFS = "app_settings"
     private const val KEY_LANGUAGE = "language"
 
-    const val LANG_AR = "ar"
+    const val LANG_PT_BR = "pt-BR" // Português [BR]
     const val LANG_ZH = "zh" // 中文 [CN]
     const val LANG_DE = "de"
     const val LANG_EN = "en"
@@ -54,13 +52,13 @@ object LocaleHelper {
 
     data class LanguageOption(
         val tag: String,
-        /** Nombre en el idioma propio + abreviatura, p.ej. "日本語 [JP]" */
+        /** Nombre en el idioma propio + abreviatura, p.ej. "Português [BR]" */
         val label: String
     )
 
-    /** Orden alfabético por abreviatura: AR → CN → DE → EN → ES → FR → IT → JP → RU */
+    /** Orden alfabético por abreviatura: BR → CN → DE → EN → ES → FR → IT → JP → RU */
     val SUPPORTED: List<LanguageOption> = listOf(
-        LanguageOption(LANG_AR, "العربية [AR]"),
+        LanguageOption(LANG_PT_BR, "Português [BR]"),
         LanguageOption(LANG_ZH, "中文 [CN]"),
         LanguageOption(LANG_DE, "Deutsch [DE]"),
         LanguageOption(LANG_EN, "English [EN]"),
@@ -78,6 +76,7 @@ object LocaleHelper {
             .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getString(KEY_LANGUAGE, LANG_ES)
             ?: LANG_ES
+        // Tags retirados (p.ej. "ar") u otros desconocidos → español
         return if (stored in SUPPORTED_TAGS) stored else LANG_ES
     }
 
@@ -112,8 +111,8 @@ object LocaleHelper {
     }
 
     /**
-     * Context con el locale de la app para recursos/strings, pero con
-     * dirección de layout **siempre LTR** (no espeja la UI en árabe).
+     * Context con el locale de la app (útil para diálogos / inflate
+     * cuando el Context base no refleja aún AppCompatDelegate).
      */
     fun wrap(context: Context): Context {
         val tag = getLanguage(context)
@@ -121,18 +120,6 @@ object LocaleHelper {
         val config = Configuration(context.resources.configuration)
         config.setLocale(locale)
         config.setLocales(LocaleList(locale))
-        // Forzar LTR aunque el idioma sea RTL (árabe, etc.)
-        config.setLayoutDirection(Locale.ENGLISH)
         return context.createConfigurationContext(config)
-    }
-
-    /**
-     * Fuerza LTR en la ventana de una Activity (tabs, sliders, menús, etc.).
-     * Llamar tras [Activity.setContentView].
-     */
-    fun applyLtrLayout(activity: Activity) {
-        activity.window?.decorView?.layoutDirection = View.LAYOUT_DIRECTION_LTR
-        activity.findViewById<View>(android.R.id.content)?.layoutDirection =
-            View.LAYOUT_DIRECTION_LTR
     }
 }

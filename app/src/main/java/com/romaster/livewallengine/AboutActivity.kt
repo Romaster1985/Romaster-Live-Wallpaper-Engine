@@ -51,9 +51,7 @@ class AboutActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_about)
-        com.romaster.livewallengine.LocaleHelper.applyLtrLayout(this)
-
-        videoView = findViewById(R.id.videoAboutBackground)
+videoView = findViewById(R.id.videoAboutBackground)
         setupBackgroundVideo()
 
         findViewById<TextView>(R.id.textAboutVersion).text =

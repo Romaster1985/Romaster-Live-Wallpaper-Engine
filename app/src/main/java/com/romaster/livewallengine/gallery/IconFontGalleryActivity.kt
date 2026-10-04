@@ -87,9 +87,7 @@ class IconFontGalleryActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_font_gallery)
-        com.romaster.livewallengine.LocaleHelper.applyLtrLayout(this)
-
-        val toolbar = findViewById<MaterialToolbar>(R.id.toolbarGallery)
+val toolbar = findViewById<MaterialToolbar>(R.id.toolbarGallery)
         toolbar.title = getString(R.string.icon_gallery_title)
         toolbar.setNavigationOnClickListener { finish() }
 

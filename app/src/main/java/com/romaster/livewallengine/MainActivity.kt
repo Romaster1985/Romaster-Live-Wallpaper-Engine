@@ -184,9 +184,7 @@ class MainActivity : AppCompatActivity() {
             
             FileLogger.log(this, "1 - setContentView")
             setContentView(R.layout.activity_main)
-            LocaleHelper.applyLtrLayout(this)
-    
-            loadDeviceInformation()
+loadDeviceInformation()
             
             setupPreviewSize()
     
