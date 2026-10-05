@@ -3646,6 +3646,19 @@ private fun showFadeDurationDialog(
             }
         })
 
+        val cbLauncherFadeOut = com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = getString(R.string.enable_launcher_fade_out)
+            isChecked = layer.enableLauncherFadeOut
+            visibility = if (layer.disableOnLauncher) View.VISIBLE else View.GONE
+            setPadding((16 * density).toInt(), (2 * density).toInt(), 0, 0)
+            setOnCheckedChangeListener { _, checked ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                liveLayer()?.enableLauncherFadeOut = checked
+                editor.save()
+                notifyImageLayersChanged()
+            }
+        }
+
         root.addView(com.google.android.material.checkbox.MaterialCheckBox(this).apply {
             text = getString(R.string.disable_on_launcher)
             isChecked = layer.disableOnLauncher
@@ -3653,10 +3666,16 @@ private fun showFadeDurationDialog(
             setOnCheckedChangeListener { _, checked ->
                 if (loadingUI) return@setOnCheckedChangeListener
                 liveLayer()?.disableOnLauncher = checked
+                if (!checked) {
+                    liveLayer()?.enableLauncherFadeOut = false
+                    cbLauncherFadeOut.isChecked = false
+                }
+                cbLauncherFadeOut.visibility = if (checked) View.VISIBLE else View.GONE
                 editor.save()
                 notifyImageLayersChanged()
             }
         })
+        root.addView(cbLauncherFadeOut)
 
         // Ubicación en el stack de capas
         val btnPos = com.google.android.material.button.MaterialButton(this).apply {

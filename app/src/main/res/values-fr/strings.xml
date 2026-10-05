@@ -277,6 +277,7 @@
     <string name="pics_file_label">Fichier : %1$s</string>
     <string name="pics_file_none">(aucun)</string>
     <string name="disable_on_launcher">Désactiver sur le lanceur (déverrouillé)</string>
+    <string name="enable_launcher_fade_out">Activer le fondu de sortie (durée soft start)</string>
     <string name="pics_select_layer_pos">Choisir la position du calque</string>
     <string name="label_transparency">Transparence</string>
     <string name="pics_layer_pos_title">Position du calque image %1$d</string>

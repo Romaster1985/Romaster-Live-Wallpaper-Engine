@@ -378,6 +378,21 @@ class WallpaperPreviewView @JvmOverloads constructor(
                         }
                         val lockedNow =
                             ProjectManager.getProject().previewLocked
+
+                        // Tras recrear el surface forceHidden queda vacío: re-sincronizar
+                        // Pics-OL / Widgets-OL con el estado de bloqueo simulado actual
+                        // (evita que capas "Deshabilitar en Launcher" reaparezcan al volver a la app).
+                        if (lockedNow) {
+                            renderer?.startImageLayersSoftStartOnLock()
+                            renderer?.startWidgetLayersSoftStartOnLock()
+                        } else {
+                            renderer?.setImageLayersLockState(false)
+                            renderer?.setWidgetLayersLockState(false)
+                            renderer?.startImageLayersSoftStart()
+                            renderer?.startWidgetLayersSoftStart()
+                        }
+                        lastPreviewLocked = lockedNow
+
                         if (lockedNow) {
                             val hideOnLock =
                                 ProjectManager.getProject()

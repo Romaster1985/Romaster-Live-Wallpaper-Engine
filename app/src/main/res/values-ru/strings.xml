@@ -277,6 +277,7 @@
     <string name="pics_file_label">Файл: %1$s</string>
     <string name="pics_file_none">(нет)</string>
     <string name="disable_on_launcher">Отключить на рабочем столе (разблокирован)</string>
+    <string name="enable_launcher_fade_out">Включить fade-out (время soft start)</string>
     <string name="pics_select_layer_pos">Выбрать позицию слоя</string>
     <string name="label_transparency">Прозрачность</string>
     <string name="pics_layer_pos_title">Позиция слоя изображения %1$d</string>

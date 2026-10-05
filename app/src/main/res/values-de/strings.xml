@@ -277,6 +277,7 @@
     <string name="pics_file_label">Datei: %1$s</string>
     <string name="pics_file_none">(keine)</string>
     <string name="disable_on_launcher">Im Launcher deaktivieren (entsperrt)</string>
+    <string name="enable_launcher_fade_out">Fade-out aktivieren (nutzt Soft-Start-Zeit)</string>
     <string name="pics_select_layer_pos">Ebenenposition wählen</string>
     <string name="label_transparency">Transparenz</string>
     <string name="pics_layer_pos_title">Position Bildebenen %1$d</string>

@@ -63,6 +63,13 @@ data class ImageLayer(
      */
     var disableOnLauncher: Boolean = false,
 
+    /**
+     * Solo aplica si [disableOnLauncher] es true.
+     * Al pasar de bloqueado → desbloqueado, en lugar de ocultar de golpe
+     * hace fade-out con la duración de [fadeDurationMs] (mismo tiempo que Soft Start).
+     */
+    var enableLauncherFadeOut: Boolean = false,
+
     /** Soft Start propio en ms */
     var fadeDurationMs: Long = 1000L,
 

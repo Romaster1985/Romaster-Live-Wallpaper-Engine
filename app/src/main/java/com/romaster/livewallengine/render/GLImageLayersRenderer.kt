@@ -53,6 +53,8 @@ class GLImageLayersRenderer {
     private val movieStart = mutableMapOf<String, Long>()
     private val bitmapSize = mutableMapOf<String, Pair<Int, Int>>()
     private val fadeStartTimes = mutableMapOf<String, Long>()
+    /** Fade-out al ocultar en launcher (desbloqueo) cuando enableLauncherFadeOut. */
+    private val fadeOutStartTimes = mutableMapOf<String, Long>()
     private val forceHidden = mutableMapOf<String, Boolean>()
 
     private var screenW = 1
@@ -200,12 +202,14 @@ class GLImageLayersRenderer {
         val now = android.os.SystemClock.elapsedRealtime()
         for (layer in layers) {
             if (forceHidden[layer.id] == true) continue
+            if (fadeOutStartTimes.containsKey(layer.id)) continue
             fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
         }
     }
 
     fun startSoftStart(id: String) {
         if (forceHidden[id] == true) return
+        if (fadeOutStartTimes.containsKey(id)) return
         val layer = ProjectManager.getProject().imageLayers.find { it.id == id }
         val delay = layer?.delayStartMs?.coerceAtLeast(0L) ?: 0L
         fadeStartTimes[id] = android.os.SystemClock.elapsedRealtime() + delay
@@ -219,16 +223,22 @@ class GLImageLayersRenderer {
     }
 
     /**
-     * Igual que Widgets-OL:
-     * - disableOnLockScreen → oculto en bloqueo
-     * - disableOnLauncher → oculto en launcher (desbloqueado)
+     * Sincroniza visibilidad con el estado de bloqueo actual (sin animación).
+     * Usar al recrear surface / cambio de proyecto. El fade-out de desbloqueo
+     * se hace en [revealAfterUnlock].
      */
     fun applyLockScreenState(deviceLocked: Boolean) {
         val layers = ProjectManager.getProject().imageLayers
         for (layer in layers) {
             val show = shouldShow(layer, deviceLocked)
             forceHidden[layer.id] = !show
-            if (!show) fadeStartTimes.remove(layer.id)
+            if (!show) {
+                fadeStartTimes.remove(layer.id)
+                fadeOutStartTimes.remove(layer.id)
+            } else {
+                // Visible: cancelar cualquier fade-out pendiente
+                fadeOutStartTimes.remove(layer.id)
+            }
         }
     }
 
@@ -239,10 +249,12 @@ class GLImageLayersRenderer {
         for (layer in layers) {
             if (shouldShow(layer, deviceLocked = true)) {
                 forceHidden[layer.id] = false
+                fadeOutStartTimes.remove(layer.id)
                 fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
             } else {
                 forceHidden[layer.id] = true
                 fadeStartTimes.remove(layer.id)
+                fadeOutStartTimes.remove(layer.id)
             }
         }
     }
@@ -251,17 +263,27 @@ class GLImageLayersRenderer {
      * Al desbloquear:
      * - visible en lock y launcher → sin re-fade
      * - oculto en lock (disableOnLockScreen) y visible en launcher → Soft Start
-     * - oculto en launcher (disableOnLauncher) → hidden
+     * - oculto en launcher (disableOnLauncher):
+     *     - enableLauncherFadeOut → fade-out con [ImageLayer.fadeDurationMs]
+     *     - si no → ocultar de inmediato
      */
     fun revealAfterUnlock() {
         val layers = ProjectManager.getProject().imageLayers
         val now = android.os.SystemClock.elapsedRealtime()
         for (layer in layers) {
             if (!shouldShow(layer, deviceLocked = false)) {
-                forceHidden[layer.id] = true
                 fadeStartTimes.remove(layer.id)
+                if (layer.disableOnLauncher && layer.enableLauncherFadeOut) {
+                    // Seguir dibujando mientras hace fade-out
+                    forceHidden[layer.id] = false
+                    fadeOutStartTimes[layer.id] = now
+                } else {
+                    forceHidden[layer.id] = true
+                    fadeOutStartTimes.remove(layer.id)
+                }
             } else {
                 forceHidden[layer.id] = false
+                fadeOutStartTimes.remove(layer.id)
                 if (layer.disableOnLockScreen) {
                     fadeStartTimes[layer.id] = now + layer.delayStartMs.coerceAtLeast(0L)
                 } else {
@@ -279,6 +301,7 @@ class GLImageLayersRenderer {
     }
 
     private fun drawLayer(layer: ImageLayer) {
+        // Durante fade-out forceHidden se mantiene false hasta alpha≈0
         if (forceHidden[layer.id] == true) return
         val tex = textures[layer.id] ?: return
 
@@ -375,18 +398,33 @@ class GLImageLayersRenderer {
         }
     }
 
-    fun isFadeComplete(): Boolean = fadeStartTimes.isEmpty()
+    fun isFadeComplete(): Boolean =
+        fadeStartTimes.isEmpty() && fadeOutStartTimes.isEmpty()
 
     private fun layerFadeAlpha(layer: ImageLayer): Float {
-        val start = fadeStartTimes[layer.id] ?: return 1f
         val now = android.os.SystemClock.elapsedRealtime()
-        // Delay Start: start guarda el instante en que debe comenzar el fade
+        // Fade-out (launcher): 1 → 0 y luego forceHidden
+        fadeOutStartTimes[layer.id]?.let { start ->
+            val dur = layer.fadeDurationMs.coerceAtLeast(1L)
+            if (now < start) return 1f
+            val elapsed = now - start
+            val a = 1f - (elapsed.toFloat() / dur.toFloat()).coerceIn(0f, 1f)
+            if (a <= 0.001f) {
+                fadeOutStartTimes.remove(layer.id)
+                forceHidden[layer.id] = true
+                return 0f
+            }
+            return a
+        }
+        val start = fadeStartTimes[layer.id] ?: return 1f
+        // Delay Start: start guarda el instante en que debe comenzar el fade-in
         if (now < start) return 0f
         val dur = layer.fadeDurationMs.coerceAtLeast(1L)
         val elapsed = now - start
         val a = (elapsed.toFloat() / dur.toFloat()).coerceIn(0f, 1f)
         if (a >= 1f) fadeStartTimes.remove(layer.id)
         return a
+
     }
 
     private fun compile(type: Int, code: String): Int {

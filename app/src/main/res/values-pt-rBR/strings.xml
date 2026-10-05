@@ -277,6 +277,7 @@
     <string name="pics_file_label">Arquivo: %1$s</string>
     <string name="pics_file_none">(nenhum)</string>
     <string name="disable_on_launcher">Desativar no launcher (desbloqueado)</string>
+    <string name="enable_launcher_fade_out">Ativar fade-out (usa tempo de soft start)</string>
     <string name="pics_select_layer_pos">Selecionar posição da camada</string>
     <string name="label_transparency">Transparência</string>
     <string name="pics_layer_pos_title">Posição da camada de imagem %1$d</string>

@@ -277,6 +277,7 @@
     <string name="pics_file_label">ファイル: %1$s</string>
     <string name="pics_file_none">(なし)</string>
     <string name="disable_on_launcher">ランチャーで無効（ロック解除時）</string>
+    <string name="enable_launcher_fade_out">フェードアウトを有効化（ソフトスタート時間を使用）</string>
     <string name="pics_select_layer_pos">レイヤー位置を選択</string>
     <string name="label_transparency">透明度</string>
     <string name="pics_layer_pos_title">画像レイヤー位置 %1$d</string>

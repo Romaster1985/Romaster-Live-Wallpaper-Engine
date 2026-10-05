@@ -306,6 +306,7 @@ Maximum allowed for this loop: %1$d ms.</string>
     <string name="pics_file_label">File: %1$s</string>
     <string name="pics_file_none">(none)</string>
     <string name="disable_on_launcher">Disable on Launcher (Unlocked)</string>
+    <string name="enable_launcher_fade_out">Enable fade-out (uses soft start time)</string>
     <string name="pics_select_layer_pos">Select layer position</string>
     <string name="label_transparency">Transparency</string>
     <string name="pics_layer_pos_title">Image layer position %1$d</string>

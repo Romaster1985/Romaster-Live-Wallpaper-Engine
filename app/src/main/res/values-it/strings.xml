@@ -277,6 +277,7 @@
     <string name="pics_file_label">File: %1$s</string>
     <string name="pics_file_none">(nessuno)</string>
     <string name="disable_on_launcher">Disattiva su launcher (sbloccato)</string>
+    <string name="enable_launcher_fade_out">Abilita fade-out (usa tempo soft start)</string>
     <string name="pics_select_layer_pos">Seleziona posizione livello</string>
     <string name="label_transparency">Trasparenza</string>
     <string name="pics_layer_pos_title">Posizione livello immagine %1$d</string>
