@@ -19,6 +19,7 @@
 package com.romaster.livewallengine.project
 
 import com.romaster.livewallengine.model.WallpaperProject
+import com.romaster.livewallengine.model.PositionCoords
 
 object ProjectManager {
 
@@ -44,11 +45,9 @@ object ProjectManager {
     fun setProject(
         project: WallpaperProject
     ) {
-
+        migratePositions(project)
         currentProject = project
-
         revision++
-
     }
 
     fun resetProject() {
@@ -83,5 +82,51 @@ object ProjectManager {
     fun getRevision(): Int {
         return revision
     }
+
+
+    /**
+     * Convierte posiciones normalizadas antiguas (centro 0.5) de reloj/imágenes/widgets
+     * al sistema unificado centro=0 en % (-200..200). Video-BG/OL no se tocan.
+     */
+    private fun migratePositions(project: WallpaperProject) {
+        if (project.positionCoordSpace >= 1) {
+            project.clock.x = PositionCoords.clamp(project.clock.x)
+            project.clock.y = PositionCoords.clamp(project.clock.y)
+            for (layer in project.imageLayers) {
+                layer.x = PositionCoords.clamp(layer.x)
+                layer.y = PositionCoords.clamp(layer.y)
+            }
+            for (layer in project.widgetLayers) {
+                layer.x = PositionCoords.clamp(layer.x)
+                layer.y = PositionCoords.clamp(layer.y)
+            }
+            for (layer in project.layers) {
+                layer.x = PositionCoords.clamp(layer.x)
+                layer.y = PositionCoords.clamp(layer.y)
+            }
+            project.overlay.x = PositionCoords.clamp(project.overlay.x)
+            project.overlay.y = PositionCoords.clamp(project.overlay.y)
+            return
+        }
+        // Legacy: normalizado centro 0.5 → % centro 0
+        project.clock.x = PositionCoords.fromLegacyNormalized(project.clock.x)
+        project.clock.y = PositionCoords.fromLegacyNormalized(project.clock.y)
+        for (layer in project.imageLayers) {
+            layer.x = PositionCoords.fromLegacyNormalized(layer.x)
+            layer.y = PositionCoords.fromLegacyNormalized(layer.y)
+        }
+        for (layer in project.widgetLayers) {
+            layer.x = PositionCoords.fromLegacyNormalized(layer.x)
+            layer.y = PositionCoords.fromLegacyNormalized(layer.y)
+        }
+        for (layer in project.layers) {
+            layer.x = PositionCoords.clamp(layer.x)
+            layer.y = PositionCoords.clamp(layer.y)
+        }
+        project.overlay.x = PositionCoords.clamp(project.overlay.x)
+        project.overlay.y = PositionCoords.clamp(project.overlay.y)
+        project.positionCoordSpace = 1
+    }
+
 
 }

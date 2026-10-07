@@ -327,8 +327,8 @@
                     android:id="@+id/sliderVideoPosX"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="-100"
-                    android:valueTo="100"/>
+                    android:valueFrom="-200"
+                    android:valueTo="200"/>
 
                 <!-- Posición Y -->
 
@@ -355,8 +355,8 @@
                     android:id="@+id/sliderVideoPosY"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="-100"
-                    android:valueTo="100"/>
+                    android:valueFrom="-200"
+                    android:valueTo="200"/>
 
             </LinearLayout>
 

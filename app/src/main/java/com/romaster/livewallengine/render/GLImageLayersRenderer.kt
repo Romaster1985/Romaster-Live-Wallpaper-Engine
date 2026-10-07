@@ -29,6 +29,7 @@ import android.opengl.Matrix
 import com.romaster.livewallengine.image.ImageStorage
 import com.romaster.livewallengine.model.ImageLayer
 import com.romaster.livewallengine.project.ProjectManager
+import com.romaster.livewallengine.animation.AnimationEngine
 import java.io.FileInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -332,21 +333,22 @@ class GLImageLayersRenderer {
             baseScaleY = 1f
         }
 
-        val zoom = layer.zoom.coerceIn(0.05f, 10f)
+        val anim = AnimationEngine.stateForImage(layer.id)
+        val zoom = (layer.zoom * anim.zoomMul).coerceIn(0.05f, 20f)
         val scaleX = baseScaleX * zoom
         val scaleY = baseScaleY * zoom
 
-        // x,y 0..1 → NDC (centro de pantalla = 0.5)
-        val tx = (layer.x.coerceIn(0f, 1f) - 0.5f) * 2f * screenRatio
-        val ty = (0.5f - layer.y.coerceIn(0f, 1f)) * 2f
+        // x,y: centro=0 en % de pantalla (-200..200); offset anim en fracción de pantalla
+        val tx2 = (layer.x / 100f) * screenRatio + anim.offsetXNorm * 2f * screenRatio
+        val ty2 = -(layer.y / 100f) - anim.offsetYNorm * 2f
 
         val mvp = FloatArray(16)
         val proj = FloatArray(16)
         val model = FloatArray(16)
         Matrix.orthoM(proj, 0, -screenRatio, screenRatio, -1f, 1f, -1f, 1f)
         Matrix.setIdentityM(model, 0)
-        Matrix.translateM(model, 0, tx, ty, 0f)
-        Matrix.rotateM(model, 0, layer.rotation, 0f, 0f, 1f)
+        Matrix.translateM(model, 0, tx2, ty2, 0f)
+        Matrix.rotateM(model, 0, layer.rotation + anim.rotationDeg, 0f, 0f, 1f)
         Matrix.scaleM(model, 0, scaleX, scaleY, 1f)
         Matrix.multiplyMM(mvp, 0, proj, 0, model, 0)
 
@@ -364,7 +366,11 @@ class GLImageLayersRenderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         tex.bind(0)
         GLES20.glUniform1i(samplerHandle, 0)
-        GLES20.glUniform1f(alphaHandle, (layer.opacity * fadeAlpha).coerceIn(0f, 1f))
+        GLES20.glUniform1f(
+            alphaHandle,
+            (layer.opacity * fadeAlpha * anim.alphaMul).coerceIn(0f, 1f)
+        )
+
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0)
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)

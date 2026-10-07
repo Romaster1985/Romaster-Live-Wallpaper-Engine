@@ -32,6 +32,7 @@ import com.romaster.livewallengine.model.CueMode
 object DefaultProject {
 
     private val factoryProject = WallpaperProject(
+            positionCoordSpace = 1,
 
         wallpaperVideo = null,
 
@@ -117,8 +118,8 @@ object DefaultProject {
             clockSize = 64f,
             dateSize = 32f,
 
-            x = 0.5f,
-            y = 0.5f,
+            x = 0f,
+            y = 0f,
 
             alignment = TextAlignment.CENTER,
 
@@ -154,6 +155,8 @@ object DefaultProject {
             imageLayers = mutableListOf(),
 
             widgetLayers = mutableListOf(),
+
+            animationLayers = mutableListOf(),
 
             layerStack = mutableListOf()
 

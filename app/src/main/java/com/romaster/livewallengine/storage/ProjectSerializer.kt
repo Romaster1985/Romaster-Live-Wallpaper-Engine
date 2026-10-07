@@ -20,6 +20,7 @@ package com.romaster.livewallengine.storage
 
 import com.romaster.livewallengine.model.WallpaperProject
 import kotlinx.serialization.json.Json
+import com.romaster.livewallengine.model.PositionCoords
 
 object ProjectSerializer {
 
@@ -43,10 +44,31 @@ object ProjectSerializer {
     fun decode(
         text: String
     ): WallpaperProject {
-
-        return json.decodeFromString(
+        val project = json.decodeFromString(
             WallpaperProject.serializer(),
             text
         )
+        // Migración aplicada también vía ProjectManager.setProject;
+        // aquí se cubre load directo desde StorageManager.
+        if (project.positionCoordSpace < 1) {
+            project.clock.x = PositionCoords.fromLegacyNormalized(project.clock.x)
+            project.clock.y = PositionCoords.fromLegacyNormalized(project.clock.y)
+            for (layer in project.imageLayers) {
+                layer.x = PositionCoords.fromLegacyNormalized(layer.x)
+                layer.y = PositionCoords.fromLegacyNormalized(layer.y)
+            }
+            for (layer in project.widgetLayers) {
+                layer.x = PositionCoords.fromLegacyNormalized(layer.x)
+                layer.y = PositionCoords.fromLegacyNormalized(layer.y)
+            }
+            for (layer in project.layers) {
+                layer.x = PositionCoords.clamp(layer.x)
+                layer.y = PositionCoords.clamp(layer.y)
+            }
+            project.overlay.x = PositionCoords.clamp(project.overlay.x)
+            project.overlay.y = PositionCoords.clamp(project.overlay.y)
+            project.positionCoordSpace = 1
+        }
+        return project
     }
 }

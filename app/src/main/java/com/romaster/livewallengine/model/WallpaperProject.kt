@@ -25,6 +25,9 @@ data class WallpaperProject(
 
     var version: Int = 1,
 
+    /** 0 = posiciones legacy normalizadas (centro 0.5); 1 = centro 0 en % (-200..200) */
+    var positionCoordSpace: Int = 0,
+
     var wallpaperVideo: String? = null,
 
     var overlayVideo: String? = null,
@@ -41,6 +44,10 @@ data class WallpaperProject(
 
     /** Capas de widgets de texto/fórmula (Widgets-OL). */
     var widgetLayers: MutableList<WidgetLayer> =
+        mutableListOf(),
+
+    /** Reglas de animación (tab Animaciones). */
+    var animationLayers: MutableList<AnimationLayer> =
         mutableListOf(),
 
     /**

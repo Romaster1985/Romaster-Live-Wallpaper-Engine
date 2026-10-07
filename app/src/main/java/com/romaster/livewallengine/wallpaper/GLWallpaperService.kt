@@ -28,6 +28,7 @@ import com.romaster.livewallengine.audio.WallpaperSoundPlayer
 import com.romaster.livewallengine.debug.FileLogger
 import com.romaster.livewallengine.model.CueMode
 import com.romaster.livewallengine.project.ProjectManager
+import com.romaster.livewallengine.animation.AnimationEngine
 import com.romaster.livewallengine.render.GLRenderer
 import com.romaster.livewallengine.video.CueLoopController
 import com.romaster.livewallengine.video.OverlayPlaybackDirection
@@ -351,6 +352,14 @@ class GLWallpaperService : WallpaperService() {
                 "onVisibilityChanged($visible)"
             )
 
+            try {
+                AnimationEngine.notifyWallpaperVisibility(
+                    visible,
+                    ProjectManager.getProject()
+                )
+            } catch (_: Exception) {
+            }
+
             if (visible) {
 
                 /*
@@ -371,6 +380,26 @@ class GLWallpaperService : WallpaperService() {
         // ============================================
         // SURFACE DESTROYED
         // ============================================
+
+        override fun onOffsetsChanged(
+            xOffset: Float,
+            yOffset: Float,
+            xOffsetStep: Float,
+            yOffsetStep: Float,
+            xPixelOffset: Int,
+            yPixelOffset: Int
+        ) {
+            super.onOffsetsChanged(
+                xOffset, yOffset, xOffsetStep, yOffsetStep, xPixelOffset, yPixelOffset
+            )
+            // Página del launcher: 0 = home, ±1 pantallas vecinas, etc.
+            val page = if (xOffsetStep > 0.0001f) {
+                Math.round(xOffset / xOffsetStep)
+            } else {
+                0
+            }
+            AnimationEngine.setHomeScreenPage(page)
+        }
 
         override fun onSurfaceDestroyed(
             holder: SurfaceHolder
@@ -1400,6 +1429,10 @@ class GLWallpaperService : WallpaperService() {
                             // Dibujar
                             // --------------------------------
 
+                            // Animaciones: bloqueo real + visibilidad + página launcher
+                            renderer?.animDeviceLocked = deviceLocked
+                            renderer?.animWallpaperVisible = visible
+                            renderer?.animHomePage = AnimationEngine.homeScreenPage()
                             renderer?.drawFrame()
 
                             frameCount++

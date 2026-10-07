@@ -72,9 +72,9 @@ data class ClockSettings(
 
     var alignment: TextAlignment = TextAlignment.CENTER,
 
-    var x: Float = 0.5f,
+    var x: Float = 0.5f, // default legacy (centro 0.5); DefaultProject pone 0
 
-    var y: Float = 0.5f,
+    var y: Float = 0.5f, // default legacy (centro 0.5); DefaultProject pone 0
 
     var dateSpacing: Float = 20f,
     

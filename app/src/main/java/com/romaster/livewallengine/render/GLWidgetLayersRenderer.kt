@@ -35,6 +35,7 @@ import com.romaster.livewallengine.model.TextAlignment
 import com.romaster.livewallengine.model.VerticalAlignment
 import com.romaster.livewallengine.model.WidgetLayer
 import com.romaster.livewallengine.project.ProjectManager
+import com.romaster.livewallengine.animation.AnimationEngine
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -177,18 +178,23 @@ class GLWidgetLayersRenderer {
         val (bw, bh) = size
         if (bw <= 0 || bh <= 0) return
 
+        val anim = AnimationEngine.stateForWidget(layer.id)
+        val alphaAnim = (alpha * anim.alphaMul).coerceIn(0f, 1f)
+        if (alphaAnim < 0.01f) return
+
         // Misma proyección ortográfica que Pics-OL para no deformar al rotar.
         // Escala en unidades de altura de pantalla → aspect ratio del bitmap se conserva.
         val screenRatio = screenW.toFloat() / screenH.toFloat().coerceAtLeast(1f)
-        val zoom = layer.zoom.coerceIn(0.05f, 10f)
+        val zoom = (layer.zoom * anim.zoomMul).coerceIn(0.05f, 20f)
         val scaleX = (bw.toFloat() / screenH) * zoom
         val scaleY = (bh.toFloat() / screenH) * zoom
 
         // Ancla de posición según alineación (el "cero" de X/Y):
         // LEFT/CENTER/RIGHT → borde izq / centro / borde der del bitmap
         // TOP/MIDDLE/BOTTOM → borde sup / centro / borde inf
-        val anchorX = (layer.x.coerceIn(0f, 1f) - 0.5f) * 2f * screenRatio
-        val anchorY = (0.5f - layer.y.coerceIn(0f, 1f)) * 2f
+        // x,y: centro=0 en % de pantalla (-200..200)
+        val anchorX = (layer.x / 100f) * screenRatio + anim.offsetXNorm * 2f * screenRatio
+        val anchorY = -(layer.y / 100f) - anim.offsetYNorm * 2f
         val ox = when (layer.alignH) {
             TextAlignment.LEFT -> scaleX
             TextAlignment.RIGHT -> -scaleX
@@ -208,7 +214,7 @@ class GLWidgetLayersRenderer {
         Matrix.orthoM(proj, 0, -screenRatio, screenRatio, -1f, 1f, -1f, 1f)
         Matrix.setIdentityM(model, 0)
         Matrix.translateM(model, 0, tx, ty, 0f)
-        Matrix.rotateM(model, 0, layer.rotation, 0f, 0f, 1f)
+        Matrix.rotateM(model, 0, layer.rotation + anim.rotationDeg, 0f, 0f, 1f)
         Matrix.scaleM(model, 0, scaleX, scaleY, 1f)
         Matrix.multiplyMM(mvp, 0, proj, 0, model, 0)
 
@@ -226,7 +232,8 @@ class GLWidgetLayersRenderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, tex.getTextureId())
         GLES20.glUniform1i(samplerHandle, 0)
-        GLES20.glUniform1f(alphaHandle, alpha)
+        GLES20.glUniform1f(alphaHandle, alphaAnim)
+
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)
 

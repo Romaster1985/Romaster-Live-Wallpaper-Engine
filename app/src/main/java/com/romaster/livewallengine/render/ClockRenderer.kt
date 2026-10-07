@@ -115,8 +115,8 @@ class ClockRenderer {
             return RectF(0f, 0f, 1f, 1f)
         }
 
-        val baseX = layoutW * settings.x
-        val baseY = layoutH * settings.y
+        val baseX = layoutW * (0.5f + settings.x / 200f)
+        val baseY = layoutH * (0.5f + settings.y / 200f)
         val spacing = settings.dateSpacing
         val variation = variationOf(settings)
 
@@ -283,8 +283,8 @@ class ClockRenderer {
         val drawDate = settings.showDate
         if (!drawClock && !drawDate) return null
 
-        val baseX = layoutW * settings.x - originX
-        val baseY = layoutH * settings.y - originY
+        val baseX = layoutW * (0.5f + settings.x / 200f) - originX
+        val baseY = layoutH * (0.5f + settings.y / 200f) - originY
         val spacing = settings.dateSpacing
         var groupTop = Float.POSITIVE_INFINITY
         var groupBottom = Float.NEGATIVE_INFINITY

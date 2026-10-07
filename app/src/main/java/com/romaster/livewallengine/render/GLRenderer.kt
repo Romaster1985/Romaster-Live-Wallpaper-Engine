@@ -35,11 +35,17 @@ import com.romaster.livewallengine.project.ProjectManager
 import com.romaster.livewallengine.model.LayerStack
 import com.romaster.livewallengine.model.VideoLayer
 import com.romaster.livewallengine.debug.FileLogger
+import com.romaster.livewallengine.animation.AnimationEngine
 
 class GLRenderer(
     private val context: Context,
     private val holder: SurfaceHolder
 ) {
+
+    /** Estado para el motor de animaciones (preview / wallpaper service). */
+    @Volatile var animDeviceLocked: Boolean = false
+    @Volatile var animWallpaperVisible: Boolean = true
+    @Volatile var animHomePage: Int = 0
 
     private val egl = EGLHelper()
     private var program = 0
@@ -315,6 +321,22 @@ class GLRenderer(
 
         val vw = if (virtualWidth > 0) virtualWidth else width
         val vh = if (virtualHeight > 0) virtualHeight else height
+
+        // Motor de animaciones (reacciones + progreso de acciones)
+        try {
+            AnimationEngine.update(
+                project,
+                AnimationEngine.FrameInput(
+                    deviceLocked = animDeviceLocked,
+                    wallpaperVisible = animWallpaperVisible,
+                    homeScreenPage = animHomePage,
+                    screenW = vw.coerceAtLeast(1),
+                    screenH = vh.coerceAtLeast(1),
+                    context = context
+                )
+            )
+        } catch (_: Exception) {
+        }
 
         // Blur del reloj: capturar solo cuando BG/OL/Pics terminaron soft start
         updateFade()

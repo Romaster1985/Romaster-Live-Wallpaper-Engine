@@ -41,9 +41,9 @@ data class ImageLayer(
     /** 0f..1f */
     var opacity: Float = 1f,
     /** 0f..1f (centro normalizado) */
-    var x: Float = 0.5f,
+    var x: Float = 0.5f, // default legacy (centro 0.5); al crear capas nuevas se pone 0
     /** 0f..1f (centro normalizado) */
-    var y: Float = 0.5f,
+    var y: Float = 0.5f, // default legacy (centro 0.5); al crear capas nuevas se pone 0
     /** Zoom relativo (1 = 100%) */
     var zoom: Float = 1f,
     /** Grados */

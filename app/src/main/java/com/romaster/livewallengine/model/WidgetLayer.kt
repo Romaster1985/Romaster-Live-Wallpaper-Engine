@@ -68,10 +68,10 @@ data class WidgetLayer(
     var opacity: Float = 1f,
 
     /** Centro normalizado 0..1 */
-    var x: Float = 0.5f,
+    var x: Float = 0.5f, // default legacy (centro 0.5); al crear capas nuevas se pone 0
 
     /** Centro normalizado 0..1 */
-    var y: Float = 0.35f,
+    var y: Float = 0.5f, // default legacy (centro 0.5); al crear capas nuevas se pone 0
 
     /** Zoom relativo (1 = 100%) */
     var zoom: Float = 1f,

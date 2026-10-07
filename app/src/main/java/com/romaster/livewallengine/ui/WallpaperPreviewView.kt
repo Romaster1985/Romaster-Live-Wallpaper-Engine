@@ -29,6 +29,7 @@ import com.romaster.livewallengine.video.VideoPlayer
 import com.romaster.livewallengine.video.OverlayVideoPlayer
 import com.romaster.livewallengine.video.CueLoopController
 import com.romaster.livewallengine.project.ProjectManager
+import com.romaster.livewallengine.animation.AnimationEngine
 import com.romaster.livewallengine.audio.WallpaperSoundPlayer
 import com.romaster.livewallengine.audio.AudioStorage
 import com.romaster.livewallengine.audio.AudioPicker
@@ -112,6 +113,11 @@ class WallpaperPreviewView @JvmOverloads constructor(
 
         holderRef = holder
 
+        try {
+            AnimationEngine.notifyWallpaperVisibility(true, ProjectManager.getProject())
+        } catch (_: Exception) {
+        }
+
         startRendering()
     }
 
@@ -147,6 +153,11 @@ class WallpaperPreviewView @JvmOverloads constructor(
             context,
             "WallpaperPreview.surfaceDestroyed()"
         )
+
+        try {
+            AnimationEngine.notifyWallpaperVisibility(false, ProjectManager.getProject())
+        } catch (_: Exception) {
+        }
 
         stopRendering()
 
@@ -860,6 +871,10 @@ class WallpaperPreviewView @JvmOverloads constructor(
                             layerOlWasEnabled = olOn
                         } catch (_: Exception) {
                         }
+                        // Animaciones: estado de bloqueo simulado + visible en preview
+                        renderer?.animDeviceLocked = ProjectManager.getProject().previewLocked
+                        renderer?.animWallpaperVisible = true
+                        renderer?.animHomePage = 0
                         renderer?.drawFrame()
 
                         pendingCapture?.let {

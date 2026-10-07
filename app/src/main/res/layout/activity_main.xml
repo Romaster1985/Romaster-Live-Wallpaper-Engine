@@ -97,6 +97,15 @@
                 layout="@layout/layout_widgets"/>
 
             <!-- ========================= -->
+            <!-- Animaciones -->
+            <!-- ========================= -->
+
+            <include
+                android:id="@+id/panelAnimations"
+                android:visibility="gone"
+                layout="@layout/layout_animations"/>
+
+            <!-- ========================= -->
             <!-- Proyecto -->
             <!-- ========================= -->
 

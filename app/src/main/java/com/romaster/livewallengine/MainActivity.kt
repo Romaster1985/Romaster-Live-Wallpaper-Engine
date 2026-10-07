@@ -70,6 +70,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.romaster.livewallengine.editor.MainEditorController
 import com.romaster.livewallengine.font.FontPicker
 import com.romaster.livewallengine.font.FontStorage
+import com.romaster.livewallengine.model.PositionCoords
 import com.romaster.livewallengine.model.DateFormat
 import com.romaster.livewallengine.model.TextAlignment
 import com.romaster.livewallengine.model.VerticalAlignment
@@ -90,6 +91,12 @@ import com.romaster.livewallengine.video.GifToMp4Converter
 import com.romaster.livewallengine.video.VideoTranscoder
 import com.romaster.livewallengine.model.ImageLayer
 import com.romaster.livewallengine.model.WidgetLayer
+import com.romaster.livewallengine.model.AnimationLayer
+import com.romaster.livewallengine.animation.AnimationEngine
+import com.romaster.livewallengine.model.AnimationReaction
+import com.romaster.livewallengine.model.AnimationAction
+import com.romaster.livewallengine.model.ClockHand
+import com.romaster.livewallengine.model.ClockHandMotion
 import com.romaster.livewallengine.formula.FormulaEngine
 import com.romaster.livewallengine.weather.WeatherProvider
 import com.romaster.livewallengine.model.LayerStack
@@ -128,6 +135,7 @@ class MainActivity : AppCompatActivity() {
     
     private lateinit var panelPics: View
     private lateinit var panelWidgets: View
+    private lateinit var panelAnimations: View
     private lateinit var panelClock: View
     
     private lateinit var panelProject: View
@@ -211,6 +219,8 @@ loadDeviceInformation()
             setupPicsTab()
             FileLogger.log(this, "6c - setupWidgetsTab")
             setupWidgetsTab()
+            FileLogger.log(this, "6d - setupAnimationsTab")
+            setupAnimationsTab()
     
             FileLogger.log(this, "7 - setupProjectTab")
             setupProjectTab()
@@ -260,6 +270,7 @@ loadDeviceInformation()
         panelClock = findViewById(R.id.panelClock)
         panelPics = findViewById(R.id.panelPics)
         panelWidgets = findViewById(R.id.panelWidgets)
+        panelAnimations = findViewById(R.id.panelAnimations)
     
         panelProject = findViewById(R.id.panelProject)
         panelSettings = findViewById(R.id.panelSettings)
@@ -295,6 +306,11 @@ loadDeviceInformation()
             tabLayout.newTab()
                 .setText(getString(R.string.tab_widgets_ol))
         )
+
+        tabLayout.addTab(
+            tabLayout.newTab()
+                .setText(getString(R.string.tab_animations))
+        )
     
         tabLayout.addTab(
             tabLayout.newTab()
@@ -317,6 +333,7 @@ loadDeviceInformation()
         panelClock.visibility = View.GONE
         panelPics.visibility = View.GONE
         panelWidgets.visibility = View.GONE
+        panelAnimations.visibility = View.GONE
         panelProject.visibility = View.GONE
         panelSettings.visibility = View.GONE
     
@@ -334,6 +351,7 @@ loadDeviceInformation()
                     panelClock.visibility = View.GONE
                     panelPics.visibility = View.GONE
                     panelWidgets.visibility = View.GONE
+                    panelAnimations.visibility = View.GONE
                     panelProject.visibility = View.GONE
                     panelSettings.visibility = View.GONE
     
@@ -344,8 +362,9 @@ loadDeviceInformation()
                         3 -> panelClock.visibility = View.VISIBLE
                         4 -> panelPics.visibility = View.VISIBLE
                         5 -> panelWidgets.visibility = View.VISIBLE
-                        6 -> panelProject.visibility = View.VISIBLE
-                        7 -> panelSettings.visibility = View.VISIBLE
+                        6 -> panelAnimations.visibility = View.VISIBLE
+                        7 -> panelProject.visibility = View.VISIBLE
+                        8 -> panelSettings.visibility = View.VISIBLE
                     }
                 }
     
@@ -2055,7 +2074,11 @@ private fun showFadeDurationDialog(
     private fun addWidgetLayer() {
         val project = ProjectManager.getProject()
         LayerStack.ensure(project)
-        val layer = WidgetLayer()
+        val layer = WidgetLayer().apply {
+            // Sistema nuevo: centro = 0 (el default del modelo es 0.5 por compat JSON legacy)
+            x = 0f
+            y = 0f
+        }
         project.widgetLayers.add(layer)
         project.layerStack.add(layer.id)
         editor.save()
@@ -2416,19 +2439,19 @@ private fun showFadeDurationDialog(
 
         addSliderRow(
             getString(R.string.label_pos_x),
-            0f, 100f,
-            (layer.x * 100f).coerceIn(0f, 100f),
-            50f,
+            -200f, 200f,
+            PositionCoords.forSlider(layer.x),
+            0f,
             { it.toInt().toString() }
-        ) { live()?.x = it / 100f }
+        ) { live()?.x = it }
 
         addSliderRow(
             getString(R.string.label_pos_y),
-            0f, 100f,
-            (layer.y * 100f).coerceIn(0f, 100f),
-            35f,
+            -200f, 200f,
+            PositionCoords.forSlider(layer.y),
+            0f,
             { it.toInt().toString() }
-        ) { live()?.y = it / 100f }
+        ) { live()?.y = it }
 
         addSliderRow(
             getString(R.string.label_rotation),
@@ -3256,10 +3279,747 @@ private fun showFadeDurationDialog(
         rebuildImageLayerCards()
     }
 
+    // =====================================================
+    // ANIMACIONES
+    // =====================================================
+
+    private fun setupAnimationsTab() {
+        val addBtn = findViewById<View>(R.id.buttonAddAnimationLayer)
+        addBtn.isClickable = true
+        addBtn.isFocusable = true
+        addBtn.setOnClickListener { addAnimationLayer() }
+        rebuildAnimationLayerCards()
+    }
+
+    private fun addAnimationLayer() {
+        val project = ProjectManager.getProject()
+        project.animationLayers.add(AnimationLayer())
+        editor.save()
+        rebuildAnimationLayerCards()
+    }
+
+    private fun removeAnimationLayer(layerId: String) {
+        val project = ProjectManager.getProject()
+        project.animationLayers.removeAll { it.id == layerId }
+        editor.save()
+        rebuildAnimationLayerCards()
+    }
+
+    private fun rebuildAnimationLayerCards() {
+        val container = findViewById<LinearLayout>(R.id.containerAnimationLayers)
+        container.removeAllViews()
+        val project = ProjectManager.getProject()
+        project.animationLayers.forEachIndexed { index, layer ->
+            container.addView(buildAnimationLayerCard(layer, index + 1))
+        }
+    }
+
+    private fun animationTargetOptions(): List<Pair<String, String>> {
+        val project = ProjectManager.getProject()
+        val list = mutableListOf(
+            "vbg" to getString(R.string.anim_target_vbg),
+            "vol" to getString(R.string.anim_target_vol),
+            "ckol" to getString(R.string.anim_target_ckol)
+        )
+        project.imageLayers.forEachIndexed { i, img ->
+            list.add("img:${img.id}" to getString(R.string.anim_target_image, i + 1))
+        }
+        project.widgetLayers.forEachIndexed { i, w ->
+            list.add("wdg:${w.id}" to getString(R.string.anim_target_widget, i + 1))
+        }
+        return list
+    }
+
+    private fun reactionLabel(r: AnimationReaction): String = when (r) {
+        AnimationReaction.DISABLED -> getString(R.string.anim_reaction_disabled)
+        AnimationReaction.UNLOCK -> getString(R.string.anim_reaction_unlock)
+        AnimationReaction.LOOP -> getString(R.string.anim_reaction_loop)
+        AnimationReaction.LOOP_REVERSE -> getString(R.string.anim_reaction_loop_reverse)
+        AnimationReaction.HOME_SCROLL -> getString(R.string.anim_reaction_home_scroll)
+        AnimationReaction.GYROSCOPE -> getString(R.string.anim_reaction_gyro)
+        AnimationReaction.VISIBILITY -> getString(R.string.anim_reaction_visibility)
+        AnimationReaction.FORMULA -> getString(R.string.anim_reaction_formula)
+    }
+
+    private fun actionLabel(a: AnimationAction): String = when (a) {
+        AnimationAction.TRANSLATE -> getString(R.string.anim_action_translate)
+        AnimationAction.TRANSLATE_INVERSE -> getString(R.string.anim_action_translate_inv)
+        AnimationAction.ZOOM_IN -> getString(R.string.anim_action_zoom_in)
+        AnimationAction.ZOOM_OUT -> getString(R.string.anim_action_zoom_out)
+        AnimationAction.FADE_OUT -> getString(R.string.anim_action_fade_out)
+        AnimationAction.FADE_IN -> getString(R.string.anim_action_fade_in)
+        AnimationAction.ROTATE -> getString(R.string.anim_action_rotate)
+    }
+
+    private fun buildAnimationLayerCard(layer: AnimationLayer, number: Int): View {
+        val density = resources.displayMetrics.density
+        val pad = (12 * density).toInt()
+        val layerId = layer.id
+
+        fun live(): AnimationLayer? =
+            ProjectManager.getProject().animationLayers.find { it.id == layerId }
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad, pad, pad)
+        }
+
+        val card = com.google.android.material.card.MaterialCardView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (10 * density).toInt() }
+            radius = 16 * density
+            cardElevation = 2 * density
+            setContentPadding(pad, pad, pad, pad)
+        }
+        card.addView(root)
+
+        root.addView(TextView(this).apply {
+            text = getString(R.string.anim_card_title, number)
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+
+        // --- Target dropdown ---
+        val targets = animationTargetOptions()
+        val targetLabels = targets.map { it.second }
+        var targetIdx = targets.indexOfFirst { it.first == layer.targetKey }.coerceAtLeast(0)
+        val targetAuto = android.widget.AutoCompleteTextView(this).apply {
+            setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, targetLabels))
+            setText(targetLabels[targetIdx], false)
+            isFocusable = false
+            setOnClickListener { showDropDown() }
+            setOnItemClickListener { _, _, pos, _ ->
+                if (loadingUI) return@setOnItemClickListener
+                targetIdx = pos
+                live()?.targetKey = targets[pos].first
+                editor.save()
+            }
+        }
+        root.addView(TextView(this).apply {
+            text = getString(R.string.anim_label_target)
+            setPadding(0, (8 * density).toInt(), 0, (2 * density).toInt())
+        })
+        root.addView(targetAuto, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
+
+        // --- Reaction dropdown ---
+        val reactions = AnimationReaction.entries
+        val reactionLabels = reactions.map { reactionLabel(it) }
+        var reactionIdx = reactions.indexOf(layer.reaction).coerceAtLeast(0)
+
+        // Containers for conditional UI
+        val reactionExtra = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = if (layer.reaction == AnimationReaction.DISABLED) View.GONE else View.VISIBLE
+        }
+        val actionExtra = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        // Se asigna más abajo; el checkbox no aplica a bucle / bucle con reversa
+        var reverseCb: com.google.android.material.checkbox.MaterialCheckBox? = null
+
+        fun refreshReactionExtra() {
+            reactionExtra.removeAllViews()
+            val cur = live() ?: layer
+            when (cur.reaction) {
+                AnimationReaction.DISABLED -> {
+                    reactionExtra.visibility = View.GONE
+                }
+                AnimationReaction.HOME_SCROLL -> {
+                    reactionExtra.visibility = View.VISIBLE
+                    val row = LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = android.view.Gravity.CENTER_VERTICAL
+                        setPadding(0, (8 * density).toInt(), 0, 0)
+                    }
+                    val screenTv = TextView(this@MainActivity).apply {
+                        text = getString(R.string.anim_home_screen, cur.homeScreenIndex)
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    }
+                    fun updateScreenLabel(v: Int) {
+                        screenTv.text = getString(R.string.anim_home_screen, v)
+                    }
+                    row.addView(screenTv)
+                    row.addView(MaterialButton(this@MainActivity).apply {
+                        text = "−"
+                        setOnClickListener {
+                            val n = (live()?.homeScreenIndex ?: 0) - 1
+                            live()?.homeScreenIndex = n
+                            updateScreenLabel(n)
+                            editor.save()
+                        }
+                    })
+                    row.addView(MaterialButton(this@MainActivity).apply {
+                        text = "+"
+                        setOnClickListener {
+                            val n = (live()?.homeScreenIndex ?: 0) + 1
+                            live()?.homeScreenIndex = n
+                            updateScreenLabel(n)
+                            editor.save()
+                        }
+                    })
+                    reactionExtra.addView(row)
+                }
+                AnimationReaction.GYROSCOPE -> {
+                    reactionExtra.visibility = View.VISIBLE
+                    reactionExtra.addView(TextView(this@MainActivity).apply {
+                        text = getString(R.string.anim_gyro_degrees)
+                        setPadding(0, (8 * density).toInt(), 0, 0)
+                    })
+                    val gyroRow = LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = android.view.Gravity.CENTER_VERTICAL
+                    }
+                    val valueTv = TextView(this@MainActivity).apply {
+                        text = "${cur.gyroDegrees}°"
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    }
+                    gyroRow.addView(valueTv)
+                    reactionExtra.addView(gyroRow)
+                    val gyroSlider = com.google.android.material.slider.Slider(this@MainActivity).apply {
+                        valueFrom = 0f
+                        valueTo = 359f
+                        stepSize = 1f
+                        value = cur.gyroDegrees.toFloat().coerceIn(0f, 359f)
+                        addOnChangeListener { _, v, fromUser ->
+                            if (!fromUser || loadingUI) return@addOnChangeListener
+                            live()?.gyroDegrees = v.toInt()
+                            valueTv.text = "${v.toInt()}°"
+                            editor.save()
+                        }
+                    }
+                    reactionExtra.addView(gyroSlider)
+                    attachSliderResetButton(gyroSlider, valueTv, 90f) { v ->
+                        live()?.gyroDegrees = v.toInt()
+                        valueTv.text = "${v.toInt()}°"
+                        editor.save()
+                    }
+                    // Indicador en vivo del ángulo (como nivel / brújula temporal)
+                    val liveAngleTv = TextView(this@MainActivity).apply {
+                        text = getString(R.string.anim_gyro_live, 0)
+                        setPadding(0, (8 * density).toInt(), 0, 0)
+                        setTextColor(0xFF1565C0.toInt())
+                    }
+                    reactionExtra.addView(liveAngleTv)
+                    // Asegurar sensores activos mientras se mira esta card
+                    AnimationEngine.ensureSensors(this@MainActivity)
+                    val gyroHandler = android.os.Handler(mainLooper)
+                    val gyroTick = object : Runnable {
+                        override fun run() {
+                            if (liveAngleTv.parent == null) return
+                            val deg = AnimationEngine.currentOrientationDeg().toInt()
+                            val signed = AnimationEngine.currentTiltSignedDeg().toInt()
+                            liveAngleTv.text = getString(R.string.anim_gyro_live, deg) +
+                                "  (signed: ${signed}°)"
+                            gyroHandler.postDelayed(this, 100L)
+                        }
+                    }
+                    liveAngleTv.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                        override fun onViewAttachedToWindow(v: View) {
+                            gyroHandler.post(gyroTick)
+                        }
+                        override fun onViewDetachedFromWindow(v: View) {
+                            gyroHandler.removeCallbacks(gyroTick)
+                        }
+                    })
+                    gyroHandler.post(gyroTick)
+                }
+                AnimationReaction.FORMULA -> {
+                    reactionExtra.visibility = View.VISIBLE
+                    reactionExtra.addView(MaterialButton(this@MainActivity).apply {
+                        text = getString(R.string.anim_edit_formula)
+                        setOnClickListener {
+                            val l = live() ?: return@setOnClickListener
+                            showAnimationFormulaDialog(l)
+                        }
+                    })
+                }
+                else -> {
+                    reactionExtra.visibility = View.VISIBLE
+                }
+            }
+            // Acción solo si no está desactivado
+            if (cur.reaction == AnimationReaction.DISABLED) {
+                actionExtra.visibility = View.GONE
+            } else {
+                actionExtra.visibility = View.VISIBLE
+                rebuildAnimationActionExtra(actionExtra, layerId)
+            }
+            // Checkbox de retorno invertido: oculto en bucle / bucle con reversa / desactivado
+            reverseCb?.visibility = when (cur.reaction) {
+                AnimationReaction.LOOP,
+                AnimationReaction.LOOP_REVERSE,
+                AnimationReaction.DISABLED -> View.GONE
+                else -> View.VISIBLE
+            }
+        }
+
+        root.addView(TextView(this).apply {
+            text = getString(R.string.anim_label_reaction)
+            setPadding(0, (10 * density).toInt(), 0, (2 * density).toInt())
+        })
+        val reactionAuto = android.widget.AutoCompleteTextView(this).apply {
+            setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, reactionLabels))
+            setText(reactionLabels[reactionIdx], false)
+            isFocusable = false
+            setOnClickListener { showDropDown() }
+            setOnItemClickListener { _, _, pos, _ ->
+                if (loadingUI) return@setOnItemClickListener
+                reactionIdx = pos
+                live()?.reaction = reactions[pos]
+                editor.save()
+                refreshReactionExtra()
+            }
+        }
+        root.addView(reactionAuto)
+
+        reverseCb = com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = getString(R.string.anim_reverse_on_deactivate)
+            isChecked = layer.reverseOnDeactivate
+            setPadding(0, (6 * density).toInt(), 0, 0)
+            setOnCheckedChangeListener { _, checked ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                live()?.reverseOnDeactivate = checked
+                editor.save()
+            }
+            // Estado inicial según reacción actual
+            visibility = when (layer.reaction) {
+                AnimationReaction.LOOP,
+                AnimationReaction.LOOP_REVERSE,
+                AnimationReaction.DISABLED -> View.GONE
+                else -> View.VISIBLE
+            }
+        }
+        root.addView(reverseCb)
+
+        root.addView(reactionExtra)
+        root.addView(actionExtra)
+        refreshReactionExtra()
+
+        root.addView(MaterialButton(this).apply {
+            text = getString(R.string.anim_delete)
+            setBackgroundColor(0xFFB00020.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = (12 * density).toInt() }
+            setOnClickListener { removeAnimationLayer(layerId) }
+        })
+
+        return card
+    }
+
+    private fun rebuildAnimationActionExtra(container: LinearLayout, layerId: String) {
+        container.removeAllViews()
+        val density = resources.displayMetrics.density
+        fun live(): AnimationLayer? =
+            ProjectManager.getProject().animationLayers.find { it.id == layerId }
+        val cur = live() ?: return
+
+        val actions = AnimationAction.entries
+        val actionLabels = actions.map { actionLabel(it) }
+        var actionIdx = actions.indexOf(cur.action).coerceAtLeast(0)
+
+        val actionControls = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        fun refreshActionControls() {
+            actionControls.removeAllViews()
+            val a = live() ?: return
+            when (a.action) {
+                AnimationAction.TRANSLATE, AnimationAction.TRANSLATE_INVERSE -> {
+                    addAnimAngleSlider(actionControls, a.moveAngleDeg, getString(R.string.anim_move_angle)) { v ->
+                        live()?.moveAngleDeg = v
+                        editor.save()
+                    }
+                    actionControls.addView(MaterialButton(this@MainActivity).apply {
+                        text = getString(R.string.anim_move_distance_btn, a.moveDistancePx.toInt())
+                        setOnClickListener {
+                            showAnimNumberDialog(
+                                getString(R.string.anim_move_distance_title),
+                                a.moveDistancePx.toInt().toString()
+                            ) { n ->
+                                live()?.moveDistancePx = n.toFloat().coerceAtLeast(0f)
+                                editor.save()
+                                rebuildAnimationLayerCards()
+                            }
+                        }
+                    })
+                    addAnimSpeedAccel(actionControls, a)
+                }
+                AnimationAction.ZOOM_IN, AnimationAction.ZOOM_OUT -> {
+                    val zoomRow = LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = android.view.Gravity.CENTER_VERTICAL
+                        setPadding(0, (8 * density).toInt(), 0, 0)
+                    }
+                    val valueTv = TextView(this@MainActivity).apply {
+                        text = getString(R.string.anim_zoom_amount, a.zoomAmount.toInt())
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    }
+                    zoomRow.addView(valueTv)
+                    actionControls.addView(zoomRow)
+                    val zoomSlider = com.google.android.material.slider.Slider(this@MainActivity).apply {
+                        valueFrom = 0f
+                        valueTo = 1000f
+                        stepSize = 1f
+                        value = a.zoomAmount.coerceIn(0f, 1000f)
+                        addOnChangeListener { _, v, fromUser ->
+                            if (!fromUser || loadingUI) return@addOnChangeListener
+                            live()?.zoomAmount = v
+                            valueTv.text = getString(R.string.anim_zoom_amount, v.toInt())
+                            editor.save()
+                        }
+                    }
+                    actionControls.addView(zoomSlider)
+                    attachSliderResetButton(zoomSlider, valueTv, 100f) { v ->
+                        live()?.zoomAmount = v
+                        valueTv.text = getString(R.string.anim_zoom_amount, v.toInt())
+                        editor.save()
+                    }
+                    addAnimSpeedAccel(actionControls, a)
+                }
+                AnimationAction.FADE_OUT, AnimationAction.FADE_IN -> {
+                    actionControls.addView(MaterialButton(this@MainActivity).apply {
+                        text = getString(R.string.anim_fade_duration_btn, a.fadeDurationMs)
+                        setOnClickListener {
+                            showAnimNumberDialog(
+                                getString(R.string.anim_fade_duration_title),
+                                a.fadeDurationMs.toString()
+                            ) { n ->
+                                live()?.fadeDurationMs = n.toLong().coerceAtLeast(0L)
+                                editor.save()
+                                rebuildAnimationLayerCards()
+                            }
+                        }
+                    })
+                }
+                AnimationAction.ROTATE -> {
+                    actionControls.addView(com.google.android.material.checkbox.MaterialCheckBox(this@MainActivity).apply {
+                        text = getString(R.string.anim_rotate_ccw)
+                        isChecked = a.rotationCounterClockwise
+                        setOnCheckedChangeListener { _, checked ->
+                            if (loadingUI) return@setOnCheckedChangeListener
+                            live()?.rotationCounterClockwise = checked
+                            editor.save()
+                        }
+                    })
+                    val reaction = live()?.reaction ?: AnimationReaction.DISABLED
+                    val canClock = reaction == AnimationReaction.LOOP
+                    if (canClock) {
+                        actionControls.addView(com.google.android.material.checkbox.MaterialCheckBox(this@MainActivity).apply {
+                            text = getString(R.string.anim_clock_rotation)
+                            isChecked = a.clockRotation
+                            setOnCheckedChangeListener { _, checked ->
+                                if (loadingUI) return@setOnCheckedChangeListener
+                                live()?.clockRotation = checked
+                                editor.save()
+                                rebuildAnimationLayerCards()
+                            }
+                        })
+                        if (a.clockRotation) {
+                            // Offset del 12:00
+                            addAnimAngleSlider(
+                                actionControls,
+                                a.rotationDegrees,
+                                getString(R.string.anim_clock_noon_offset),
+                                defaultValue = 0f
+                            ) { v ->
+                                live()?.rotationDegrees = v
+                                editor.save()
+                            }
+                            // Manecilla: Hora / Minutos / Segundos
+                            actionControls.addView(TextView(this@MainActivity).apply {
+                                text = getString(R.string.anim_clock_hand)
+                                setPadding(0, (8 * density).toInt(), 0, (2 * density).toInt())
+                            })
+                            val handGroup = android.widget.RadioGroup(this@MainActivity).apply {
+                                orientation = android.widget.RadioGroup.HORIZONTAL
+                            }
+                            val rbHour = com.google.android.material.radiobutton.MaterialRadioButton(this@MainActivity).apply {
+                                text = getString(R.string.anim_clock_hand_hour)
+                                id = View.generateViewId()
+                            }
+                            val rbMin = com.google.android.material.radiobutton.MaterialRadioButton(this@MainActivity).apply {
+                                text = getString(R.string.anim_clock_hand_minute)
+                                id = View.generateViewId()
+                            }
+                            val rbSec = com.google.android.material.radiobutton.MaterialRadioButton(this@MainActivity).apply {
+                                text = getString(R.string.anim_clock_hand_second)
+                                id = View.generateViewId()
+                            }
+                            handGroup.addView(rbHour)
+                            handGroup.addView(rbMin)
+                            handGroup.addView(rbSec)
+                            when (a.clockHand) {
+                                ClockHand.HOUR -> handGroup.check(rbHour.id)
+                                ClockHand.MINUTE -> handGroup.check(rbMin.id)
+                                ClockHand.SECOND -> handGroup.check(rbSec.id)
+                            }
+                            handGroup.setOnCheckedChangeListener { _, checkedId ->
+                                if (loadingUI) return@setOnCheckedChangeListener
+                                live()?.clockHand = when (checkedId) {
+                                    rbMin.id -> ClockHand.MINUTE
+                                    rbSec.id -> ClockHand.SECOND
+                                    else -> ClockHand.HOUR
+                                }
+                                editor.save()
+                            }
+                            actionControls.addView(handGroup)
+                            // Movimiento: paso a paso / continuo
+                            actionControls.addView(TextView(this@MainActivity).apply {
+                                text = getString(R.string.anim_clock_motion)
+                                setPadding(0, (8 * density).toInt(), 0, (2 * density).toInt())
+                            })
+                            val motionGroup = android.widget.RadioGroup(this@MainActivity).apply {
+                                orientation = android.widget.RadioGroup.HORIZONTAL
+                            }
+                            val rbStep = com.google.android.material.radiobutton.MaterialRadioButton(this@MainActivity).apply {
+                                text = getString(R.string.anim_clock_motion_step)
+                                id = View.generateViewId()
+                            }
+                            val rbCont = com.google.android.material.radiobutton.MaterialRadioButton(this@MainActivity).apply {
+                                text = getString(R.string.anim_clock_motion_continuous)
+                                id = View.generateViewId()
+                            }
+                            motionGroup.addView(rbStep)
+                            motionGroup.addView(rbCont)
+                            when (a.clockHandMotion) {
+                                ClockHandMotion.STEP -> motionGroup.check(rbStep.id)
+                                ClockHandMotion.CONTINUOUS -> motionGroup.check(rbCont.id)
+                            }
+                            motionGroup.setOnCheckedChangeListener { _, checkedId ->
+                                if (loadingUI) return@setOnCheckedChangeListener
+                                live()?.clockHandMotion = if (checkedId == rbStep.id) {
+                                    ClockHandMotion.STEP
+                                } else {
+                                    ClockHandMotion.CONTINUOUS
+                                }
+                                editor.save()
+                            }
+                            actionControls.addView(motionGroup)
+                            // Sin velocidad/aceleración: lo marca el reloj del sistema
+                        } else {
+                            addAnimAngleSlider(actionControls, a.rotationDegrees, getString(R.string.anim_rotate_degrees), defaultValue = 90f) { v ->
+                                live()?.rotationDegrees = v
+                                editor.save()
+                            }
+                            addAnimSpeedAccel(actionControls, a)
+                        }
+                    } else {
+                        addAnimAngleSlider(actionControls, a.rotationDegrees, getString(R.string.anim_rotate_degrees), defaultValue = 90f) { v ->
+                            live()?.rotationDegrees = v
+                            editor.save()
+                        }
+                        addAnimSpeedAccel(actionControls, a)
+                    }
+                }
+            }
+        }
+
+        container.addView(TextView(this).apply {
+            text = getString(R.string.anim_label_action)
+            setPadding(0, (10 * density).toInt(), 0, (2 * density).toInt())
+        })
+        container.addView(android.widget.AutoCompleteTextView(this).apply {
+            setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, actionLabels))
+            setText(actionLabels[actionIdx], false)
+            isFocusable = false
+            setOnClickListener { showDropDown() }
+            setOnItemClickListener { _, _, pos, _ ->
+                if (loadingUI) return@setOnItemClickListener
+                actionIdx = pos
+                live()?.action = actions[pos]
+                editor.save()
+                refreshActionControls()
+            }
+        })
+        container.addView(actionControls)
+        refreshActionControls()
+    }
+
+    private fun addAnimAngleSlider(
+        parent: LinearLayout,
+        initial: Float,
+        label: String,
+        defaultValue: Float = 0f,
+        onChange: (Float) -> Unit
+    ) {
+        val density = resources.displayMetrics.density
+        val valueRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, (8 * density).toInt(), 0, 0)
+        }
+        val valueTv = TextView(this).apply {
+            text = "$label: ${initial.toInt()}°"
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        valueRow.addView(valueTv)
+        parent.addView(valueRow)
+        val slider = com.google.android.material.slider.Slider(this).apply {
+            valueFrom = 0f
+            valueTo = 359f
+            stepSize = 1f
+            value = initial.coerceIn(0f, 359f)
+            addOnChangeListener { _, v, fromUser ->
+                if (!fromUser || loadingUI) return@addOnChangeListener
+                valueTv.text = "$label: ${v.toInt()}°"
+                onChange(v)
+            }
+        }
+        parent.addView(slider)
+        attachSliderResetButton(slider, valueTv, defaultValue) { v ->
+            valueTv.text = "$label: ${v.toInt()}°"
+            onChange(v)
+        }
+    }
+
+    private fun addAnimSpeedAccel(parent: LinearLayout, a: AnimationLayer) {
+        val density = resources.displayMetrics.density
+        fun live(): AnimationLayer? =
+            ProjectManager.getProject().animationLayers.find { it.id == a.id }
+
+        val speedRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, (8 * density).toInt(), 0, 0)
+        }
+        val speedTv = TextView(this).apply {
+            text = getString(R.string.anim_speed, String.format("%.2f", a.speed))
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        speedRow.addView(speedTv)
+        parent.addView(speedRow)
+        val speedSlider = com.google.android.material.slider.Slider(this).apply {
+            valueFrom = 0.01f
+            valueTo = 5f
+            stepSize = 0.01f
+            value = a.speed.coerceIn(0.01f, 5f)
+            addOnChangeListener { _, v, fromUser ->
+                if (!fromUser || loadingUI) return@addOnChangeListener
+                live()?.speed = v
+                speedTv.text = getString(R.string.anim_speed, String.format("%.2f", v))
+                editor.save()
+            }
+        }
+        parent.addView(speedSlider)
+        attachSliderResetButton(speedSlider, speedTv, 0.25f) { v ->
+            live()?.speed = v
+            speedTv.text = getString(R.string.anim_speed, String.format("%.2f", v))
+            editor.save()
+        }
+
+        val accelRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, (8 * density).toInt(), 0, 0)
+        }
+        val accelTv = TextView(this).apply {
+            text = getString(R.string.anim_accel, String.format("%.2f", a.acceleration))
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        accelRow.addView(accelTv)
+        parent.addView(accelRow)
+        val accelSlider = com.google.android.material.slider.Slider(this).apply {
+            valueFrom = 0f
+            valueTo = 2f
+            stepSize = 0.01f
+            value = a.acceleration.coerceIn(0f, 2f)
+            addOnChangeListener { _, v, fromUser ->
+                if (!fromUser || loadingUI) return@addOnChangeListener
+                live()?.acceleration = v
+                accelTv.text = getString(R.string.anim_accel, String.format("%.2f", v))
+                editor.save()
+            }
+        }
+        parent.addView(accelSlider)
+        attachSliderResetButton(accelSlider, accelTv, 0f) { v ->
+            live()?.acceleration = v
+            accelTv.text = getString(R.string.anim_accel, String.format("%.2f", v))
+            editor.save()
+        }
+    }
+
+    private fun showAnimNumberDialog(title: String, initial: String, onOk: (Int) -> Unit) {
+        val input = android.widget.EditText(this).apply {
+            setText(initial)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setView(input)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
+                val n = input.text.toString().toIntOrNull() ?: return@setPositiveButton
+                onOk(n)
+            }
+            .show()
+    }
+
+    private fun showAnimationFormulaDialog(layer: AnimationLayer) {
+        val density = resources.displayMetrics.density
+        val input = android.widget.EditText(this).apply {
+            setText(layer.formula)
+            minLines = 3
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+        }
+        val preview = TextView(this).apply {
+            setPadding(0, (8 * density).toInt(), 0, 0)
+            text = try {
+                FormulaEngine.evaluate(layer.formula, this@MainActivity)
+            } catch (_: Exception) {
+                ""
+            }
+        }
+        input.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                preview.text = try {
+                    FormulaEngine.evaluate(s?.toString() ?: "", this@MainActivity)
+                } catch (_: Exception) {
+                    "…"
+                }
+            }
+        })
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((16 * density).toInt(), (8 * density).toInt(), (16 * density).toInt(), 0)
+            addView(TextView(this@MainActivity).apply { text = getString(R.string.formula_preview) })
+            addView(preview)
+            addView(TextView(this@MainActivity).apply {
+                text = getString(R.string.anim_formula_hint)
+                setPadding(0, (8 * density).toInt(), 0, 0)
+            })
+            addView(input)
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.anim_edit_formula))
+            .setView(box)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.ok) { _, _ ->
+                layer.formula = input.text.toString()
+                editor.save()
+            }
+            .show()
+    }
+
+
     private fun addImageLayer() {
         val project = ProjectManager.getProject()
         LayerStack.ensure(project)
-        val layer = ImageLayer()
+        val layer = ImageLayer().apply {
+            // Sistema nuevo: centro = 0 (el default del modelo es 0.5 por compat JSON legacy)
+            x = 0f
+            y = 0f
+        }
         project.imageLayers.add(layer)
         project.layerStack.add(layer.id)
         editor.save()
@@ -3735,11 +4495,11 @@ private fun showFadeDurationDialog(
         addSliderRow(getString(R.string.label_transparency), 0f, 100f, layer.opacity * 100f, 100f, { "${it.toInt()} %" }) {
             liveLayer()?.opacity = it / 100f
         }
-        addSliderRow(getString(R.string.label_pos_x), 0f, 100f, layer.x * 100f, 50f, { it.toInt().toString() }) {
-            liveLayer()?.x = it / 100f
+        addSliderRow(getString(R.string.label_pos_x), -200f, 200f, PositionCoords.forSlider(layer.x), 0f, { it.toInt().toString() }) {
+            liveLayer()?.x = it
         }
-        addSliderRow(getString(R.string.label_pos_y), 0f, 100f, layer.y * 100f, 50f, { it.toInt().toString() }) {
-            liveLayer()?.y = it / 100f
+        addSliderRow(getString(R.string.label_pos_y), -200f, 200f, PositionCoords.forSlider(layer.y), 0f, { it.toInt().toString() }) {
+            liveLayer()?.y = it
         }
         addSliderRow(getString(R.string.label_zoom), 10f, 800f, (layer.zoom * 100f).coerceIn(10f, 800f), 100f, { "${it.toInt()} %" }) {
             liveLayer()?.zoom = it / 100f
@@ -4292,8 +5052,8 @@ private fun showFadeDurationDialog(
         connectSlider(R.id.sliderFontYtas, R.id.textFontYtas, 750f)
         connectSlider(R.id.sliderFontYtde, R.id.textFontYtde, -203f)
         connectSlider(R.id.sliderFontYtfi, R.id.textFontYtfi, 738f)
-        connectSlider(R.id.sliderX, R.id.textXValue, 50f)
-        connectSlider(R.id.sliderY, R.id.textYValue, 50f)
+        connectSlider(R.id.sliderX, R.id.textXValue, 0f)
+        connectSlider(R.id.sliderY, R.id.textYValue, 0f)
 
         setupFontVariationsInfoButton()
         setupExpandableClockCards()
@@ -4862,22 +5622,22 @@ findViewById<CheckBox>(
         findViewById<Slider>(
             R.id.sliderX
         ).value =
-            clock.x * 100f
+            PositionCoords.forSlider(clock.x)
         
         findViewById<TextView>(
             R.id.textXValue
         ).text =
-            (clock.x * 100f).toInt().toString()
+            PositionCoords.forSlider(clock.x).toInt().toString()
         
         findViewById<Slider>(
             R.id.sliderY
         ).value =
-            clock.y * 100f
+            PositionCoords.forSlider(clock.y)
         
         findViewById<TextView>(
             R.id.textYValue
         ).text =
-            (clock.y * 100f).toInt().toString()
+            PositionCoords.forSlider(clock.y).toInt().toString()
 
         findViewById<MaterialSwitch>(
             R.id.switchCenterOnColon
@@ -5654,7 +6414,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         findViewById<Slider>(
             R.id.sliderOverlayPosX
         ).value =
-            overlay.x
+            PositionCoords.forSlider(overlay.x)
     
         findViewById<TextView>(
             R.id.textOverlayPosXValue
@@ -5664,7 +6424,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         findViewById<Slider>(
             R.id.sliderOverlayPosY
         ).value =
-            overlay.y
+            PositionCoords.forSlider(overlay.y)
     
         findViewById<TextView>(
             R.id.textOverlayPosYValue
@@ -5820,7 +6580,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         findViewById<Slider>(
             R.id.sliderVideoPosX
         ).value =
-            layer.x
+            PositionCoords.forSlider(layer.x)
     
         findViewById<TextView>(
             R.id.textVideoPosXValue
@@ -5830,7 +6590,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         findViewById<Slider>(
             R.id.sliderVideoPosY
         ).value =
-            layer.y
+            PositionCoords.forSlider(layer.y)
     
         findViewById<TextView>(
             R.id.textVideoPosYValue
@@ -6591,6 +7351,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         reloadFontLibrary()
         rebuildImageLayerCards()
         rebuildWidgetLayerCards()
+        rebuildAnimationLayerCards()
         
         loadVideoLayerSettings()
         
@@ -6744,12 +7505,12 @@ clock.enabled =
         clock.x =
             findViewById<Slider>(
                 R.id.sliderX
-            ).value / 100f
+            ).value
         
         clock.y =
             findViewById<Slider>(
                 R.id.sliderY
-            ).value / 100f
+            ).value
 
         clock.centerOnColon =
             findViewById<MaterialSwitch>(
