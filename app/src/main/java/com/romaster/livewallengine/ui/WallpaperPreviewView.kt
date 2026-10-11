@@ -95,6 +95,8 @@ class WallpaperPreviewView @JvmOverloads constructor(
      * null = aún no inicializado (no disparar transición al primer frame).
      * Misma idea que lastLockState en GLWallpaperService.
      */
+    private var lastBgShouldShow: Boolean? = null
+    private var lastOlShouldShow: Boolean? = null
     private var lastPreviewLocked: Boolean? = null
     
     init {
@@ -1114,12 +1116,50 @@ class WallpaperPreviewView @JvmOverloads constructor(
     }
     
     
-    private fun applyBgPreviewLockVisibility(locked: Boolean) {
+    /**
+     * @param forceTransition true solo en cambio real de bloqueo/desbloqueo
+     * (seek/pausa/soft-start). false = solo sincronizar hide/show sin reiniciar video.
+     */
+    private fun applyBgPreviewLockVisibility(
+        locked: Boolean,
+        forceTransition: Boolean = true
+    ) {
         val project = ProjectManager.getProject()
         val bg = project.layers.firstOrNull() ?: return
         val softMs = project.videoFadeDurationMs.coerceAtLeast(1L)
+        val shouldShow = when {
+            locked && bg.disableOnLockScreen -> false
+            !locked && bg.disableOnLauncher -> false
+            else -> true
+        }
+
+        // Cambios de UI (volumen, sliders, etc.): no reiniciar reproducción
+        if (!forceTransition) {
+            if (lastBgShouldShow == shouldShow) {
+                renderer?.setBgForceHidden(!shouldShow)
+                return
+            }
+            // Solo cambió el flag de visibilidad desde la UI
+            if (!shouldShow) {
+                renderer?.setBgForceHidden(true)
+                try {
+                    videoPlayer?.pause()
+                } catch (_: Exception) {
+                }
+            } else {
+                renderer?.setBgForceHidden(false)
+                try {
+                    videoPlayer?.play()
+                } catch (_: Exception) {
+                }
+            }
+            lastBgShouldShow = shouldShow
+            return
+        }
+
+        lastBgShouldShow = shouldShow
         if (locked) {
-            if (bg.disableOnLockScreen) {
+            if (!shouldShow) {
                 FileLogger.log(context, "Preview BG LOCKED -> oculto + pausa 0")
                 renderer?.setBgForceHidden(true)
                 try {
@@ -1128,7 +1168,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                 } catch (_: Exception) {
                 }
             } else {
-                FileLogger.log(context, "Preview BG LOCKED -> visible")
+                FileLogger.log(context, "Preview BG LOCKED -> visible desde 0")
                 renderer?.setBgForceHidden(false)
                 try {
                     videoPlayer?.seekTo(0)
@@ -1248,30 +1288,34 @@ private fun initializeAudioConfiguration() {
     }
     
     fun refresh() {
-        // Reaplicar visibilidad BG/OL ante cambios de flags desde la UI
+        // Solo sincronizar visibilidad; no reiniciar videos en cada cambio de UI
         try {
-            applyBgPreviewLockVisibility(ProjectManager.getProject().previewLocked)
             val project = ProjectManager.getProject()
-            val overlay = renderer?.getVideoOverlayRenderer()
-            if (overlay != null) {
-                val locked = project.previewLocked
-                when {
-                    locked && project.overlay.disableOnLockScreen -> {
-                        overlay.setForceHidden(true)
-                        overlay.restoreAt(0, paused = true)
-                    }
-                    !locked && project.overlay.disableOnLauncher -> {
-                        if (!project.overlay.enableLauncherFadeOut) {
-                            overlay.setForceHidden(true)
-                            overlay.restoreAt(0, paused = true)
-                        }
-                    }
-                    locked && !project.overlay.disableOnLockScreen -> {
-                        overlay.setForceHidden(false)
-                    }
-                    !locked && !project.overlay.disableOnLauncher -> {
-                        overlay.setForceHidden(false)
-                    }
+            val locked = project.previewLocked
+            applyBgPreviewLockVisibility(locked, forceTransition = false)
+
+            val overlay = renderer?.getVideoOverlayRenderer() ?: return
+            val olShouldShow = when {
+                locked && project.overlay.disableOnLockScreen -> false
+                !locked && project.overlay.disableOnLauncher -> false
+                else -> true
+            }
+            if (lastOlShouldShow == olShouldShow) {
+                overlay.setForceHidden(!olShouldShow)
+                return
+            }
+            lastOlShouldShow = olShouldShow
+            if (!olShouldShow) {
+                overlay.setForceHidden(true)
+                try {
+                    overlay.pause()
+                } catch (_: Exception) {
+                }
+            } else {
+                overlay.setForceHidden(false)
+                try {
+                    overlay.play()
+                } catch (_: Exception) {
                 }
             }
         } catch (_: Exception) {
@@ -1294,6 +1338,8 @@ private fun initializeAudioConfiguration() {
         savedOverlayPosition = 0
         savedOverlayPaused = false
         lastPreviewLocked = null
+        lastBgShouldShow = null
+        lastOlShouldShow = null
         stopRendering()
         startRendering()
     }
