@@ -2439,7 +2439,7 @@ private fun showFadeDurationDialog(
 
         addSliderRow(
             getString(R.string.label_pos_x),
-            -200f, 200f,
+            -300f, 300f,
             PositionCoords.forSlider(layer.x),
             0f,
             { it.toInt().toString() }
@@ -2447,7 +2447,7 @@ private fun showFadeDurationDialog(
 
         addSliderRow(
             getString(R.string.label_pos_y),
-            -200f, 200f,
+            -300f, 300f,
             PositionCoords.forSlider(layer.y),
             0f,
             { it.toInt().toString() }
@@ -4495,10 +4495,10 @@ private fun showFadeDurationDialog(
         addSliderRow(getString(R.string.label_transparency), 0f, 100f, layer.opacity * 100f, 100f, { "${it.toInt()} %" }) {
             liveLayer()?.opacity = it / 100f
         }
-        addSliderRow(getString(R.string.label_pos_x), -200f, 200f, PositionCoords.forSlider(layer.x), 0f, { it.toInt().toString() }) {
+        addSliderRow(getString(R.string.label_pos_x), -300f, 300f, PositionCoords.forSlider(layer.x), 0f, { it.toInt().toString() }) {
             liveLayer()?.x = it
         }
-        addSliderRow(getString(R.string.label_pos_y), -200f, 200f, PositionCoords.forSlider(layer.y), 0f, { it.toInt().toString() }) {
+        addSliderRow(getString(R.string.label_pos_y), -300f, 300f, PositionCoords.forSlider(layer.y), 0f, { it.toInt().toString() }) {
             liveLayer()?.y = it
         }
         addSliderRow(getString(R.string.label_zoom), 10f, 800f, (layer.zoom * 100f).coerceIn(10f, 800f), 100f, { "${it.toInt()} %" }) {

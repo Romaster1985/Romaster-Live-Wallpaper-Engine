@@ -1080,8 +1080,8 @@
                     android:id="@+id/sliderX"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="-200"
-                    android:valueTo="200"
+                    android:valueFrom="-300"
+                    android:valueTo="300"
                     android:stepSize="1"
                     android:value="0"/>
         
@@ -1109,8 +1109,8 @@
                     android:id="@+id/sliderY"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="-200"
-                    android:valueTo="200"
+                    android:valueFrom="-300"
+                    android:valueTo="300"
                     android:stepSize="1"
                     android:value="0"/>
 

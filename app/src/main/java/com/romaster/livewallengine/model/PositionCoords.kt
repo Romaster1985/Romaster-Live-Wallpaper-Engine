@@ -23,7 +23,7 @@ import kotlin.math.roundToInt
 /**
  * Sistema unificado de posición:
  * - Centro de pantalla = 0
- * - Rango típico de sliders = [-200, 200]
+ * - Rango típico de sliders = [-300, 300]
  * - 100 ≈ del centro al borde (la capa centrada en el borde)
  * - 200 ≈ una pantalla completa fuera del centro
  *
@@ -31,8 +31,8 @@ import kotlin.math.roundToInt
  * Reloj / imágenes / widgets usaban normalizado [0,1] con centro 0.5.
  */
 object PositionCoords {
-    const val MIN = -200f
-    const val MAX = 200f
+    const val MIN = -300f
+    const val MAX = 300f
 
     fun clamp(v: Float): Float = v.coerceIn(MIN, MAX)
 

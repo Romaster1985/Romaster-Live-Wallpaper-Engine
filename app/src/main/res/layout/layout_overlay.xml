@@ -427,8 +427,8 @@
                     android:id="@+id/sliderOverlayPosX"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="-200"
-                    android:valueTo="200"/>
+                    android:valueFrom="-300"
+                    android:valueTo="300"/>
 
                 <!-- Posición Y -->
 
@@ -455,8 +455,8 @@
                     android:id="@+id/sliderOverlayPosY"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:valueFrom="-200"
-                    android:valueTo="200"/>
+                    android:valueFrom="-300"
+                    android:valueTo="300"/>
 
                 <!-- Rotación -->
 

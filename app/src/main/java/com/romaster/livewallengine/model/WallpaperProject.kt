@@ -25,7 +25,7 @@ data class WallpaperProject(
 
     var version: Int = 1,
 
-    /** 0 = posiciones legacy normalizadas (centro 0.5); 1 = centro 0 en % (-200..200) */
+    /** 0 = posiciones legacy normalizadas (centro 0.5); 1 = centro 0 en % (-300..300) */
     var positionCoordSpace: Int = 0,
 
     var wallpaperVideo: String? = null,
