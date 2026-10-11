@@ -167,6 +167,22 @@
                     android:layout_marginTop="16dp"
                     android:text="@string/disable_on_lockscreen"/>
 
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/checkOverlayDisableOnLauncher"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/disable_on_launcher"/>
+
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/checkOverlayEnableLauncherFadeOut"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone"
+                    android:text="@string/enable_launcher_fade_out"/>
+
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>

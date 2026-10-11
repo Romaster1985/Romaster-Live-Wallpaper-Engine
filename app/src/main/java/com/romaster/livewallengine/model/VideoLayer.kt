@@ -54,5 +54,20 @@ data class VideoLayer(
     
     var soundVolume: Float = 1f,
     
-    var soundEnabled: Boolean = true
+    var soundEnabled: Boolean = true,
+
+    /** Opacidad del Video-BG (0..1). */
+    var opacity: Float = 1f,
+
+    /** Si true, oculto en pantalla de bloqueo. */
+    var disableOnLockScreen: Boolean = false,
+
+    /** Si true, oculto en launcher (desbloqueado). */
+    var disableOnLauncher: Boolean = false,
+
+    /**
+     * Solo si [disableOnLauncher]: fade-out al desbloquear
+     * con videoFadeDurationMs (Soft Start del BG).
+     */
+    var enableLauncherFadeOut: Boolean = false
 )

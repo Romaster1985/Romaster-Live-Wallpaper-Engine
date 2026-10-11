@@ -63,9 +63,18 @@ data class OverlaySettings(
 
     /**
      * Si true, Video-OL oculto en pantalla de bloqueo.
-     * Al desbloquear se revela con Soft Start.
+     * Al desbloquear se revela con Soft Start (si no está disableOnLauncher).
      * Default false = visible (proyectos viejos).
      */
-    var disableOnLockScreen: Boolean = false
+    var disableOnLockScreen: Boolean = false,
+
+    /** Si true, oculto en launcher (desbloqueado). */
+    var disableOnLauncher: Boolean = false,
+
+    /**
+     * Solo si [disableOnLauncher]: al desbloquear hace fade-out
+     * con la duración de overlayFadeDurationMs (Soft Start).
+     */
+    var enableLauncherFadeOut: Boolean = false
 
 )

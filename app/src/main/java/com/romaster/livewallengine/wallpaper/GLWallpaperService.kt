@@ -173,18 +173,15 @@ class GLWallpaperService : WallpaperService() {
                     // Anti-flash del frame anterior
                     overlay?.setForceHidden(true)
 
-                    val hideOnLock =
+                    val hideOlOnLock =
                         project.overlay.disableOnLockScreen
-
-                    if (hideOnLock) {
-                        // No mostrar ni reproducir Video-OL en pantalla de bloqueo
+                    if (hideOlOnLock) {
                         FileLogger.log(
                             this@GLWallpaperService,
                             "LOCKED -> overlay oculto + pausa en 0 (disableOnLockScreen)"
                         )
                         overlay?.restoreAt(0, paused = true)
                     } else {
-                        // Soft Start al llegar el frame 0
                         val softMs =
                             project.overlayFadeDurationMs
                                 .coerceAtLeast(1L)
@@ -196,6 +193,31 @@ class GLWallpaperService : WallpaperService() {
                                 overlay.startOverlayFadeIn(softMs)
                             }
                         )
+                    }
+
+                    // Video-BG visibilidad en bloqueo
+                    val bgLayer = project.layers.firstOrNull()
+                    if (bgLayer != null) {
+                        if (bgLayer.disableOnLockScreen) {
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "LOCKED -> BG oculto + pausa en 0"
+                            )
+                            renderer?.setBgForceHidden(true)
+                            try {
+                                videoPlayer?.pause()
+                                videoPlayer?.seekTo(0)
+                            } catch (_: Exception) {
+                            }
+                        } else {
+                            renderer?.setBgForceHidden(false)
+                            try {
+                                videoPlayer?.seekTo(0)
+                                videoPlayer?.play()
+                            } catch (_: Exception) {
+                            }
+                            renderer?.startFadeIn()
+                        }
                     }
 
                     // NO editor.load() aquí: reemplaza el WallpaperProject en memoria
@@ -259,34 +281,101 @@ class GLWallpaperService : WallpaperService() {
 
                     val overlay =
                         renderer?.getVideoOverlayRenderer()
+                    val softOlMs =
+                        project.overlayFadeDurationMs.coerceAtLeast(1L)
 
                     if (overlay != null) {
-                        val wasHiddenOnLock =
-                            project.overlay.disableOnLockScreen
-                        if (wasHiddenOnLock) {
-                            // Desde el inicio al desbloquear (estuvo pausado en 0 en lock)
-                            val softMs =
-                                project.overlayFadeDurationMs
-                                    .coerceAtLeast(1L)
-                            FileLogger.log(
-                                this@GLWallpaperService,
-                                "UNLOCKED -> overlay desde 0 + Soft Start (estaba disableOnLockScreen)"
-                            )
-                            overlay.restoreAt(
-                                0,
-                                paused = false,
-                                onReady = {
-                                    overlay.setForceHidden(false)
-                                    overlay.startSoftStart(softMs)
+                        when {
+                            project.overlay.disableOnLauncher -> {
+                                if (project.overlay.enableLauncherFadeOut) {
+                                    FileLogger.log(
+                                        this@GLWallpaperService,
+                                        "UNLOCKED -> overlay fade-out launcher"
+                                    )
+                                    overlay.startLauncherFadeOut(softOlMs) {
+                                        overlay.restoreAt(0, paused = true)
+                                    }
+                                } else {
+                                    FileLogger.log(
+                                        this@GLWallpaperService,
+                                        "UNLOCKED -> overlay oculto en launcher"
+                                    )
+                                    overlay.setForceHidden(true)
+                                    overlay.restoreAt(0, paused = true)
                                 }
-                            )
-                        } else if (overlay.isPlayingReverseClip()) {
-                            FileLogger.log(
-                                this@GLWallpaperService,
-                                "UNLOCKED durante reversa -> se deja terminar el clip"
-                            )
-                        } else {
-                            overlay.play()
+                            }
+                            project.overlay.disableOnLockScreen -> {
+                                FileLogger.log(
+                                    this@GLWallpaperService,
+                                    "UNLOCKED -> overlay desde 0 + Soft Start"
+                                )
+                                overlay.restoreAt(
+                                    0,
+                                    paused = false,
+                                    onReady = {
+                                        overlay.setForceHidden(false)
+                                        overlay.startSoftStart(softOlMs)
+                                    }
+                                )
+                            }
+                            overlay.isPlayingReverseClip() -> {
+                                FileLogger.log(
+                                    this@GLWallpaperService,
+                                    "UNLOCKED durante reversa -> se deja terminar el clip"
+                                )
+                            }
+                            else -> overlay.play()
+                        }
+                    }
+
+                    // Video-BG al desbloquear
+                    val bgLayer = project.layers.firstOrNull()
+                    val softBgMs =
+                        project.videoFadeDurationMs.coerceAtLeast(1L)
+                    if (bgLayer != null) {
+                        when {
+                            bgLayer.disableOnLauncher -> {
+                                if (bgLayer.enableLauncherFadeOut) {
+                                    FileLogger.log(
+                                        this@GLWallpaperService,
+                                        "UNLOCKED -> BG fade-out launcher"
+                                    )
+                                    renderer?.startBgLauncherFadeOut(softBgMs) {
+                                        try {
+                                            videoPlayer?.pause()
+                                            videoPlayer?.seekTo(0)
+                                        } catch (_: Exception) {
+                                        }
+                                    }
+                                } else {
+                                    FileLogger.log(
+                                        this@GLWallpaperService,
+                                        "UNLOCKED -> BG oculto en launcher"
+                                    )
+                                    renderer?.setBgForceHidden(true)
+                                    try {
+                                        videoPlayer?.pause()
+                                        videoPlayer?.seekTo(0)
+                                    } catch (_: Exception) {
+                                    }
+                                }
+                            }
+                            bgLayer.disableOnLockScreen -> {
+                                FileLogger.log(
+                                    this@GLWallpaperService,
+                                    "UNLOCKED -> BG desde 0 + Soft Start"
+                                )
+                                renderer?.setBgForceHidden(false)
+                                try {
+                                    videoPlayer?.seekTo(0)
+                                    videoPlayer?.play()
+                                } catch (_: Exception) {
+                                }
+                                renderer?.startFadeIn()
+                            }
+                            else -> {
+                                // Visible en lock y launcher: sin re-fade
+                            }
                         }
                     }
                 }

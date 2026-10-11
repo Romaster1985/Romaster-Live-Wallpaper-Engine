@@ -494,10 +494,24 @@ loadDeviceInformation()
         findViewById<MaterialCheckBox>(
             R.id.checkOverlayDisableOnLock
         ).setOnCheckedChangeListener { _, _ ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            updatePreviewProject()
+        }
 
-            if (loadingUI)
-                return@setOnCheckedChangeListener
+        findViewById<MaterialCheckBox>(
+            R.id.checkOverlayDisableOnLauncher
+        ).setOnCheckedChangeListener { _, checked ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            findViewById<MaterialCheckBox>(
+                R.id.checkOverlayEnableLauncherFadeOut
+            ).visibility = if (checked) View.VISIBLE else View.GONE
+            updatePreviewProject()
+        }
 
+        findViewById<MaterialCheckBox>(
+            R.id.checkOverlayEnableLauncherFadeOut
+        ).setOnCheckedChangeListener { _, _ ->
+            if (loadingUI) return@setOnCheckedChangeListener
             updatePreviewProject()
         }
 
@@ -5129,6 +5143,25 @@ private fun showFadeDurationDialog(
         connectSlider(R.id.sliderVideoZoom, R.id.textVideoZoomValue, 100f)
         connectSlider(R.id.sliderVideoPosX, R.id.textVideoPosXValue, 0f)
         connectSlider(R.id.sliderVideoPosY, R.id.textVideoPosYValue, 0f)
+        connectSlider(R.id.sliderVideoAlpha, R.id.textVideoAlphaValue, 100f)
+
+        findViewById<MaterialCheckBox>(R.id.checkVideoDisableOnLock)
+            .setOnCheckedChangeListener { _, _ ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                updatePreviewProject()
+            }
+        findViewById<MaterialCheckBox>(R.id.checkVideoDisableOnLauncher)
+            .setOnCheckedChangeListener { _, checked ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                findViewById<MaterialCheckBox>(R.id.checkVideoEnableLauncherFadeOut)
+                    .visibility = if (checked) View.VISIBLE else View.GONE
+                updatePreviewProject()
+            }
+        findViewById<MaterialCheckBox>(R.id.checkVideoEnableLauncherFadeOut)
+            .setOnCheckedChangeListener { _, _ ->
+                if (loadingUI) return@setOnCheckedChangeListener
+                updatePreviewProject()
+            }
     }
     
     private fun setupOverlaySliders() {
@@ -6383,6 +6416,18 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             overlay.disableOnLockScreen
 
         findViewById<MaterialCheckBox>(
+            R.id.checkOverlayDisableOnLauncher
+        ).isChecked =
+            overlay.disableOnLauncher
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkOverlayEnableLauncherFadeOut
+        ).apply {
+            isChecked = overlay.enableLauncherFadeOut
+            visibility = if (overlay.disableOnLauncher) View.VISIBLE else View.GONE
+        }
+
+        findViewById<MaterialCheckBox>(
             R.id.checkVideoOlEnabled
         ).isChecked = overlay.layerEnabled
         
@@ -6596,6 +6641,31 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             R.id.textVideoPosYValue
         ).text =
             layer.y.toInt().toString()
+
+        findViewById<Slider>(
+            R.id.sliderVideoAlpha
+        ).value =
+            (layer.opacity * 100f).coerceIn(0f, 100f)
+
+        findViewById<TextView>(
+            R.id.textVideoAlphaValue
+        ).text =
+            (layer.opacity * 100f).toInt().toString()
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkVideoDisableOnLock
+        ).isChecked = layer.disableOnLockScreen
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkVideoDisableOnLauncher
+        ).isChecked = layer.disableOnLauncher
+
+        findViewById<MaterialCheckBox>(
+            R.id.checkVideoEnableLauncherFadeOut
+        ).apply {
+            isChecked = layer.enableLauncherFadeOut
+            visibility = if (layer.disableOnLauncher) View.VISIBLE else View.GONE
+        }
         
         // -----------------------------
         // Audio
@@ -6759,6 +6829,16 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         overlay.disableOnLockScreen =
             findViewById<MaterialCheckBox>(
                 R.id.checkOverlayDisableOnLock
+            ).isChecked
+
+        overlay.disableOnLauncher =
+            findViewById<MaterialCheckBox>(
+                R.id.checkOverlayDisableOnLauncher
+            ).isChecked
+
+        overlay.enableLauncherFadeOut =
+            findViewById<MaterialCheckBox>(
+                R.id.checkOverlayEnableLauncherFadeOut
             ).isChecked
 
         overlay.layerEnabled =
@@ -7712,6 +7792,26 @@ clock.enabled =
             findViewById<Slider>(
                 R.id.sliderVideoPosY
             ).value
+
+        layer.opacity =
+            findViewById<Slider>(
+                R.id.sliderVideoAlpha
+            ).value / 100f
+
+        layer.disableOnLockScreen =
+            findViewById<MaterialCheckBox>(
+                R.id.checkVideoDisableOnLock
+            ).isChecked
+
+        layer.disableOnLauncher =
+            findViewById<MaterialCheckBox>(
+                R.id.checkVideoDisableOnLauncher
+            ).isChecked
+
+        layer.enableLauncherFadeOut =
+            findViewById<MaterialCheckBox>(
+                R.id.checkVideoEnableLauncherFadeOut
+            ).isChecked
     
         // -----------------------------
         // Audio

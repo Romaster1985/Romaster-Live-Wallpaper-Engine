@@ -84,6 +84,10 @@ class GLRenderer(
     private var fadeStartTime = 0L
     private var fadeDelayUntil = 0L
     private var fadeAlpha = 0f
+    private var bgForceHidden = false
+    private var bgFadeOutStart = -1L
+    private var bgFadeOutDur = 500L
+    private var bgOnFadeOutComplete: (() -> Unit)? = null
     private var alphaHandle = 0
 
     private var videoVertexBuffer: java.nio.FloatBuffer? = null
@@ -230,7 +234,33 @@ class GLRenderer(
         updateVideoRect(-1f, 1f, -1f, 1f)
     }
 
+
+    fun setBgForceHidden(hidden: Boolean) {
+        bgForceHidden = hidden
+        if (hidden) {
+            fadeAlpha = 0f
+            fadeStartTime = 0L
+            bgFadeOutStart = -1L
+            bgOnFadeOutComplete = null
+        }
+    }
+
+    fun startBgLauncherFadeOut(durationMs: Long, onComplete: (() -> Unit)? = null) {
+        bgForceHidden = false
+        fadeStartTime = 0L
+        fadeDelayUntil = 0L
+        bgFadeOutDur = durationMs.coerceAtLeast(1L)
+        bgFadeOutStart = SystemClock.elapsedRealtime()
+        bgOnFadeOutComplete = onComplete
+        if (fadeAlpha < 0.01f) fadeAlpha = 1f
+    }
+
+    fun isBgForceHidden(): Boolean = bgForceHidden
+
     fun startFadeIn() {
+        bgFadeOutStart = -1L
+        bgOnFadeOutComplete = null
+        bgForceHidden = false
         fadeAlpha = 0f
         val delay = ProjectManager.getProject().videoDelayStartMs.coerceAtLeast(0L)
         val now = SystemClock.elapsedRealtime()
@@ -255,6 +285,20 @@ class GLRenderer(
 
     private fun updateFade() {
         val now = SystemClock.elapsedRealtime()
+        if (bgFadeOutStart >= 0L) {
+            val elapsed = now - bgFadeOutStart
+            val dur = bgFadeOutDur.toFloat().coerceAtLeast(1f)
+            fadeAlpha = (1f - elapsed.toFloat() / dur).coerceIn(0f, 1f)
+            if (fadeAlpha <= 0.001f) {
+                bgFadeOutStart = -1L
+                fadeAlpha = 0f
+                bgForceHidden = true
+                val cb = bgOnFadeOutComplete
+                bgOnFadeOutComplete = null
+                cb?.invoke()
+            }
+            return
+        }
         // Esperando Delay Start
         if (fadeDelayUntil > 0L) {
             fadeAlpha = 0f
@@ -379,8 +423,12 @@ class GLRenderer(
     }
 
     private fun drawVideoBackground() {
+        if (bgForceHidden) return
         GLES20.glUseProgram(program)
         updateFade()
+        val layerOp = ProjectManager.getProject().layers.firstOrNull()?.opacity?.coerceIn(0f, 1f) ?: 1f
+        val drawAlpha = (fadeAlpha * layerOp).coerceIn(0f, 1f)
+        if (drawAlpha <= 0.001f) return
 
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
@@ -402,7 +450,7 @@ class GLRenderer(
         updateVideoTransform()
 
         GLES20.glUniformMatrix4fv(transformHandle, 1, false, transformMatrix, 0)
-        GLES20.glUniform1f(alphaHandle, fadeAlpha)
+        GLES20.glUniform1f(alphaHandle, drawAlpha)
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)
 

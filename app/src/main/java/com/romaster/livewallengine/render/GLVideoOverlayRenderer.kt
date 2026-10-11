@@ -73,6 +73,9 @@ class GLVideoOverlayRenderer(
     private var fadeDelayUntil = 0L
     private var fadeStartTime = 0L
     private var fadeAlpha = 0f
+    private var fadeOutStartTime = -1L
+    private var fadeOutDurationMs = 500L
+    private var onFadeOutComplete: (() -> Unit)? = null
 
     @Volatile
     private var forceHidden: Boolean = false
@@ -146,6 +149,21 @@ class GLVideoOverlayRenderer(
 
     private fun updateFade() {
         val now = SystemClock.elapsedRealtime()
+        // Fade-out (launcher) tiene prioridad
+        if (fadeOutStartTime >= 0L) {
+            val elapsed = now - fadeOutStartTime
+            val dur = fadeOutDurationMs.toFloat().coerceAtLeast(1f)
+            fadeAlpha = (1f - elapsed.toFloat() / dur).coerceIn(0f, 1f)
+            if (fadeAlpha <= 0.001f) {
+                fadeOutStartTime = -1L
+                fadeAlpha = 0f
+                forceHidden = true
+                val cb = onFadeOutComplete
+                onFadeOutComplete = null
+                cb?.invoke()
+            }
+            return
+        }
         if (fadeDelayUntil > 0L) {
             fadeAlpha = 0f
             if (now >= fadeDelayUntil) {
@@ -174,6 +192,8 @@ class GLVideoOverlayRenderer(
     }
 
     fun startSoftStart(durationMs: Long = -1L) {
+        fadeOutStartTime = -1L
+        onFadeOutComplete = null
         forceHidden = false
         fadeDurationOverrideMs =
             if (durationMs > 0L) durationMs else -1L
@@ -282,11 +302,28 @@ class GLVideoOverlayRenderer(
         }
     }
 
+
+    /** Fade-out al desbloquear cuando disableOnLauncher + enableLauncherFadeOut. */
+    fun startLauncherFadeOut(durationMs: Long, onComplete: (() -> Unit)? = null) {
+        forceHidden = false
+        fadeStartTime = -1L
+        fadeDelayUntil = 0L
+        fadeOutDurationMs = durationMs.coerceAtLeast(1L)
+        fadeOutStartTime = SystemClock.elapsedRealtime()
+        onFadeOutComplete = onComplete
+        // Partir del alpha actual visible
+        if (fadeAlpha < 0.01f) fadeAlpha = 1f
+    }
+
+    fun isForceHidden(): Boolean = forceHidden
+
     fun setForceHidden(hidden: Boolean) {
         forceHidden = hidden
         if (hidden) {
             fadeAlpha = 0f
             fadeStartTime = -1L
+            fadeOutStartTime = -1L
+            onFadeOutComplete = null
             resetLoopBlend()
             // Sin audio mientras está oculto (p. ej. disableOnLockScreen)
             try {
@@ -465,8 +502,6 @@ class GLVideoOverlayRenderer(
             }
         }
     }
-
-    fun isForceHidden(): Boolean = forceHidden
 
     fun isLoopCrossfading(): Boolean = loopPhase != LOOP_IDLE
 

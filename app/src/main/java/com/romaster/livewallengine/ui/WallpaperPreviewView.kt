@@ -666,26 +666,35 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                         "Preview UNLOCKED (sim) reverse=" +
                                             overlay.isPlayingReverseClip()
                                     )
-                                    if (project.overlay.disableOnLockScreen) {
-                                        val softMs =
-                                            project.overlayFadeDurationMs
-                                                .coerceAtLeast(1L)
-                                        FileLogger.log(
-                                            context,
-                                            "Preview UNLOCKED -> overlay desde 0 + Soft Start"
-                                        )
-                                        overlay.restoreAt(
-                                            0,
-                                            paused = false,
-                                            onReady = {
-                                                overlay.setForceHidden(false)
-                                                overlay.startSoftStart(softMs)
+                                    val softOlMs =
+                                        project.overlayFadeDurationMs.coerceAtLeast(1L)
+                                    when {
+                                        project.overlay.disableOnLauncher -> {
+                                            if (project.overlay.enableLauncherFadeOut) {
+                                                overlay.startLauncherFadeOut(softOlMs) {
+                                                    overlay.restoreAt(0, paused = true)
+                                                }
+                                            } else {
+                                                overlay.setForceHidden(true)
+                                                overlay.restoreAt(0, paused = true)
                                             }
-                                        )
-                                    } else if (overlay.isPlayingReverseClip()) {
-                                        // Dejar terminar la reversa
-                                    } else {
-                                        overlay.play()
+                                        }
+                                        project.overlay.disableOnLockScreen -> {
+                                            FileLogger.log(
+                                                context,
+                                                "Preview UNLOCKED -> overlay desde 0 + Soft Start"
+                                            )
+                                            overlay.restoreAt(
+                                                0,
+                                                paused = false,
+                                                onReady = {
+                                                    overlay.setForceHidden(false)
+                                                    overlay.startSoftStart(softOlMs)
+                                                }
+                                            )
+                                        }
+                                        overlay.isPlayingReverseClip() -> { }
+                                        else -> overlay.play()
                                     }
 
                                     renderer?.setClockLockScreenState(
