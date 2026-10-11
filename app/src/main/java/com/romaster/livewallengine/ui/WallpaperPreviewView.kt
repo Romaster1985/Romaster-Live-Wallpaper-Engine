@@ -255,6 +255,9 @@ class WallpaperPreviewView @JvmOverloads constructor(
                 }
 
                 videoPlayer!!.play()
+                applyBgPreviewLockVisibility(
+                    ProjectManager.getProject().previewLocked
+                )
                 
                 // Restaurar posición del Video OL
                 renderer!!
@@ -614,6 +617,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                     overlay.setForceHidden(true)
                                     val hideOnLock =
                                         project.overlay.disableOnLockScreen
+                                    applyBgPreviewLockVisibility(locked = true)
                                     if (hideOnLock) {
                                         // Sin audio ni reproducción en lock simulado
                                         overlay.restoreAt(0, paused = true)
@@ -703,6 +707,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                     )
                                     renderer?.revealImageLayersAfterUnlock()
                                     renderer?.revealWidgetLayersAfterUnlock()
+                                    applyBgPreviewLockVisibility(locked = false)
                                 }
                             }
 
@@ -1108,7 +1113,70 @@ class WallpaperPreviewView @JvmOverloads constructor(
     
     }
     
-    private fun initializeAudioConfiguration() {
+    
+    private fun applyBgPreviewLockVisibility(locked: Boolean) {
+        val project = ProjectManager.getProject()
+        val bg = project.layers.firstOrNull() ?: return
+        val softMs = project.videoFadeDurationMs.coerceAtLeast(1L)
+        if (locked) {
+            if (bg.disableOnLockScreen) {
+                FileLogger.log(context, "Preview BG LOCKED -> oculto + pausa 0")
+                renderer?.setBgForceHidden(true)
+                try {
+                    videoPlayer?.pause()
+                    videoPlayer?.seekTo(0)
+                } catch (_: Exception) {
+                }
+            } else {
+                FileLogger.log(context, "Preview BG LOCKED -> visible")
+                renderer?.setBgForceHidden(false)
+                try {
+                    videoPlayer?.seekTo(0)
+                    videoPlayer?.play()
+                } catch (_: Exception) {
+                }
+                renderer?.startFadeIn()
+            }
+        } else {
+            when {
+                bg.disableOnLauncher -> {
+                    if (bg.enableLauncherFadeOut) {
+                        FileLogger.log(context, "Preview BG UNLOCKED -> fade-out")
+                        renderer?.startBgLauncherFadeOut(softMs) {
+                            try {
+                                videoPlayer?.pause()
+                                videoPlayer?.seekTo(0)
+                            } catch (_: Exception) {
+                            }
+                        }
+                    } else {
+                        FileLogger.log(context, "Preview BG UNLOCKED -> oculto launcher")
+                        renderer?.setBgForceHidden(true)
+                        try {
+                            videoPlayer?.pause()
+                            videoPlayer?.seekTo(0)
+                        } catch (_: Exception) {
+                        }
+                    }
+                }
+                bg.disableOnLockScreen -> {
+                    FileLogger.log(context, "Preview BG UNLOCKED -> soft start")
+                    renderer?.setBgForceHidden(false)
+                    try {
+                        videoPlayer?.seekTo(0)
+                        videoPlayer?.play()
+                    } catch (_: Exception) {
+                    }
+                    renderer?.startFadeIn()
+                }
+                else -> {
+                    renderer?.setBgForceHidden(false)
+                }
+            }
+        }
+    }
+
+private fun initializeAudioConfiguration() {
 
         val project =
             ProjectManager.getProject()
@@ -1180,8 +1248,34 @@ class WallpaperPreviewView @JvmOverloads constructor(
     }
     
     fun refresh() {
-
-        // Más adelante regeneraremos el bitmap del reloj aquí.
+        // Reaplicar visibilidad BG/OL ante cambios de flags desde la UI
+        try {
+            applyBgPreviewLockVisibility(ProjectManager.getProject().previewLocked)
+            val project = ProjectManager.getProject()
+            val overlay = renderer?.getVideoOverlayRenderer()
+            if (overlay != null) {
+                val locked = project.previewLocked
+                when {
+                    locked && project.overlay.disableOnLockScreen -> {
+                        overlay.setForceHidden(true)
+                        overlay.restoreAt(0, paused = true)
+                    }
+                    !locked && project.overlay.disableOnLauncher -> {
+                        if (!project.overlay.enableLauncherFadeOut) {
+                            overlay.setForceHidden(true)
+                            overlay.restoreAt(0, paused = true)
+                        }
+                    }
+                    locked && !project.overlay.disableOnLockScreen -> {
+                        overlay.setForceHidden(false)
+                    }
+                    !locked && !project.overlay.disableOnLauncher -> {
+                        overlay.setForceHidden(false)
+                    }
+                }
+            }
+        } catch (_: Exception) {
+        }
     }
     
     fun capturePreview(

@@ -140,6 +140,86 @@ class GLWallpaperService : WallpaperService() {
         // ESTADO DE BLOQUEO
         // ============================================
 
+
+        /** Visibilidad + pausa del Video-BG según bloqueo y flags del layer. */
+        private fun applyBgLockVisibility(locked: Boolean) {
+            val project = ProjectManager.getProject()
+            val bg = project.layers.firstOrNull() ?: return
+            val softMs = project.videoFadeDurationMs.coerceAtLeast(1L)
+            if (locked) {
+                if (bg.disableOnLockScreen) {
+                    FileLogger.log(
+                        this@GLWallpaperService,
+                        "BG visibility LOCKED -> oculto + pausa 0"
+                    )
+                    renderer?.setBgForceHidden(true)
+                    try {
+                        videoPlayer?.pause()
+                        videoPlayer?.seekTo(0)
+                    } catch (_: Exception) {
+                    }
+                } else {
+                    FileLogger.log(
+                        this@GLWallpaperService,
+                        "BG visibility LOCKED -> visible desde 0"
+                    )
+                    renderer?.setBgForceHidden(false)
+                    try {
+                        videoPlayer?.seekTo(0)
+                        videoPlayer?.play()
+                    } catch (_: Exception) {
+                    }
+                    renderer?.startFadeIn()
+                }
+            } else {
+                when {
+                    bg.disableOnLauncher -> {
+                        if (bg.enableLauncherFadeOut) {
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "BG visibility UNLOCKED -> fade-out launcher"
+                            )
+                            renderer?.startBgLauncherFadeOut(softMs) {
+                                try {
+                                    videoPlayer?.pause()
+                                    videoPlayer?.seekTo(0)
+                                } catch (_: Exception) {
+                                }
+                            }
+                        } else {
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "BG visibility UNLOCKED -> oculto launcher"
+                            )
+                            renderer?.setBgForceHidden(true)
+                            try {
+                                videoPlayer?.pause()
+                                videoPlayer?.seekTo(0)
+                            } catch (_: Exception) {
+                            }
+                        }
+                    }
+                    bg.disableOnLockScreen -> {
+                        FileLogger.log(
+                            this@GLWallpaperService,
+                            "BG visibility UNLOCKED -> soft start (estaba oculto en lock)"
+                        )
+                        renderer?.setBgForceHidden(false)
+                        try {
+                            videoPlayer?.seekTo(0)
+                            videoPlayer?.play()
+                        } catch (_: Exception) {
+                        }
+                        renderer?.startFadeIn()
+                    }
+                    else -> {
+                        // Visible en lock y launcher: no forzar re-fade
+                        renderer?.setBgForceHidden(false)
+                    }
+                }
+            }
+        }
+
         private fun updateCueState() {
 
             val keyguard =
@@ -195,30 +275,7 @@ class GLWallpaperService : WallpaperService() {
                         )
                     }
 
-                    // Video-BG visibilidad en bloqueo
-                    val bgLayer = project.layers.firstOrNull()
-                    if (bgLayer != null) {
-                        if (bgLayer.disableOnLockScreen) {
-                            FileLogger.log(
-                                this@GLWallpaperService,
-                                "LOCKED -> BG oculto + pausa en 0"
-                            )
-                            renderer?.setBgForceHidden(true)
-                            try {
-                                videoPlayer?.pause()
-                                videoPlayer?.seekTo(0)
-                            } catch (_: Exception) {
-                            }
-                        } else {
-                            renderer?.setBgForceHidden(false)
-                            try {
-                                videoPlayer?.seekTo(0)
-                                videoPlayer?.play()
-                            } catch (_: Exception) {
-                            }
-                            renderer?.startFadeIn()
-                        }
-                    }
+                    applyBgLockVisibility(locked = true)
 
                     // NO editor.load() aquí: reemplaza el WallpaperProject en memoria
                     // y los controles de la UI quedan apuntando a capas "muertas".
@@ -328,56 +385,7 @@ class GLWallpaperService : WallpaperService() {
                         }
                     }
 
-                    // Video-BG al desbloquear
-                    val bgLayer = project.layers.firstOrNull()
-                    val softBgMs =
-                        project.videoFadeDurationMs.coerceAtLeast(1L)
-                    if (bgLayer != null) {
-                        when {
-                            bgLayer.disableOnLauncher -> {
-                                if (bgLayer.enableLauncherFadeOut) {
-                                    FileLogger.log(
-                                        this@GLWallpaperService,
-                                        "UNLOCKED -> BG fade-out launcher"
-                                    )
-                                    renderer?.startBgLauncherFadeOut(softBgMs) {
-                                        try {
-                                            videoPlayer?.pause()
-                                            videoPlayer?.seekTo(0)
-                                        } catch (_: Exception) {
-                                        }
-                                    }
-                                } else {
-                                    FileLogger.log(
-                                        this@GLWallpaperService,
-                                        "UNLOCKED -> BG oculto en launcher"
-                                    )
-                                    renderer?.setBgForceHidden(true)
-                                    try {
-                                        videoPlayer?.pause()
-                                        videoPlayer?.seekTo(0)
-                                    } catch (_: Exception) {
-                                    }
-                                }
-                            }
-                            bgLayer.disableOnLockScreen -> {
-                                FileLogger.log(
-                                    this@GLWallpaperService,
-                                    "UNLOCKED -> BG desde 0 + Soft Start"
-                                )
-                                renderer?.setBgForceHidden(false)
-                                try {
-                                    videoPlayer?.seekTo(0)
-                                    videoPlayer?.play()
-                                } catch (_: Exception) {
-                                }
-                                renderer?.startFadeIn()
-                            }
-                            else -> {
-                                // Visible en lock y launcher: sin re-fade
-                            }
-                        }
-                    }
+                    applyBgLockVisibility(locked = false)
                 }
             }
         }
@@ -816,7 +824,29 @@ class GLWallpaperService : WallpaperService() {
                             )
                         }
 
-                        renderer!!.startFadeIn()
+                        // Soft Start BG solo si debe verse según lock/launcher
+                        run {
+                            val project = ProjectManager.getProject()
+                            val keyguard =
+                                getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+                            val lockedNow = keyguard.isKeyguardLocked
+                            val bg = project.layers.firstOrNull()
+                            val hideBg =
+                                bg != null && (
+                                    (lockedNow && bg.disableOnLockScreen) ||
+                                        (!lockedNow && bg.disableOnLauncher)
+                                )
+                            if (hideBg) {
+                                renderer?.setBgForceHidden(true)
+                                try {
+                                    videoPlayer?.pause()
+                                    videoPlayer?.seekTo(0)
+                                } catch (_: Exception) {
+                                }
+                            } else {
+                                renderer!!.startFadeIn()
+                            }
+                        }
 
                         // Soft Start según estado real de bloqueo al volverse visible
                         // No editor.load(): reemplaza el proyecto en memoria y rompe
