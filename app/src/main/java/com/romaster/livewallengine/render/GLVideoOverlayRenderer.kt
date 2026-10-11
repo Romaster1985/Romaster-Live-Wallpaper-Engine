@@ -22,6 +22,7 @@ import android.content.Context
 import android.os.SystemClock
 import android.view.Surface
 import com.romaster.livewallengine.model.OverlayAspectMode
+import com.romaster.livewallengine.animation.AnimationEngine
 import com.romaster.livewallengine.project.ProjectManager
 import com.romaster.livewallengine.video.OverlayPlaybackDirection
 import com.romaster.livewallengine.video.OverlayVideoPlayer
@@ -233,7 +234,8 @@ class GLVideoOverlayRenderer(
         updateFade()
 
         val overlay = ProjectManager.getProject().overlay
-        val base = (overlay.opacity * fadeAlpha).coerceIn(0f, 1f)
+        val animA = AnimationEngine.stateForVol().alphaMul.coerceIn(0f, 1f)
+        val base = (overlay.opacity * fadeAlpha * animA).coerceIn(0f, 1f)
 
         if (loopPhase == LOOP_CROSSFADING) {
             val t = crossT.coerceIn(0f, 1f)
@@ -550,12 +552,16 @@ class GLVideoOverlayRenderer(
             }
         }
 
+        val anim = AnimationEngine.stateForVol()
+        val ax = (overlay.x / 100f) * screenRatio + anim.offsetXNorm * 2f * screenRatio
+        val ay = overlay.y / 100f - anim.offsetYNorm * 2f
+        val zm = anim.zoomMul.coerceIn(0.05f, 20f)
         quadRenderer.setRect(
-            (overlay.x / 100f) * screenRatio,
-            overlay.y / 100f,
-            targetWidth,
-            targetHeight,
-            overlay.rotation
+            ax,
+            ay,
+            targetWidth * zm,
+            targetHeight * zm,
+            overlay.rotation + anim.rotationDeg
         )
     }
 

@@ -427,7 +427,8 @@ class GLRenderer(
         GLES20.glUseProgram(program)
         updateFade()
         val layerOp = ProjectManager.getProject().layers.firstOrNull()?.opacity?.coerceIn(0f, 1f) ?: 1f
-        val drawAlpha = (fadeAlpha * layerOp).coerceIn(0f, 1f)
+        val animA = AnimationEngine.stateForVbg().alphaMul.coerceIn(0f, 1f)
+        val drawAlpha = (fadeAlpha * layerOp * animA).coerceIn(0f, 1f)
         if (drawAlpha <= 0.001f) return
 
         GLES20.glEnable(GLES20.GL_BLEND)
@@ -470,16 +471,27 @@ class GLRenderer(
         val modelMatrix = FloatArray(16)
         android.opengl.Matrix.setIdentityM(modelMatrix, 0)
 
+        val anim = AnimationEngine.stateForVbg()
+
         when (layer.fitMode) {
             VideoFitMode.STRETCH -> {
-                android.opengl.Matrix.setIdentityM(transformMatrix, 0)
-                return
+                // Pantalla completa + offsets/zoom/rotación de animación
             }
             VideoFitMode.FREE -> {
                 val zoom = layer.scale / 100f
                 val targetRatio = getTargetAspectRatio(layer.aspectMode)
-                android.opengl.Matrix.translateM(modelMatrix, 0, (layer.x / 100f) * screenRatio, layer.y / 100f, 0f)
-                android.opengl.Matrix.scaleM(modelMatrix, 0, targetRatio * zoom, 1f * zoom, 1f)
+                android.opengl.Matrix.translateM(
+                    modelMatrix, 0,
+                    (layer.x / 100f) * screenRatio,
+                    layer.y / 100f,
+                    0f
+                )
+                android.opengl.Matrix.scaleM(
+                    modelMatrix, 0,
+                    targetRatio * zoom,
+                    1f * zoom,
+                    1f
+                )
             }
             VideoFitMode.FIT -> {
                 val videoRatio = videoPlayerWidth.toFloat() / videoPlayerHeight.toFloat()
@@ -497,6 +509,30 @@ class GLRenderer(
                     android.opengl.Matrix.scaleM(modelMatrix, 0, screenRatio, screenRatio / videoRatio, 1f)
                 }
             }
+        }
+
+        // Animaciones (desplazamiento / zoom / rotación) sobre el modelo base
+        if (anim.offsetXNorm != 0f || anim.offsetYNorm != 0f ||
+            anim.zoomMul != 1f || anim.rotationDeg != 0f
+        ) {
+            val animModel = FloatArray(16)
+            android.opengl.Matrix.setIdentityM(animModel, 0)
+            android.opengl.Matrix.translateM(
+                animModel, 0,
+                anim.offsetXNorm * 2f * screenRatio,
+                -anim.offsetYNorm * 2f,
+                0f
+            )
+            if (anim.rotationDeg != 0f) {
+                android.opengl.Matrix.rotateM(animModel, 0, anim.rotationDeg, 0f, 0f, 1f)
+            }
+            if (anim.zoomMul != 1f) {
+                val z = anim.zoomMul.coerceIn(0.05f, 20f)
+                android.opengl.Matrix.scaleM(animModel, 0, z, z, 1f)
+            }
+            val combined = FloatArray(16)
+            android.opengl.Matrix.multiplyMM(combined, 0, animModel, 0, modelMatrix, 0)
+            System.arraycopy(combined, 0, modelMatrix, 0, 16)
         }
 
         android.opengl.Matrix.multiplyMM(transformMatrix, 0, projectionMatrix, 0, modelMatrix, 0)

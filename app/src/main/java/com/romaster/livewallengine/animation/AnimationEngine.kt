@@ -216,6 +216,12 @@ object AnimationEngine : SensorEventListener {
 
     fun stateForWidget(widgetId: String): LayerAnimState = stateFor("wdg:$widgetId")
 
+    fun stateForVbg(): LayerAnimState = stateFor("vbg")
+
+    fun stateForVol(): LayerAnimState = stateFor("vol")
+
+    fun stateForClock(): LayerAnimState = stateFor("ckol")
+
     // -------------------------------------------------------------------------
     // Reacciones
     // -------------------------------------------------------------------------

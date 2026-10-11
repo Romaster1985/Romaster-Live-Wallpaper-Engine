@@ -24,6 +24,7 @@ import android.opengl.GLES20
 import android.os.SystemClock
 import com.romaster.livewallengine.debug.FileLogger
 import com.romaster.livewallengine.model.ClockSettings
+import com.romaster.livewallengine.animation.AnimationEngine
 import com.romaster.livewallengine.project.ProjectManager
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -245,13 +246,14 @@ class GLOverlayRenderer {
                         )
                     }
                     // 1) Base difuminada OPACA en la forma del texto
+                    val animA = AnimationEngine.stateForClock().alphaMul.coerceIn(0f, 1f)
                     backdropBlur?.drawUnderlay(
                         maskTexId = texture.getTextureId(),
                         leftNdc = destLeftNdc,
                         topNdc = destTopNdc,
                         rightNdc = destRightNdc,
                         bottomNdc = destBottomNdc,
-                        alpha = clockAlpha,
+                        alpha = (clockAlpha * animA).coerceIn(0f, 1f),
                         glassFactor = gf
                     )
                 } catch (e: Exception) {
@@ -265,9 +267,10 @@ class GLOverlayRenderer {
             }
             // 2) Siempre el reloj (color + transparencia del cristal)
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+            val animA = AnimationEngine.stateForClock().alphaMul.coerceIn(0f, 1f)
             quadRenderer.draw(
                 texture,
-                clockAlpha,
+                (clockAlpha * animA).coerceIn(0f, 1f),
                 destLeftNdc,
                 destTopNdc,
                 destRightNdc,
@@ -571,10 +574,25 @@ class GLOverlayRenderer {
         destBottomPx = frame.bottom
         frameScreenW = frame.screenWidth.coerceAtLeast(1)
         frameScreenH = frame.screenHeight.coerceAtLeast(1)
-        destLeftNdc = (frame.left / sw) * 2f - 1f
-        destRightNdc = (frame.right / sw) * 2f - 1f
-        destTopNdc = 1f - (frame.top / sh) * 2f
-        destBottomNdc = 1f - (frame.bottom / sh) * 2f
+        var left = (frame.left / sw) * 2f - 1f
+        var right = (frame.right / sw) * 2f - 1f
+        var top = 1f - (frame.top / sh) * 2f
+        var bottom = 1f - (frame.bottom / sh) * 2f
+
+        // Animaciones sobre el reloj (desplazamiento + zoom; rotación no soportada en quad axis-aligned)
+        val anim = AnimationEngine.stateForClock()
+        val screenRatio = sw / sh
+        val cx = (left + right) * 0.5f
+        val cy = (top + bottom) * 0.5f
+        val zm = anim.zoomMul.coerceIn(0.05f, 20f)
+        val hw = (right - left) * 0.5f * zm
+        val hh = (top - bottom) * 0.5f * zm
+        val ox = anim.offsetXNorm * 2f * screenRatio
+        val oy = -anim.offsetYNorm * 2f
+        destLeftNdc = cx - hw + ox
+        destRightNdc = cx + hw + ox
+        destTopNdc = cy + hh + oy
+        destBottomNdc = cy - hh + oy
     }
 
     fun setBackgroundsSettled(settled: Boolean) {
