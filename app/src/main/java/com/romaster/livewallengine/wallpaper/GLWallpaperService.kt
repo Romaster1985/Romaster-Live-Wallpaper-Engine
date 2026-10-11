@@ -177,16 +177,12 @@ class GLWallpaperService : WallpaperService() {
                         project.overlay.disableOnLockScreen
 
                     if (hideOnLock) {
-                        // No mostrar Video-OL en pantalla de bloqueo
+                        // No mostrar ni reproducir Video-OL en pantalla de bloqueo
                         FileLogger.log(
                             this@GLWallpaperService,
-                            "LOCKED -> overlay deshabilitado en lock screen"
+                            "LOCKED -> overlay oculto + pausa en 0 (disableOnLockScreen)"
                         )
-                        // Sigue en original desde 0 por debajo (sin dibujar)
-                        overlay?.setDirection(
-                            OverlayPlaybackDirection.FORWARD,
-                            startPositionMs = 0
-                        )
+                        overlay?.restoreAt(0, paused = true)
                     } else {
                         // Soft Start al llegar el frame 0
                         val softMs =
@@ -268,15 +264,23 @@ class GLWallpaperService : WallpaperService() {
                         val wasHiddenOnLock =
                             project.overlay.disableOnLockScreen
                         if (wasHiddenOnLock) {
-                            // Revelar con Soft Start al desbloquear
+                            // Desde el inicio al desbloquear (estuvo pausado en 0 en lock)
                             val softMs =
                                 project.overlayFadeDurationMs
                                     .coerceAtLeast(1L)
-                            overlay.setForceHidden(false)
-                            overlay.startSoftStart(softMs)
-                        }
-
-                        if (overlay.isPlayingReverseClip()) {
+                            FileLogger.log(
+                                this@GLWallpaperService,
+                                "UNLOCKED -> overlay desde 0 + Soft Start (estaba disableOnLockScreen)"
+                            )
+                            overlay.restoreAt(
+                                0,
+                                paused = false,
+                                onReady = {
+                                    overlay.setForceHidden(false)
+                                    overlay.startSoftStart(softMs)
+                                }
+                            )
+                        } else if (overlay.isPlayingReverseClip()) {
                             FileLogger.log(
                                 this@GLWallpaperService,
                                 "UNLOCKED durante reversa -> se deja terminar el clip"
@@ -985,12 +989,12 @@ class GLWallpaperService : WallpaperService() {
                                         if (hideOnLock) {
                                             FileLogger.log(
                                                 this@GLWallpaperService,
-                                                "Overlay LOCKED resume -> oculto (disableOnLockScreen)"
+                                                "Overlay LOCKED resume -> oculto + pausa en 0 (disableOnLockScreen)"
                                             )
                                             overlay.setForceHidden(true)
                                             overlay.restoreAt(
                                                 0,
-                                                paused = false
+                                                paused = true
                                             )
                                         } else {
                                             FileLogger.log(
@@ -1751,7 +1755,7 @@ class GLWallpaperService : WallpaperService() {
                      */
 
                     videoPlayer?.setVolume(
-                        bgLayer.soundVolume
+                        if (bgLayer.soundEnabled) bgLayer.soundVolume else 0f
                     )
 
                 } else {
@@ -1765,7 +1769,7 @@ class GLWallpaperService : WallpaperService() {
                      */
 
                     bgSoundPlayer?.setVolume(
-                        bgLayer.soundVolume
+                        if (bgLayer.soundEnabled) bgLayer.soundVolume else 0f
                     )
                 }
             }
@@ -1784,13 +1788,13 @@ class GLWallpaperService : WallpaperService() {
                 renderer
                     ?.getVideoOverlayRenderer()
                     ?.setVolume(
-                        overlay.soundVolume
+                        if (overlay.soundEnabled) overlay.soundVolume else 0f
                     )
 
             } else {
 
                 overlaySoundPlayer?.setVolume(
-                    overlay.soundVolume
+                    if (overlay.soundEnabled) overlay.soundVolume else 0f
                 )
             }
         }
@@ -1824,9 +1828,9 @@ class GLWallpaperService : WallpaperService() {
                      * su volumen configurado.
                      */
 
-                    videoPlayer?.setVolume(
-                        bgLayer.soundVolume
-                    )
+                    val bgVol =
+                        if (bgLayer.soundEnabled) bgLayer.soundVolume else 0f
+                    videoPlayer?.setVolume(bgVol)
 
                     bgSoundPlayer?.stop()
 
@@ -1843,12 +1847,14 @@ class GLWallpaperService : WallpaperService() {
                         0f
                     )
 
+                    val bgExtVol =
+                        if (bgLayer.soundEnabled) bgLayer.soundVolume else 0f
                     bgSoundPlayer?.play(
                         AudioStorage.getAudioFile(
                             this@GLWallpaperService,
                             bgLayer.soundPath!!
                         ),
-                        bgLayer.soundVolume,
+                        bgExtVol,
                         false
                     )
                 }
@@ -1870,11 +1876,11 @@ class GLWallpaperService : WallpaperService() {
                  * dentro de su propio MediaPlayer.
                  */
 
+                val ovVol =
+                    if (overlay.soundEnabled) overlay.soundVolume else 0f
                 renderer
                     ?.getVideoOverlayRenderer()
-                    ?.setVolume(
-                        overlay.soundVolume
-                    )
+                    ?.setVolume(ovVol)
 
                 overlaySoundPlayer?.stop()
 
@@ -1892,12 +1898,14 @@ class GLWallpaperService : WallpaperService() {
                         0f
                     )
 
+                val ovExtVol =
+                    if (overlay.soundEnabled) overlay.soundVolume else 0f
                 overlaySoundPlayer?.play(
                     AudioStorage.getAudioFile(
                         this@GLWallpaperService,
                         overlay.soundPath!!
                     ),
-                    overlay.soundVolume,
+                    ovExtVol,
                     false
                 )
             }

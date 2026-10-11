@@ -411,10 +411,10 @@ class WallpaperPreviewView @JvmOverloads constructor(
                             if (hideOnLock) {
                                 FileLogger.log(
                                     context,
-                                    "Preview LOCKED resume -> oculto"
+                                    "Preview LOCKED resume -> oculto + pausa en 0"
                                 )
                                 overlay.setForceHidden(true)
-                                overlay.restoreAt(0, paused = false)
+                                overlay.restoreAt(0, paused = true)
                             } else {
                                 FileLogger.log(
                                     context,
@@ -615,10 +615,8 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                     val hideOnLock =
                                         project.overlay.disableOnLockScreen
                                     if (hideOnLock) {
-                                        overlay.setDirection(
-                                            OverlayPlaybackDirection.FORWARD,
-                                            startPositionMs = 0
-                                        )
+                                        // Sin audio ni reproducción en lock simulado
+                                        overlay.restoreAt(0, paused = true)
                                     } else {
                                         val softMs =
                                             project.overlayFadeDurationMs
@@ -672,10 +670,19 @@ class WallpaperPreviewView @JvmOverloads constructor(
                                         val softMs =
                                             project.overlayFadeDurationMs
                                                 .coerceAtLeast(1L)
-                                        overlay.setForceHidden(false)
-                                        overlay.startSoftStart(softMs)
-                                    }
-                                    if (overlay.isPlayingReverseClip()) {
+                                        FileLogger.log(
+                                            context,
+                                            "Preview UNLOCKED -> overlay desde 0 + Soft Start"
+                                        )
+                                        overlay.restoreAt(
+                                            0,
+                                            paused = false,
+                                            onReady = {
+                                                overlay.setForceHidden(false)
+                                                overlay.startSoftStart(softMs)
+                                            }
+                                        )
+                                    } else if (overlay.isPlayingReverseClip()) {
                                         // Dejar terminar la reversa
                                     } else {
                                         overlay.play()
@@ -1059,13 +1066,13 @@ class WallpaperPreviewView @JvmOverloads constructor(
             if (bgLayer.soundPath.isNullOrEmpty()) {
     
                 videoPlayer?.setVolume(
-                    bgLayer.soundVolume
+                    if (bgLayer.soundEnabled) bgLayer.soundVolume else 0f
                 )
     
             } else {
     
                 bgSoundPlayer?.setVolume(
-                    bgLayer.soundVolume
+                    if (bgLayer.soundEnabled) bgLayer.soundVolume else 0f
                 )
     
             }
@@ -1079,13 +1086,13 @@ class WallpaperPreviewView @JvmOverloads constructor(
             renderer
                 ?.getVideoOverlayRenderer()
                 ?.setVolume(
-                    overlay.soundVolume
+                    if (overlay.soundEnabled) overlay.soundVolume else 0f
                 )
     
         } else {
     
             overlaySoundPlayer?.setVolume(
-                overlay.soundVolume
+                if (overlay.soundEnabled) overlay.soundVolume else 0f
             )
     
         }
@@ -1109,7 +1116,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
             if (bgLayer.soundPath.isNullOrEmpty()) {
     
                 videoPlayer?.setVolume(
-                    bgLayer.soundVolume
+                    if (bgLayer.soundEnabled) bgLayer.soundVolume else 0f
                 )
     
                 bgSoundPlayer?.stop()
@@ -1123,7 +1130,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                         context,
                         bgLayer.soundPath!!
                     ),
-                    bgLayer.soundVolume,
+                    if (bgLayer.soundEnabled) bgLayer.soundVolume else 0f,
                     false
                 )
             }
@@ -1141,7 +1148,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
             renderer
                 ?.getVideoOverlayRenderer()
                 ?.setVolume(
-                    overlay.soundVolume
+                    if (overlay.soundEnabled) overlay.soundVolume else 0f
                 )
     
             overlaySoundPlayer?.stop()
@@ -1157,7 +1164,7 @@ class WallpaperPreviewView @JvmOverloads constructor(
                     context,
                     overlay.soundPath!!
                 ),
-                overlay.soundVolume,
+                if (overlay.soundEnabled) overlay.soundVolume else 0f,
                 false
             )
         }

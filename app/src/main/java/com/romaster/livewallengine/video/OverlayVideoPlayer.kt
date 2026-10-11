@@ -70,7 +70,7 @@ class OverlayVideoPlayer(
 
     var surfaceProvider: (() -> Surface)? = null
 
-    private var currentVolume = 1f
+    private var currentVolume = 0f
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -204,7 +204,7 @@ class OverlayVideoPlayer(
                 val d = mp.duration
                 if (d > 0) cachedDurationMs = d
 
-                mp.setVolume(currentVolume, currentVolume)
+                applyVolumeTo(mp)
 
                 val seek = pendingSeekMs
                 val hasSeek = seek >= 0
@@ -216,6 +216,7 @@ class OverlayVideoPlayer(
                     // start() se dispara en onSeekComplete
                 } else {
                     waitSeekBeforeStart = false
+                    applyVolumeTo(mp)
                     if (!mp.isPlaying) {
                         mp.start()
                         cachedIsPlaying = true
@@ -245,6 +246,7 @@ class OverlayVideoPlayer(
             if (waitSeekBeforeStart) {
                 waitSeekBeforeStart = false
                 try {
+                    applyVolumeTo(mp)
                     if (!mp.isPlaying) {
                         mp.start()
                     }
@@ -509,7 +511,12 @@ class OverlayVideoPlayer(
 
             player.setSurface(s)
             player.isLooping = looping
-            player.setVolume(currentVolume, currentVolume)
+            // Silencio al preparar; el volumen final se reafirma en onPrepared/start
+            try {
+                player.setVolume(0f, 0f)
+            } catch (_: Exception) {
+            }
+            applyVolumeTo(player)
             installListeners(player)
 
             if (autoPlay) {
@@ -581,8 +588,9 @@ class OverlayVideoPlayer(
         runOnPlayerThread {
             mediaPlayer?.let {
                 try {
+                    applyVolumeTo(it)
                     if (!it.isPlaying) {
-                        FileLogger.log(context, "MediaPlayer.start()")
+                        FileLogger.log(context, "MediaPlayer.start() vol=$currentVolume")
                         it.start()
                         cachedIsPlaying = true
                     }
@@ -961,7 +969,18 @@ class OverlayVideoPlayer(
         onCompletion = listener
     }
 
-    fun setVolume(volume: Float) {
+    
+    /** Aplica el volumen actual al MediaPlayer activo (antes de start). */
+    private fun applyVolumeTo(mp: MediaPlayer?) {
+        if (mp == null) return
+        try {
+            val v = currentVolume.coerceIn(0f, 1f)
+            mp.setVolume(v, v)
+        } catch (_: Exception) {
+        }
+    }
+
+fun setVolume(volume: Float) {
         currentVolume = volume.coerceIn(0f, 1f)
         runOnPlayerThread {
             try {

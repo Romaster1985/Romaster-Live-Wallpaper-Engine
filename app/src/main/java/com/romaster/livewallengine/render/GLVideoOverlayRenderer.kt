@@ -91,7 +91,7 @@ class GLVideoOverlayRenderer(
     @Volatile
     private var crossReady: Boolean = false
 
-    private var currentVolume: Float = 1f
+    private var currentVolume: Float = 0f
     private var completionListener: (() -> Unit)? = null
 
     private var screenWidth = 1
@@ -288,6 +288,20 @@ class GLVideoOverlayRenderer(
             fadeAlpha = 0f
             fadeStartTime = -1L
             resetLoopBlend()
+            // Sin audio mientras está oculto (p. ej. disableOnLockScreen)
+            try {
+                activePlayer.setVolume(0f)
+            } catch (_: Exception) {
+            }
+            try {
+                standbyPlayer.setVolume(0f)
+            } catch (_: Exception) {
+            }
+        } else {
+            try {
+                activePlayer.setVolume(currentVolume)
+            } catch (_: Exception) {
+            }
         }
     }
 
