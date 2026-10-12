@@ -63,6 +63,13 @@ class GLOverlayRenderer {
     private var destRightNdc = 1f
     private var destBottomNdc = -1f
 
+    /** Rect base del bitmap (sin animación). Se anima cada frame en [applyClockAnimToDest]. */
+    private var baseLeftNdc = -1f
+    private var baseTopNdc = 1f
+    private var baseRightNdc = 1f
+    private var baseBottomNdc = -1f
+    private var baseScreenRatio = 1f
+
     private var destLeftPx = 0f
     private var destTopPx = 0f
     private var destRightPx = 1f
@@ -160,6 +167,9 @@ class GLOverlayRenderer {
 
         // 1) Consumir bitmap listo en el hilo GL (upload rápido)
         consumePendingTexture()
+
+        // Animación de posición/zoom a 60 FPS (el bitmap del reloj sigue a ~1 FPS)
+        applyClockAnimToDest()
 
         val settings = ProjectManager.getProject().clock
         val secondBucket = System.currentTimeMillis() / 1000L
@@ -574,20 +584,30 @@ class GLOverlayRenderer {
         destBottomPx = frame.bottom
         frameScreenW = frame.screenWidth.coerceAtLeast(1)
         frameScreenH = frame.screenHeight.coerceAtLeast(1)
-        var left = (frame.left / sw) * 2f - 1f
-        var right = (frame.right / sw) * 2f - 1f
-        var top = 1f - (frame.top / sh) * 2f
-        var bottom = 1f - (frame.bottom / sh) * 2f
+        baseLeftNdc = (frame.left / sw) * 2f - 1f
+        baseRightNdc = (frame.right / sw) * 2f - 1f
+        baseTopNdc = 1f - (frame.top / sh) * 2f
+        baseBottomNdc = 1f - (frame.bottom / sh) * 2f
+        baseScreenRatio = sw / sh
+        applyClockAnimToDest()
+    }
 
-        // Animaciones sobre el reloj (desplazamiento + zoom; rotación no soportada en quad axis-aligned)
+    /**
+     * Aplica desplazamiento / zoom del motor de animaciones sobre el rect base.
+     * Debe llamarse **cada frame** (60 FPS del wallpaper), no solo al regenerar el bitmap (~1 FPS).
+     */
+    private fun applyClockAnimToDest() {
         val anim = AnimationEngine.stateForClock()
-        val screenRatio = sw / sh
+        val left = baseLeftNdc
+        val right = baseRightNdc
+        val top = baseTopNdc
+        val bottom = baseBottomNdc
         val cx = (left + right) * 0.5f
         val cy = (top + bottom) * 0.5f
         val zm = anim.zoomMul.coerceIn(0.05f, 20f)
         val hw = (right - left) * 0.5f * zm
         val hh = (top - bottom) * 0.5f * zm
-        val ox = anim.offsetXNorm * 2f * screenRatio
+        val ox = anim.offsetXNorm * 2f * baseScreenRatio
         val oy = -anim.offsetYNorm * 2f
         destLeftNdc = cx - hw + ox
         destRightNdc = cx + hw + ox
