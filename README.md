@@ -4,11 +4,11 @@
   <img src="pictures/imagen_10.png" alt="Romaster LiveWall Engine" width="360"/>
 </p>
 
-**Motor y editor de live wallpapers para Android** con video de fondo, video overlay, capas de imagen, **widgets con fórmulas (estilo KLWP)**, reloj avanzado (cristal, reflejo, fuentes variables), reproducción reactiva al bloqueo, galerías online y proyectos importables/exportables.
+**Motor y editor de live wallpapers para Android** con video de fondo, video overlay, capas de imagen, **widgets con fórmulas (estilo KLWP)**, **sistema de animaciones** (reacciones + acciones), reloj avanzado (cristal, reflejo, fuentes variables), reproducción reactiva al bloqueo, galerías online y proyectos importables/exportables.
 
 > Crea fondos animados con varias capas, chroma key, audio independiente, ping-pong, crossfade de loops, soft start, widgets de hora/batería/clima y comportamientos distintos cuando el teléfono está bloqueado o desbloqueado.
 
-**Versión actual:** `1.0.0-alpha4` (versionCode 4)
+**Versión actual:** `1.0.0-beta1` (versionCode 5)
 
 <p align="center">
   <img src="pictures/imagen_1.png" alt="Editor con preview en vivo" width="280"/>
@@ -99,6 +99,34 @@ Capa de texto/fórmulas inspirada en KLWP/KWGT:
 - Limpiar fuentes de texto e íconos no usadas (conserva las del reloj y widgets en uso)
 
 Ver tabla completa de fórmulas más abajo.
+
+
+### Animaciones (Animaciones)
+
+Sistema de animaciones por capa inspirado en motores de themes (reacciones + acciones):
+
+| Concepto | Descripción |
+|----------|-------------|
+| **Capa objetivo** | Video-BG, Video-OL, Clock-OL, cualquier imagen o widget |
+| **Reacciones** | Desbloquear, Bucle, Bucle con reversa, Desplazamiento del launcher (pantalla N), Giroscopio (ángulo), Visibilidad del wallpaper, **Fórmula** (`$if(..., 1, 0)$`) |
+| **Acciones** | Desplazamiento, Desplazamiento invertido, Acercar, Alejar, Aparecer, Desaparecer, Rotación |
+| **Física** | Velocidad y aceleración/desaceleración en perfil triangular (pico de velocidad a mitad de recorrido) |
+| **Retorno** | Checkbox opcional de retorno con animación invertida (no aplica a bucle / bucle con reversa) |
+| **Rotación de reloj** | En bucle + rotación: manecillas de hora / minutos / segundos, paso a paso o continuo |
+| **Fórmulas de reacción** | Diálogo con botones **Funciones** (`df`, `wi`, `bi`, `if`) y **Variables globales** (tokens de fecha, batería, clima, íconos y **`locked`** = 1 bloqueado / 0 desbloqueado) |
+
+El desplazamiento, zoom y fade del **reloj** se interpolan a **~60 FPS** (el bitmap del reloj sigue regenerándose ~1 vez por segundo). Video-BG, Video-OL, imágenes y widgets también reciben transformaciones de animación en el pipeline OpenGL.
+
+Posiciones unificadas en **X/Y de −300 a +300** (centro = 0) para videos, reloj, imágenes y widgets, con migración automática de proyectos antiguos.
+
+### Visibilidad de videos (Video-BG / Video-OL)
+
+Además del checkbox de “capa activa” en el título de cada card:
+
+- **Deshabilitar en pantalla de bloqueo** — oculta la capa; el player va a posición 0 y queda en pausa (sin audio)
+- **Deshabilitar en Launcher** — oculta al desbloquear; opción de **fade-out** usando la duración de Soft Start de Playback
+- Soft start / fade-out alineados entre preview y servicio de wallpaper
+- Volumen efectivo aplicado antes de cada `start()` para evitar “pops” de audio en cambios de visibilidad
 
 ### Video-BG / Video-OL — activar o desactivar capa
 
@@ -191,13 +219,15 @@ app/src/main/java/com/romaster/livewallengine/
 
 | Tab | Contenido |
 |-----|-----------|
-| **Video-BG** | Video / GIF / pantalla negra, ajuste, escala, posición, audio, reset de tab |
-| **Video-OL** | Overlay, chroma, transformaciones, lock screen, audio, reset de tab |
-| **Playback** | Cues, ping-pong, transición suave (Normal/Altern), soft/delay start, simulación de bloqueo |
+| **Video-BG** | Video / GIF / pantalla negra, ajuste, escala, posición, audio, visibilidad lock/launcher, reset de tab |
+| **Video-OL** | Overlay, chroma, transformaciones, visibilidad lock/launcher, audio, reset de tab |
+| **Playback** | Cues, ping-pong, transición suave (Normal/Altern), soft/delay start, sonido al desbloquear, simulación de bloqueo |
 | **Clock-OL** | Formatos, fuentes, variables, cristal, reflejo, blur, posición, bordes |
-| **Pics-OL** | Capas de imagen, orden Z, soft start, lock/launcher |
+| **Pics-OL** | Capas de imagen, orden Z, soft start, lock/launcher (+ fade-out opcional) |
 | **Widgets-OL** | Fórmulas KLWP-like, fuentes texto/íconos, alineación 3×3, clima, batería |
-| **Proyecto** | Guardar, importar, exportar, nuevo, galería de wallpapers, Acerca de |
+| **Animaciones** | Reacciones + acciones por capa (videos, reloj, imágenes, widgets), fórmulas con `locked` |
+| **Proyecto** | Guardar, importar, exportar, nuevo, galería de wallpapers |
+| **Settings** | Idioma, limpiar fuentes, información del dispositivo, Acerca de |
 
 ---
 
@@ -205,7 +235,7 @@ app/src/main/java/com/romaster/livewallengine/
 
 ```
 proyecto.zip
-├── project.json       # Capas, cues, clock, fades, ping-pong, imágenes…
+├── project.json       # Capas, cues, clock, fades, ping-pong, imágenes, widgets, animaciones…
 ├── preview.png        # Miniatura del diseño
 ├── videos/            # wallpaper_video, overlay_video, reversas
 ├── audio/             # Pistas externas (opcional)
@@ -261,6 +291,7 @@ Sintaxis inspirada en KLWP. El texto **fuera** de `$...$` es literal (incluye sa
 | `$wi(feels)$` / `$wi(feelsc)$` | Sensación térmica |
 | `$if(cond, sí, no)$` | Condicional; el branch elegido se evalúa de nuevo |
 | `$"texto"$` | Literal: no se calcula (ej. `$"20*2+5"$` → `20*2+5`) |
+| `$locked$` / `locked` | `1` si el dispositivo (o la simulación) está bloqueado, `0` si no — útil en animaciones y widgets |
 
 ### Operadores y condiciones
 
@@ -319,6 +350,17 @@ Claves de clima (`$wi(icon)$`) alineadas con KLWP:
 
 
 ## Historial de versiones
+
+### 1.0.0-beta1
+
+Primera **beta** pública: el motor de composición y el editor se consideran feature-complete para el ciclo 1.0; se prioriza estabilidad y pulido frente a features rotas.
+
+- **Tab Animaciones**: reacciones (desbloqueo, bucle, bucle+reversa, launcher, giroscopio, visibilidad, fórmula) y acciones (desplazamiento, inverso, zoom, fade, rotación, manecillas de reloj)
+- Animaciones aplicadas a Video-BG, Video-OL, Clock-OL, imágenes y widgets; reloj a **60 FPS** en transformaciones
+- Posiciones X/Y unificadas **−300…300** (centro 0) con compatibilidad de proyectos antiguos
+- Visibilidad avanzada Video-BG/OL (lock, launcher, fade-out, pause en 0, audio silencioso)
+- Fórmulas: selectores de **Funciones** y **Variables globales**; variable **`locked`**
+- Soft start / delay / soft-end y simulación de bloqueo alineados entre preview y servicio
 
 ### 1.0.0-alpha4
 
