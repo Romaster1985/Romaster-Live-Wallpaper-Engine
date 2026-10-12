@@ -3977,6 +3977,17 @@ private fun showFadeDurationDialog(
             .show()
     }
 
+    private fun insertAtCursor(edit: android.widget.EditText, text: String) {
+        val start = edit.selectionStart.coerceAtLeast(0)
+        val end = edit.selectionEnd.coerceAtLeast(0)
+        val a = minOf(start, end)
+        val b = maxOf(start, end)
+        edit.editableText.replace(a, b, text)
+        val pos = a + text.length
+        edit.setSelection(pos.coerceAtMost(edit.text.length))
+        edit.requestFocus()
+    }
+
     private fun showAnimationFormulaDialog(layer: AnimationLayer) {
         val density = resources.displayMetrics.density
         val input = android.widget.EditText(this).apply {
@@ -4003,6 +4014,44 @@ private fun showFadeDurationDialog(
                 }
             }
         })
+
+        val btnFunctions = com.google.android.material.button.MaterialButton(
+            this,
+            null,
+            com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = getString(R.string.anim_formula_functions)
+            layoutParams = LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+            ).apply {
+                marginEnd = (4 * density).toInt()
+            }
+            setOnClickListener {
+                showAnimFormulaFunctionsPicker(input)
+            }
+        }
+        val btnGlobals = com.google.android.material.button.MaterialButton(
+            this,
+            null,
+            com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = getString(R.string.anim_formula_globals)
+            layoutParams = LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+            ).apply {
+                marginStart = (4 * density).toInt()
+            }
+            setOnClickListener {
+                showAnimFormulaGlobalsPicker(input)
+            }
+        }
+        val btnRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, (8 * density).toInt(), 0, 0)
+            addView(btnFunctions)
+            addView(btnGlobals)
+        }
+
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding((16 * density).toInt(), (8 * density).toInt(), (16 * density).toInt(), 0)
@@ -4013,6 +4062,7 @@ private fun showFadeDurationDialog(
                 setPadding(0, (8 * density).toInt(), 0, 0)
             })
             addView(input)
+            addView(btnRow)
         }
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.anim_edit_formula))
@@ -4022,6 +4072,85 @@ private fun showFadeDurationDialog(
                 layer.formula = input.text.toString()
                 editor.save()
             }
+            .show()
+    }
+
+    private fun showAnimFormulaFunctionsPicker(edit: android.widget.EditText) {
+        data class FnItem(val label: String, val insert: String)
+        val items = listOf(
+            FnItem("df() — fecha/hora", "\$df()\$"),
+            FnItem("wi() — clima", "\$wi()\$"),
+            FnItem("bi() — batería", "\$bi()\$"),
+            FnItem("if() — condicional", "\$if(, , )\$")
+        )
+        val labels = items.map { it.label }.toTypedArray()
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.anim_formula_functions))
+            .setItems(labels) { _, which ->
+                insertAtCursor(edit, items[which].insert)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun showAnimFormulaGlobalsPicker(edit: android.widget.EditText) {
+        data class VarItem(val label: String, val insert: String)
+        val items = listOf(
+            // Estado
+            VarItem("locked (0/1 bloqueo)", "locked"),
+            // Fecha / hora (tokens df)
+            VarItem("HH — hora 00-23", "HH"),
+            VarItem("hh — hora 00-23", "hh"),
+            VarItem("H — hora sin cero", "H"),
+            VarItem("h — hora sin cero", "h"),
+            VarItem("mm — minutos", "mm"),
+            VarItem("m — minutos sin cero", "m"),
+            VarItem("ss — segundos", "ss"),
+            VarItem("s — segundos sin cero", "s"),
+            VarItem("EEEE — día semana largo", "EEEE"),
+            VarItem("EEE — día semana corto", "EEE"),
+            VarItem("dd — día mes", "dd"),
+            VarItem("d — día sin cero", "d"),
+            VarItem("MM — mes numérico", "MM"),
+            VarItem("MMM — mes corto", "MMM"),
+            VarItem("MMMM — mes largo", "MMMM"),
+            VarItem("yyyy — año", "yyyy"),
+            VarItem("yy — año 2 dígitos", "yy"),
+            VarItem("aa / a — AM/PM", "aa"),
+            VarItem("D — día del año", "D"),
+            VarItem("w — semana del año", "w"),
+            // Batería (bi)
+            VarItem("level — batería %", "level"),
+            VarItem("charging — cargando 0/1", "charging"),
+            VarItem("temp — temp. batería", "temp"),
+            VarItem("volt — voltaje", "volt"),
+            // Clima (wi)
+            VarItem("temp — temp. clima °C", "temp"),
+            VarItem("tempf — temp. °F", "tempf"),
+            VarItem("cond — condición", "cond"),
+            VarItem("humidity — humedad", "humidity"),
+            VarItem("wind — viento", "wind"),
+            VarItem("code — código WMO", "code"),
+            VarItem("icon — clave ícono", "icon"),
+            // Claves de ícono clima (texto)
+            VarItem("CLEAR", "CLEAR"),
+            VarItem("PCLOUDY", "PCLOUDY"),
+            VarItem("MCLOUDY", "MCLOUDY"),
+            VarItem("CLOUDY", "CLOUDY"),
+            VarItem("RAIN", "RAIN"),
+            VarItem("SLEET", "SLEET"),
+            VarItem("SNOW", "SNOW"),
+            VarItem("TSTORM", "TSTORM"),
+            VarItem("FOG", "FOG"),
+            VarItem("WIND", "WIND")
+        )
+        val labels = items.map { it.label }.toTypedArray()
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.anim_formula_globals))
+            .setItems(labels) { _, which ->
+                insertAtCursor(edit, items[which].insert)
+            }
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 

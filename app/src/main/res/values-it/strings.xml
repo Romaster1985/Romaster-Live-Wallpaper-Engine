@@ -34,7 +34,12 @@
     <string name="clear_fonts">Pulisci font</string>
     <string name="clear_fonts_title">Pulisci font</string>
     <string name="clear_fonts_message">I font di testo e icone non usati dall\'orologio o dai widget verranno eliminati. I font attualmente selezionati vengono conservati.</string>
-    <string name="clear_fonts_confirm">I font importati/scaricati non usati dall\'orologio o dai widget verranno eliminati.\n\nVerranno conservati:\n%1$s\n\nContinuare?</string>
+    <string name="clear_fonts_confirm">I font importati/scaricati non usati dall\'orologio o dai widget verranno eliminati.
+
+Verranno conservati:
+%1$s
+
+Continuare?</string>
     <string name="clear_fonts_keep_text">Testo: %1$s</string>
     <string name="clear_fonts_keep_icons">Icone: %1$s</string>
     <string name="clear_fonts_keep_none">(nessuno)</string>
@@ -56,16 +61,22 @@
     <string name="language_english">English [EN]</string>
     <string name="language_changed">Lingua aggiornata</string>
     <string name="about_title">Informazioni</string>
-    <string name="about_description">Motore ed editor di sfondi animati per Android.\nVideo, overlay, livelli immagine, widget, orologio avanzato e altro.</string>
-    <string name="about_credits">Sviluppato da Román Ignacio Romero (Romaster).\nGrazie per aver usato l’app.</string>
+    <string name="about_description">Motore ed editor di sfondi animati per Android.
+Video, overlay, livelli immagine, widget, orologio avanzato e altro.</string>
+    <string name="about_credits">Sviluppato da Román Ignacio Romero (Romaster).
+Grazie per aver usato l’app.</string>
     <string name="about_contact_section">Contatti e social</string>
-    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub
+Reddit · Patreon · Gmail</string>
     <string name="about_support_section">Sostieni il progetto</string>
     <string name="about_bmc_label">🍺  Offrimi una birra</string>
     <string name="about_bmc_cd">Buy me a coffee</string>
-    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nLicenza Apache 2.0</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)
+Licenza Apache 2.0</string>
     <string name="gallery_title">Seleziona progetto</string>
-    <string name="gallery_empty">Nessun progetto pubblicato.\n\nQuando carichi ZIP + PNG nella cartella LiveWallpapers del repository temi, appariranno qui.</string>
+    <string name="gallery_empty">Nessun progetto pubblicato.
+
+Quando carichi ZIP + PNG nella cartella LiveWallpapers del repository temi, appariranno qui.</string>
     <string name="gallery_download">Scarica</string>
     <string name="gallery_redownload">Scarica di nuovo</string>
     <string name="gallery_apply">Applica</string>
@@ -261,7 +272,22 @@
     <string name="spacing_dialog_title">Spazio tra orologio e data</string>
     <string name="font_axes_info_title">Assi parametrici (forma del glifo)</string>
     <string name="font_axes_info_ok">Ho capito</string>
-    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>\n• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>\n• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>\n• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>\n• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>\n• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>\n<b>Parametric axes (glyph shape)</b><br/><br/>\n• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>\n• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>\n• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>\n• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>\n• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>\n• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>\n• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>\n• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>\n<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
+    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>
+• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>
+• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>
+• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>
+• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>
+• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>
+<b>Parametric axes (glyph shape)</b><br/><br/>
+• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>
+• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>
+• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>
+• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>
+• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>
+• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>
+• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>
+• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>
+<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
     <string name="font_gallery_empty">Nessun font nella cartella Fonts del repository.</string>
     <string name="font_imported_ok">Font importato</string>
     <string name="font_import_error">Errore importazione font: %1$s</string>
@@ -380,7 +406,11 @@
     <string name="icon_gallery_empty">Nessuna coppia TTF+JSON nella cartella Icons del repository.</string>
     <string name="icon_gallery_empty_short">Nessun font icone in Icons/.</string>
     <string name="font_install_confirm">Installare questo font nell\'app?</string>
-    <string name="font_gallery_load_error">Impossibile caricare la galleria font.\n\n%1$s\n\nControlla la connessione e riprova.</string>
+    <string name="font_gallery_load_error">Impossibile caricare la galleria font.
+
+%1$s
+
+Controlla la connessione e riprova.</string>
     <string name="font_gallery_no_match">Nessun font corrisponde a «%1$s».</string>
     <string name="icon_glyphs_not_found">Nessun glifo trovato nel JSON.</string>
     <string name="icon_browse_message">%1$d icone — tocca un glifo per assegnarlo a uno stato meteo, oppure Installa</string>
@@ -459,4 +489,6 @@
     <string name="anim_clock_motion">Movimento</string>
     <string name="anim_clock_motion_step">Passo-passo</string>
     <string name="anim_clock_motion_continuous">Continuo</string>
+    <string name="anim_formula_functions">Funzioni</string>
+    <string name="anim_formula_globals">Variabili globali</string>
 </resources>

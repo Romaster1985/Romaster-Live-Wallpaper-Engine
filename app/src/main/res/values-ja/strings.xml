@@ -34,7 +34,12 @@
     <string name="clear_fonts">フォントを整理</string>
     <string name="clear_fonts_title">フォントを整理</string>
     <string name="clear_fonts_message">時計やウィジェットで未使用のテキスト／アイコンフォントを削除します。現在選択中のフォントは残します。</string>
-    <string name="clear_fonts_confirm">時計やウィジェットで未使用のインポート／ダウンロード済みフォントを削除します。\n\n残るフォント:\n%1$s\n\n続けますか？</string>
+    <string name="clear_fonts_confirm">時計やウィジェットで未使用のインポート／ダウンロード済みフォントを削除します。
+
+残るフォント:
+%1$s
+
+続けますか？</string>
     <string name="clear_fonts_keep_text">テキスト: %1$s</string>
     <string name="clear_fonts_keep_icons">アイコン: %1$s</string>
     <string name="clear_fonts_keep_none">(なし)</string>
@@ -56,16 +61,22 @@
     <string name="language_english">English [EN]</string>
     <string name="language_changed">言語を更新しました</string>
     <string name="about_title">このアプリについて</string>
-    <string name="about_description">Android向けライブ壁紙エンジン＆エディタ。\n動画、オーバーレイ、画像レイヤー、ウィジェット、高度な時計など。</string>
-    <string name="about_credits">開発: Román Ignacio Romero (Romaster)。\nご利用ありがとうございます。</string>
+    <string name="about_description">Android向けライブ壁紙エンジン＆エディタ。
+動画、オーバーレイ、画像レイヤー、ウィジェット、高度な時計など。</string>
+    <string name="about_credits">開発: Román Ignacio Romero (Romaster)。
+ご利用ありがとうございます。</string>
     <string name="about_contact_section">連絡先・SNS</string>
-    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub
+Reddit · Patreon · Gmail</string>
     <string name="about_support_section">プロジェクトを支援</string>
     <string name="about_bmc_label">🍺  ビールをおごる</string>
     <string name="about_bmc_cd">Buy me a coffee</string>
-    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nApache 2.0 ライセンス</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)
+Apache 2.0 ライセンス</string>
     <string name="gallery_title">プロジェクトを選択</string>
-    <string name="gallery_empty">公開プロジェクトはまだありません。\n\nテーマリポジトリの LiveWallpapers フォルダに ZIP + PNG を置くとここに表示されます。</string>
+    <string name="gallery_empty">公開プロジェクトはまだありません。
+
+テーマリポジトリの LiveWallpapers フォルダに ZIP + PNG を置くとここに表示されます。</string>
     <string name="gallery_download">ダウンロード</string>
     <string name="gallery_redownload">再ダウンロード</string>
     <string name="gallery_apply">適用</string>
@@ -261,7 +272,22 @@
     <string name="spacing_dialog_title">時計と日付の間隔</string>
     <string name="font_axes_info_title">パラメータ軸（字形）</string>
     <string name="font_axes_info_ok">了解</string>
-    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>\n• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>\n• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>\n• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>\n• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>\n• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>\n<b>Parametric axes (glyph shape)</b><br/><br/>\n• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>\n• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>\n• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>\n• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>\n• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>\n• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>\n• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>\n• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>\n<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
+    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>
+• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>
+• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>
+• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>
+• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>
+• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>
+<b>Parametric axes (glyph shape)</b><br/><br/>
+• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>
+• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>
+• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>
+• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>
+• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>
+• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>
+• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>
+• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>
+<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
     <string name="font_gallery_empty">リポジトリの Fonts フォルダにフォントがありません。</string>
     <string name="font_imported_ok">フォントをインポートしました</string>
     <string name="font_import_error">フォントインポートエラー: %1$s</string>
@@ -380,7 +406,11 @@
     <string name="icon_gallery_empty">リポジトリの Icons に TTF+JSON のペアがありません。</string>
     <string name="icon_gallery_empty_short">Icons/ にアイコンフォントがありません。</string>
     <string name="font_install_confirm">このフォントをアプリにインストールしますか？</string>
-    <string name="font_gallery_load_error">フォントギャラリーを読み込めませんでした。\n\n%1$s\n\n接続を確認して再試行してください。</string>
+    <string name="font_gallery_load_error">フォントギャラリーを読み込めませんでした。
+
+%1$s
+
+接続を確認して再試行してください。</string>
     <string name="font_gallery_no_match">「%1$s」に一致するフォントがありません。</string>
     <string name="icon_glyphs_not_found">JSONにグリフが見つかりません。</string>
     <string name="icon_browse_message">%1$d 個のアイコン — グリフをタップして天気状態に割り当てるか、インストール</string>
@@ -459,4 +489,6 @@
     <string name="anim_clock_motion">動き</string>
     <string name="anim_clock_motion_step">ステップ</string>
     <string name="anim_clock_motion_continuous">連続</string>
+    <string name="anim_formula_functions">関数</string>
+    <string name="anim_formula_globals">グローバル変数</string>
 </resources>

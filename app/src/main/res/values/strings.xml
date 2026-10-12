@@ -42,7 +42,12 @@
     <string name="clear_fonts">Limpiar Fuentes</string>
     <string name="clear_fonts_title">Limpiar Fuentes</string>
     <string name="clear_fonts_message">Se eliminarán las fuentes de texto e íconos que no estén en uso en el reloj ni en los widgets. Las fuentes seleccionadas actualmente se conservan.</string>
-    <string name="clear_fonts_confirm">Se eliminarán fuentes de texto e íconos importadas/descargadas que no estén en uso por el reloj ni por los widgets.\n\nSe conservarán:\n%1$s\n\n¿Continuar?</string>
+    <string name="clear_fonts_confirm">Se eliminarán fuentes de texto e íconos importadas/descargadas que no estén en uso por el reloj ni por los widgets.
+
+Se conservarán:
+%1$s
+
+¿Continuar?</string>
     <string name="clear_fonts_keep_text">Texto: %1$s</string>
     <string name="clear_fonts_keep_icons">Íconos: %1$s</string>
     <string name="clear_fonts_keep_none">(ninguna)</string>
@@ -69,18 +74,24 @@
 
     <!-- About -->
     <string name="about_title">Romaster LiveWall Engine</string>
-    <string name="about_description">Motor y editor de live wallpapers para Android.\nVideo, Overlay, capas de imagen, capas de widgets, reloj avanzado y reproducción reactiva al bloqueo del dispositivo.</string>
-    <string name="about_credits">Desarrollado por Román Ignacio Romero (Romaster).\nGracias por usar la app. Si te gusta el proyecto, podés apoyarlo o escribirme.</string>
+    <string name="about_description">Motor y editor de live wallpapers para Android.
+Video, Overlay, capas de imagen, capas de widgets, reloj avanzado y reproducción reactiva al bloqueo del dispositivo.</string>
+    <string name="about_credits">Desarrollado por Román Ignacio Romero (Romaster).
+Gracias por usar la app. Si te gusta el proyecto, podés apoyarlo o escribirme.</string>
     <string name="about_contact_section">Contacto y redes</string>
-    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub
+Reddit · Patreon · Gmail</string>
     <string name="about_support_section">Apoyar el proyecto</string>
     <string name="about_bmc_label">🍺  Invítame una cerveza</string>
     <string name="about_bmc_cd">Buy me a coffee</string>
-    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nLicencia Apache 2.0</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)
+Licencia Apache 2.0</string>
 
     <!-- Gallery -->
     <string name="gallery_title">Seleccionar Proyecto</string>
-    <string name="gallery_empty">No hay proyectos publicados todavía.\n\nCuando subas ZIP + PNG a la carpeta LiveWallpapers del repositorio, aparecerán aquí.</string>
+    <string name="gallery_empty">No hay proyectos publicados todavía.
+
+Cuando subas ZIP + PNG a la carpeta LiveWallpapers del repositorio, aparecerán aquí.</string>
     <string name="gallery_download">Descargar</string>
     <string name="gallery_redownload">Re-descargar</string>
     <string name="gallery_apply">Aplicar</string>
@@ -501,4 +512,6 @@ Comprobá la conexión e intentá de nuevo.</string>
     <string name="anim_clock_motion">Movimiento</string>
     <string name="anim_clock_motion_step">Paso a paso</string>
     <string name="anim_clock_motion_continuous">Continuo</string>
+    <string name="anim_formula_functions">Funciones</string>
+    <string name="anim_formula_globals">Variables Globales</string>
 </resources>

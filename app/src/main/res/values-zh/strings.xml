@@ -34,7 +34,12 @@
     <string name="clear_fonts">清理字体</string>
     <string name="clear_fonts_title">清理字体</string>
     <string name="clear_fonts_message">将删除时钟和小组件未使用的文本/图标字体。当前选中的字体会保留。</string>
-    <string name="clear_fonts_confirm">将删除时钟和小组件未使用的已导入/下载字体。\n\n将保留：\n%1$s\n\n继续？</string>
+    <string name="clear_fonts_confirm">将删除时钟和小组件未使用的已导入/下载字体。
+
+将保留：
+%1$s
+
+继续？</string>
     <string name="clear_fonts_keep_text">文本：%1$s</string>
     <string name="clear_fonts_keep_icons">图标：%1$s</string>
     <string name="clear_fonts_keep_none">（无）</string>
@@ -56,16 +61,22 @@
     <string name="language_english">English [EN]</string>
     <string name="language_changed">语言已更新</string>
     <string name="about_title">关于</string>
-    <string name="about_description">面向 Android 的动态壁纸引擎与编辑器。\n视频、叠加、图片图层、小组件、高级时钟等。</string>
-    <string name="about_credits">开发者：Román Ignacio Romero (Romaster)。\n感谢使用本应用。</string>
+    <string name="about_description">面向 Android 的动态壁纸引擎与编辑器。
+视频、叠加、图片图层、小组件、高级时钟等。</string>
+    <string name="about_credits">开发者：Román Ignacio Romero (Romaster)。
+感谢使用本应用。</string>
     <string name="about_contact_section">联系与社交</string>
-    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub
+Reddit · Patreon · Gmail</string>
     <string name="about_support_section">支持项目</string>
     <string name="about_bmc_label">🍺  请我喝杯啤酒</string>
     <string name="about_bmc_cd">Buy me a coffee</string>
-    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nApache 2.0 许可证</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)
+Apache 2.0 许可证</string>
     <string name="gallery_title">选择项目</string>
-    <string name="gallery_empty">尚无已发布的项目。\n\n将 ZIP + PNG 上传到主题仓库的 LiveWallpapers 文件夹后会出现在这里。</string>
+    <string name="gallery_empty">尚无已发布的项目。
+
+将 ZIP + PNG 上传到主题仓库的 LiveWallpapers 文件夹后会出现在这里。</string>
     <string name="gallery_download">下载</string>
     <string name="gallery_redownload">重新下载</string>
     <string name="gallery_apply">应用</string>
@@ -261,7 +272,22 @@
     <string name="spacing_dialog_title">时钟与日期间距</string>
     <string name="font_axes_info_title">参数轴（字形）</string>
     <string name="font_axes_info_ok">知道了</string>
-    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>\n• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>\n• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>\n• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>\n• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>\n• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>\n<b>Parametric axes (glyph shape)</b><br/><br/>\n• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>\n• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>\n• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>\n• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>\n• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>\n• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>\n• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>\n• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>\n<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
+    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>
+• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>
+• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>
+• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>
+• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>
+• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>
+<b>Parametric axes (glyph shape)</b><br/><br/>
+• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>
+• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>
+• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>
+• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>
+• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>
+• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>
+• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>
+• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>
+<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
     <string name="font_gallery_empty">仓库 Fonts 文件夹中没有字体。</string>
     <string name="font_imported_ok">已导入字体</string>
     <string name="font_import_error">字体导入错误：%1$s</string>
@@ -380,7 +406,11 @@
     <string name="icon_gallery_empty">仓库 Icons 文件夹中没有 TTF+JSON 对。</string>
     <string name="icon_gallery_empty_short">Icons/ 中没有图标字体。</string>
     <string name="font_install_confirm">将此字体安装到应用中？</string>
-    <string name="font_gallery_load_error">无法加载字体图库。\n\n%1$s\n\n请检查网络后重试。</string>
+    <string name="font_gallery_load_error">无法加载字体图库。
+
+%1$s
+
+请检查网络后重试。</string>
     <string name="font_gallery_no_match">没有与“%1$s”匹配的字体。</string>
     <string name="icon_glyphs_not_found">JSON 中未找到字形。</string>
     <string name="icon_browse_message">共 %1$d 个图标 — 点按字形以分配天气状态，或安装</string>
@@ -459,4 +489,6 @@
     <string name="anim_clock_motion">运动</string>
     <string name="anim_clock_motion_step">步进</string>
     <string name="anim_clock_motion_continuous">连续</string>
+    <string name="anim_formula_functions">函数</string>
+    <string name="anim_formula_globals">全局变量</string>
 </resources>

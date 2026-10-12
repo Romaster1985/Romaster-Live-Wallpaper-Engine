@@ -234,7 +234,7 @@ object AnimationEngine : SensorEventListener {
             AnimationReaction.HOME_SCROLL ->
                 if (input.homeScreenPage == anim.homeScreenIndex) 1f else 0f
             AnimationReaction.GYROSCOPE -> if (gyroMatches(anim.gyroDegrees)) 1f else 0f
-            AnimationReaction.FORMULA -> evalFormula01(anim.formula, input.context)
+            AnimationReaction.FORMULA -> evalFormula01(anim.formula, input)
             AnimationReaction.LOOP, AnimationReaction.LOOP_REVERSE -> 1f
         }
     }
@@ -252,9 +252,10 @@ object AnimationEngine : SensorEventListener {
         return circular <= tol
     }
 
-    private fun evalFormula01(formula: String, context: Context?): Float {
+    private fun evalFormula01(formula: String, input: FrameInput): Float {
         return try {
-            val raw = FormulaEngine.evaluate(formula, context).trim()
+            FormulaEngine.lockStateOverride = input.deviceLocked
+            val raw = FormulaEngine.evaluate(formula, input.context).trim()
             val n = raw.replace(',', '.').toFloatOrNull()
             when {
                 n != null -> n.coerceIn(0f, 1f)
@@ -263,6 +264,8 @@ object AnimationEngine : SensorEventListener {
             }
         } catch (_: Exception) {
             0f
+        } finally {
+            FormulaEngine.lockStateOverride = null
         }
     }
 

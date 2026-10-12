@@ -34,7 +34,12 @@
     <string name="clear_fonts">Очистить шрифты</string>
     <string name="clear_fonts_title">Очистить шрифты</string>
     <string name="clear_fonts_message">Шрифты текста и иконок, не используемые часами или виджетами, будут удалены. Выбранные сейчас шрифты сохраняются.</string>
-    <string name="clear_fonts_confirm">Импортированные/скачанные шрифты, не используемые часами или виджетами, будут удалены.\n\nСохранятся:\n%1$s\n\nПродолжить?</string>
+    <string name="clear_fonts_confirm">Импортированные/скачанные шрифты, не используемые часами или виджетами, будут удалены.
+
+Сохранятся:
+%1$s
+
+Продолжить?</string>
     <string name="clear_fonts_keep_text">Текст: %1$s</string>
     <string name="clear_fonts_keep_icons">Иконки: %1$s</string>
     <string name="clear_fonts_keep_none">(нет)</string>
@@ -56,16 +61,22 @@
     <string name="language_english">English [EN]</string>
     <string name="language_changed">Язык обновлён</string>
     <string name="about_title">О приложении</string>
-    <string name="about_description">Движок и редактор живых обоев для Android.\nВидео, оверлей, слои изображений, виджеты, продвинутые часы и другое.</string>
-    <string name="about_credits">Разработка: Román Ignacio Romero (Romaster).\nСпасибо за использование приложения.</string>
+    <string name="about_description">Движок и редактор живых обоев для Android.
+Видео, оверлей, слои изображений, виджеты, продвинутые часы и другое.</string>
+    <string name="about_credits">Разработка: Román Ignacio Romero (Romaster).
+Спасибо за использование приложения.</string>
     <string name="about_contact_section">Контакты и соцсети</string>
-    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub
+Reddit · Patreon · Gmail</string>
     <string name="about_support_section">Поддержать проект</string>
     <string name="about_bmc_label">🍺  Угостить пивом</string>
     <string name="about_bmc_cd">Buy me a coffee</string>
-    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nЛицензия Apache 2.0</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)
+Лицензия Apache 2.0</string>
     <string name="gallery_title">Выбор проекта</string>
-    <string name="gallery_empty">Пока нет опубликованных проектов.\n\nКогда вы загрузите ZIP + PNG в папку LiveWallpapers репозитория тем, они появятся здесь.</string>
+    <string name="gallery_empty">Пока нет опубликованных проектов.
+
+Когда вы загрузите ZIP + PNG в папку LiveWallpapers репозитория тем, они появятся здесь.</string>
     <string name="gallery_download">Скачать</string>
     <string name="gallery_redownload">Скачать снова</string>
     <string name="gallery_apply">Применить</string>
@@ -261,7 +272,22 @@
     <string name="spacing_dialog_title">Интервал между часами и датой</string>
     <string name="font_axes_info_title">Параметрические оси (форма глифа)</string>
     <string name="font_axes_info_ok">Понятно</string>
-    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>\n• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>\n• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>\n• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>\n• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>\n• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>\n<b>Parametric axes (glyph shape)</b><br/><br/>\n• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>\n• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>\n• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>\n• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>\n• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>\n• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>\n• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>\n• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>\n<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
+    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>
+• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>
+• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>
+• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>
+• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>
+• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>
+<b>Parametric axes (glyph shape)</b><br/><br/>
+• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>
+• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>
+• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>
+• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>
+• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>
+• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>
+• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>
+• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>
+<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
     <string name="font_gallery_empty">В папке Fonts репозитория нет шрифтов.</string>
     <string name="font_imported_ok">Шрифт импортирован</string>
     <string name="font_import_error">Ошибка импорта шрифта: %1$s</string>
@@ -380,7 +406,11 @@
     <string name="icon_gallery_empty">Нет пар TTF+JSON в папке Icons репозитория.</string>
     <string name="icon_gallery_empty_short">Нет шрифтов иконок в Icons/.</string>
     <string name="font_install_confirm">Установить этот шрифт в приложение?</string>
-    <string name="font_gallery_load_error">Не удалось загрузить галерею шрифтов.\n\n%1$s\n\nПроверьте соединение и повторите попытку.</string>
+    <string name="font_gallery_load_error">Не удалось загрузить галерею шрифтов.
+
+%1$s
+
+Проверьте соединение и повторите попытку.</string>
     <string name="font_gallery_no_match">Нет шрифтов, совпадающих с «%1$s».</string>
     <string name="icon_glyphs_not_found">В JSON не найдены глифы.</string>
     <string name="icon_browse_message">%1$d иконок — нажмите глиф, чтобы назначить состоянию погоды, или Установить</string>
@@ -459,4 +489,6 @@
     <string name="anim_clock_motion">Движение</string>
     <string name="anim_clock_motion_step">Шаг</string>
     <string name="anim_clock_motion_continuous">Непрерывно</string>
+    <string name="anim_formula_functions">Функции</string>
+    <string name="anim_formula_globals">Глобальные переменные</string>
 </resources>

@@ -18,6 +18,7 @@
 
 package com.romaster.livewallengine.formula
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -40,6 +41,13 @@ import com.romaster.livewallengine.weather.WeatherProvider
  * - `$bi(level)$%` → 90%
  */
 object FormulaEngine {
+
+    /**
+     * Si no es null, fuerza el valor de [locked] (p. ej. preview / motor de animaciones).
+     * true = bloqueado → locked=1.
+     */
+    @Volatile
+    var lockStateOverride: Boolean? = null
 
     fun evaluate(formula: String, context: Context? = null): String {
         if (formula.isEmpty()) return ""
@@ -72,8 +80,8 @@ object FormulaEngine {
         val onlyLiteral = extractWholeStringLiteral(block.trim())
         if (onlyLiteral != null) return onlyLiteral
 
-        // Expandir df()/bi() respetando comillas; los literales quedan como texto
-        val expanded = expandFunctions(block, context)
+        // Expandir df()/bi()/wi()/if y variables globales (locked, …)
+        val expanded = expandGlobals(expandFunctions(block, context), context)
         val trimmed = expanded.trim()
 
         // Bloque 100% matemático → un solo resultado
@@ -229,6 +237,50 @@ object FormulaEngine {
         return false
     }
 
+
+    /** Sustituye identificadores globales (p. ej. locked → 0/1). */
+    private fun expandGlobals(input: String, context: Context?): String {
+        if (input.isEmpty()) return input
+        val lockedVal = if (resolveLocked(context)) "1" else "0"
+        val out = StringBuilder()
+        var i = 0
+        var inQuote = false
+        while (i < input.length) {
+            val c = input[i]
+            if (c == '"') {
+                inQuote = !inQuote
+                out.append(c)
+                i++
+                continue
+            }
+            if (!inQuote && isIdentStart(c)) {
+                val start = i
+                i++
+                while (i < input.length && isIdentPart(input[i])) i++
+                val word = input.substring(start, i)
+                when (word.lowercase(java.util.Locale.ROOT)) {
+                    "locked" -> out.append(lockedVal)
+                    else -> out.append(word)
+                }
+            } else {
+                out.append(c)
+                i++
+            }
+        }
+        return out.toString()
+    }
+
+    private fun resolveLocked(context: Context?): Boolean {
+        lockStateOverride?.let { return it }
+        if (context == null) return false
+        return try {
+            val kg = context.getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager
+            kg?.isKeyguardLocked == true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /**
      * Expande df(...) / bi(...). El contenido entre comillas dobles se copia
      * tal cual (sin expandir ni calcular), sin las comillas en la salida final
@@ -292,7 +344,7 @@ object FormulaEngine {
         val trueRaw = parts.getOrElse(1) { "" }
         val falseRaw = parts.getOrElse(2) { "" }
 
-        val condExpanded = expandFunctions(condRaw, context)
+        val condExpanded = expandGlobals(expandFunctions(condRaw, context), context)
         val result = evalCondition(condExpanded)
         val chosen = if (result) trueRaw else falseRaw
         // El branch elegido puede tener más funciones / math / literales

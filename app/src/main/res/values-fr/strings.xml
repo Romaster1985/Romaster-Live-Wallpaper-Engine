@@ -34,7 +34,12 @@
     <string name="clear_fonts">Nettoyer les polices</string>
     <string name="clear_fonts_title">Nettoyer les polices</string>
     <string name="clear_fonts_message">Les polices de texte et d\'icônes non utilisées par l\'horloge ou les widgets seront supprimées. Les polices actuellement sélectionnées sont conservées.</string>
-    <string name="clear_fonts_confirm">Les polices importées/téléchargées non utilisées par l\'horloge ou les widgets seront supprimées.\n\nConservées :\n%1$s\n\nContinuer ?</string>
+    <string name="clear_fonts_confirm">Les polices importées/téléchargées non utilisées par l\'horloge ou les widgets seront supprimées.
+
+Conservées :
+%1$s
+
+Continuer ?</string>
     <string name="clear_fonts_keep_text">Texte : %1$s</string>
     <string name="clear_fonts_keep_icons">Icônes : %1$s</string>
     <string name="clear_fonts_keep_none">(aucune)</string>
@@ -56,16 +61,22 @@
     <string name="language_english">English [EN]</string>
     <string name="language_changed">Langue mise à jour</string>
     <string name="about_title">À propos</string>
-    <string name="about_description">Moteur et éditeur de fonds d’écran animés pour Android.\nVidéo, overlay, calques image, widgets, horloge avancée et plus.</string>
-    <string name="about_credits">Développé par Román Ignacio Romero (Romaster).\nMerci d’utiliser l’application.</string>
+    <string name="about_description">Moteur et éditeur de fonds d’écran animés pour Android.
+Vidéo, overlay, calques image, widgets, horloge avancée et plus.</string>
+    <string name="about_credits">Développé par Román Ignacio Romero (Romaster).
+Merci d’utiliser l’application.</string>
     <string name="about_contact_section">Contact et réseaux</string>
-    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub
+Reddit · Patreon · Gmail</string>
     <string name="about_support_section">Soutenir le projet</string>
     <string name="about_bmc_label">🍺  Offre-moi une bière</string>
     <string name="about_bmc_cd">Buy me a coffee</string>
-    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nLicence Apache 2.0</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)
+Licence Apache 2.0</string>
     <string name="gallery_title">Choisir un projet</string>
-    <string name="gallery_empty">Aucun projet publié pour le moment.\n\nQuand vous ajoutez ZIP + PNG dans le dossier LiveWallpapers du dépôt de thèmes, ils apparaîtront ici.</string>
+    <string name="gallery_empty">Aucun projet publié pour le moment.
+
+Quand vous ajoutez ZIP + PNG dans le dossier LiveWallpapers du dépôt de thèmes, ils apparaîtront ici.</string>
     <string name="gallery_download">Télécharger</string>
     <string name="gallery_redownload">Retélécharger</string>
     <string name="gallery_apply">Appliquer</string>
@@ -261,7 +272,22 @@
     <string name="spacing_dialog_title">Espace entre horloge et date</string>
     <string name="font_axes_info_title">Axes de paramètres (forme du glyphe)</string>
     <string name="font_axes_info_ok">Compris</string>
-    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>\n• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>\n• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>\n• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>\n• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>\n• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>\n<b>Parametric axes (glyph shape)</b><br/><br/>\n• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>\n• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>\n• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>\n• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>\n• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>\n• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>\n• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>\n• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>\n<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
+    <string name="font_axes_info_message"><![CDATA[<b>Standard axes</b><br/><br/>
+• <b>Width (wdth)</b> — Width: condensed ↔ expanded (flatter or wider sides).<br/><br/>
+• <b>Weight (wght)</b> — Weight: Light → Regular → Bold → Black.<br/><br/>
+• <b>Optical Size (opsz)</b> — Optimizes drawing for small (UI) or large (titles) sizes.<br/><br/>
+• <b>Grade (GRAD)</b> — Visual weight without changing advance width: denser or lighter while keeping layout.<br/><br/>
+• <b>Slant (slnt)</b> — Oblique slant (not a true italic).<br/><br/>
+<b>Parametric axes (glyph shape)</b><br/><br/>
+• <b>Thick stroke (XOPQ)</b> — Thickness of vertical strokes (stems of H, I, n…).<br/><br/>
+• <b>Thin stroke (YOPQ)</b> — Thickness of horizontal strokes (bars of E, H, f…).<br/><br/>
+• <b>Counter width (XTRA)</b> — Counter width (inner gaps): tighter or more open.<br/><br/>
+• <b>Uppercase (YTUC)</b> — Cap height.<br/><br/>
+• <b>Lowercase (YTLC)</b> — x-height.<br/><br/>
+• <b>Ascender (YTAS)</b> — Ascender height (b, d, h, l…).<br/><br/>
+• <b>Descender (YTDE)</b> — Descender depth (g, p, q, y…).<br/><br/>
+• <b>Figure height (YTFI)</b> — Figure height / proportion (very useful for clocks).<br/><br/>
+<i>Note:</i> All these variations are available in full variable fonts such as Roboto Flex. On fixed fonts or fonts with fewer axes, unsupported controls are ignored.]]></string>
     <string name="font_gallery_empty">Aucune police dans le dossier Fonts du dépôt.</string>
     <string name="font_imported_ok">Police importée</string>
     <string name="font_import_error">Erreur d’import de police : %1$s</string>
@@ -380,7 +406,11 @@
     <string name="icon_gallery_empty">Aucun couple TTF+JSON dans le dossier Icons du dépôt.</string>
     <string name="icon_gallery_empty_short">Aucune police d\'icônes dans Icons/.</string>
     <string name="font_install_confirm">Installer cette police dans l\'application ?</string>
-    <string name="font_gallery_load_error">Impossible de charger la galerie de polices.\n\n%1$s\n\nVérifiez la connexion et réessayez.</string>
+    <string name="font_gallery_load_error">Impossible de charger la galerie de polices.
+
+%1$s
+
+Vérifiez la connexion et réessayez.</string>
     <string name="font_gallery_no_match">Aucune police ne correspond à « %1$s ».</string>
     <string name="icon_glyphs_not_found">Aucun glyphe trouvé dans le JSON.</string>
     <string name="icon_browse_message">%1$d icônes — touchez un glyphe pour l\'attribuer à un état météo, ou Installer</string>
@@ -459,4 +489,6 @@
     <string name="anim_clock_motion">Mouvement</string>
     <string name="anim_clock_motion_step">Pas à pas</string>
     <string name="anim_clock_motion_continuous">Continu</string>
+    <string name="anim_formula_functions">Fonctions</string>
+    <string name="anim_formula_globals">Variables globales</string>
 </resources>

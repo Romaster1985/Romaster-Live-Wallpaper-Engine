@@ -38,7 +38,12 @@
     <string name="clear_fonts">Clear Fonts</string>
     <string name="clear_fonts_title">Clear Fonts</string>
     <string name="clear_fonts_message">Text and icon fonts that are not used by the clock or widgets will be deleted. Currently selected fonts are kept.</string>
-    <string name="clear_fonts_confirm">Imported/downloaded text and icon fonts that are not used by the clock or widgets will be deleted.\n\nThese will be kept:\n%1$s\n\nContinue?</string>
+    <string name="clear_fonts_confirm">Imported/downloaded text and icon fonts that are not used by the clock or widgets will be deleted.
+
+These will be kept:
+%1$s
+
+Continue?</string>
     <string name="clear_fonts_keep_text">Text: %1$s</string>
     <string name="clear_fonts_keep_icons">Icons: %1$s</string>
     <string name="clear_fonts_keep_none">(none)</string>
@@ -63,17 +68,23 @@
     <string name="language_changed">Language updated</string>
 
     <string name="about_title">Romaster LiveWall Engine</string>
-    <string name="about_description">Live wallpaper engine and editor for Android.\nVideo, Overlay, image layers, widget layers, advanced clock and lock-screen reactive playback.</string>
-    <string name="about_credits">Developed by Román Ignacio Romero (Romaster).\nThanks for using the app. If you like the project, you can support it or write to me.</string>
+    <string name="about_description">Live wallpaper engine and editor for Android.
+Video, Overlay, image layers, widget layers, advanced clock and lock-screen reactive playback.</string>
+    <string name="about_credits">Developed by Román Ignacio Romero (Romaster).
+Thanks for using the app. If you like the project, you can support it or write to me.</string>
     <string name="about_contact_section">Contact &amp; social</string>
-    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub\nReddit · Patreon · Gmail</string>
+    <string name="about_networks_hint">Instagram · Threads · YouTube · GitHub
+Reddit · Patreon · Gmail</string>
     <string name="about_support_section">Support the project</string>
     <string name="about_bmc_label">🍺  Buy me a beer</string>
     <string name="about_bmc_cd">Buy me a coffee</string>
-    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)\nApache 2.0 License</string>
+    <string name="about_copyright">© 2026 Román Ignacio Romero (Romaster)
+Apache 2.0 License</string>
 
     <string name="gallery_title">Select Project</string>
-    <string name="gallery_empty">No published projects yet.\n\nWhen you upload ZIP + PNG files to the LiveWallpapers folder in the repository, they will appear here.</string>
+    <string name="gallery_empty">No published projects yet.
+
+When you upload ZIP + PNG files to the LiveWallpapers folder in the repository, they will appear here.</string>
     <string name="gallery_download">Download</string>
     <string name="gallery_redownload">Re-download</string>
     <string name="gallery_apply">Apply</string>
@@ -492,4 +503,6 @@ Check your connection and try again.</string>
     <string name="anim_clock_motion">Motion</string>
     <string name="anim_clock_motion_step">Step</string>
     <string name="anim_clock_motion_continuous">Continuous</string>
+    <string name="anim_formula_functions">Functions</string>
+    <string name="anim_formula_globals">Global Variables</string>
 </resources>
