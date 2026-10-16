@@ -83,6 +83,12 @@ enum class ClockHandMotion {
 data class AnimationLayer(
     var id: String = UUID.randomUUID().toString(),
 
+    /**
+     * Nombre visible opcional. Vacío = "Animación N".
+     */
+    var customName: String = "",
+
+
     /** Capa a animar (ver [targetKey]). */
     var targetKey: String = "vbg",
 

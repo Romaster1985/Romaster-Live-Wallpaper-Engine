@@ -515,4 +515,10 @@ Comprobá la conexión e intentá de nuevo.</string>
     <string name="anim_clock_motion_continuous">Continuo</string>
     <string name="anim_formula_functions">Funciones</string>
     <string name="anim_formula_globals">Variables Globales</string>
+    <string name="layer_rename_title">Nombre de capa</string>
+    <string name="layer_rename_message">Escribí un nombre para identificar esta capa. Dejá vacío o usá Restablecer para el nombre por defecto.</string>
+    <string name="layer_rename_reset">Restablecer</string>
+    <string name="layer_pos_title_named">Ubicación: %1$s</string>
+    <string name="soft_start_named_title">Soft Start — %1$s</string>
+    <string name="delay_start_named_title">Delay Start — %1$s</string>
 </resources>

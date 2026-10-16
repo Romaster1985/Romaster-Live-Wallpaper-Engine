@@ -2157,11 +2157,34 @@ private fun showFadeDurationDialog(
             setPadding(pad, pad, pad, pad)
         }
 
-        root.addView(TextView(this).apply {
-            text = getString(R.string.widget_title, displayIndex)
+        val titleTv = TextView(this).apply {
+            text = widgetDisplayName(layer, displayIndex)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-        })
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0x18FFFFFF)
+                cornerRadius = 8 * density
+                setStroke((1 * density).toInt().coerceAtLeast(1), 0x55FFFFFF)
+            }
+            setPadding((10 * density).toInt(), (8 * density).toInt(), (10 * density).toInt(), (8 * density).toInt())
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                val liveLayer = ProjectManager.getProject().widgetLayers.find { it.id == layerId } ?: return@setOnClickListener
+                showRenameLayerDialog(
+                    liveLayer.customName,
+                    getString(R.string.widget_title, displayIndex)
+                ) { name ->
+                    liveLayer.customName = name
+                    text = widgetDisplayName(liveLayer, displayIndex)
+                    editor.save()
+                    rebuildAnimationLayerCards()
+                    rebuildWidgetSoftStartRows()
+                    rebuildWidgetDelayStartRows()
+                }
+            }
+        }
+        root.addView(titleTv)
 
         val previewTv = TextView(this).apply {
             text = try {
@@ -3336,12 +3359,66 @@ private fun showFadeDurationDialog(
             "ckol" to getString(R.string.anim_target_ckol)
         )
         project.imageLayers.forEachIndexed { i, img ->
-            list.add("img:${img.id}" to getString(R.string.anim_target_image, i + 1))
+            list.add("img:${img.id}" to imageDisplayName(img, i + 1))
         }
         project.widgetLayers.forEachIndexed { i, w ->
-            list.add("wdg:${w.id}" to getString(R.string.anim_target_widget, i + 1))
+            list.add("wdg:${w.id}" to widgetDisplayName(w, i + 1))
         }
         return list
+    }
+
+    private fun imageDisplayName(layer: ImageLayer, index1Based: Int): String {
+        val custom = layer.customName.trim()
+        return if (custom.isNotEmpty()) custom
+        else getString(R.string.pics_layer_title, index1Based)
+    }
+
+    private fun widgetDisplayName(layer: WidgetLayer, index1Based: Int): String {
+        val custom = layer.customName.trim()
+        return if (custom.isNotEmpty()) custom
+        else getString(R.string.widget_title, index1Based)
+    }
+
+    private fun animationDisplayName(layer: AnimationLayer, index1Based: Int): String {
+        val custom = layer.customName.trim()
+        return if (custom.isNotEmpty()) custom
+        else getString(R.string.anim_card_title, index1Based)
+    }
+
+    private fun showRenameLayerDialog(
+        currentName: String,
+        defaultLabel: String,
+        onSaved: (String) -> Unit
+    ) {
+        val density = resources.displayMetrics.density
+        val input = android.widget.EditText(this).apply {
+            setText(currentName)
+            hint = defaultLabel
+            setSelection(text.length)
+            setSingleLine(true)
+            maxLines = 1
+        }
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((20 * density).toInt(), (8 * density).toInt(), (20 * density).toInt(), 0)
+            addView(TextView(this@MainActivity).apply {
+                text = getString(R.string.layer_rename_message)
+                textSize = 13f
+                setPadding(0, 0, 0, (8 * density).toInt())
+            })
+            addView(input)
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.layer_rename_title))
+            .setView(box)
+            .setNegativeButton(R.string.cancel, null)
+            .setNeutralButton(R.string.layer_rename_reset) { _, _ ->
+                onSaved("")
+            }
+            .setPositiveButton(R.string.ok) { _, _ ->
+                onSaved(input.text.toString().trim())
+            }
+            .show()
     }
 
     private fun reactionLabel(r: AnimationReaction): String = when (r) {
@@ -3389,11 +3466,32 @@ private fun showFadeDurationDialog(
         }
         card.addView(root)
 
-        root.addView(TextView(this).apply {
-            text = getString(R.string.anim_card_title, number)
+        val titleTv = TextView(this).apply {
+            text = animationDisplayName(layer, number)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-        })
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0x18FFFFFF)
+                cornerRadius = 8 * density
+                setStroke((1 * density).toInt().coerceAtLeast(1), 0x55FFFFFF)
+            }
+            setPadding((10 * density).toInt(), (8 * density).toInt(), (10 * density).toInt(), (8 * density).toInt())
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                val liveLayer = ProjectManager.getProject().animationLayers.find { it.id == layer.id }
+                    ?: return@setOnClickListener
+                showRenameLayerDialog(
+                    liveLayer.customName,
+                    getString(R.string.anim_card_title, number)
+                ) { name ->
+                    liveLayer.customName = name
+                    text = animationDisplayName(liveLayer, number)
+                    editor.save()
+                }
+            }
+        }
+        root.addView(titleTv)
 
         // --- Target dropdown ---
         val targets = animationTargetOptions()
@@ -4214,7 +4312,7 @@ private fun showFadeDurationDialog(
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             texts.addView(TextView(this).apply {
-                text = getString(R.string.layer_label_image, index + 1)
+                text = imageDisplayName(layer, index + 1)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             val valueTv = TextView(this).apply {
@@ -4247,9 +4345,10 @@ private fun showFadeDurationDialog(
             setPadding(48, 0, 48, 0)
             addView(input)
         }
-        val idx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
+        val idx = project.imageLayers.indexOfFirst { it.id == layerId }
+        val titleName = if (idx >= 0) imageDisplayName(layer, idx + 1) else layerId
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.soft_start_image_title, idx))
+            .setTitle(getString(R.string.soft_start_named_title, titleName))
             .setMessage("Duración del fade en milisegundos.")
             .setView(box)
             .setNegativeButton(R.string.cancel, null)
@@ -4283,7 +4382,7 @@ private fun showFadeDurationDialog(
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             texts.addView(TextView(this).apply {
-                text = getString(R.string.layer_label_image, index + 1)
+                text = imageDisplayName(layer, index + 1)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             val valueTv = TextView(this).apply {
@@ -4316,9 +4415,10 @@ private fun showFadeDurationDialog(
             setPadding(48, 0, 48, 0)
             addView(input)
         }
-        val idx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
+        val idx = project.imageLayers.indexOfFirst { it.id == layerId }
+        val titleName = if (idx >= 0) imageDisplayName(layer, idx + 1) else layerId
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.delay_start_image_title, idx))
+            .setTitle(getString(R.string.delay_start_named_title, titleName))
             .setMessage(getString(R.string.delay_before_soft_message))
             .setView(box)
             .setNegativeButton(R.string.cancel, null)
@@ -4354,7 +4454,7 @@ private fun showFadeDurationDialog(
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             texts.addView(TextView(this).apply {
-                text = getString(R.string.widget_title, index + 1)
+                text = widgetDisplayName(layer, index + 1)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             val valueTv = TextView(this).apply {
@@ -4377,13 +4477,14 @@ private fun showFadeDurationDialog(
     private fun showWidgetLayerFadeDialog(layerId: String, valueTv: TextView) {
         val project = ProjectManager.getProject()
         val layer = project.widgetLayers.find { it.id == layerId } ?: return
-        val idx = project.widgetLayers.indexOfFirst { it.id == layerId } + 1
+        val idx = project.widgetLayers.indexOfFirst { it.id == layerId }
+        val titleName = if (idx >= 0) widgetDisplayName(layer, idx + 1) else layerId
         val input = android.widget.EditText(this).apply {
             setText(layer.fadeDurationMs.toString())
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.soft_start_widget_title, idx))
+            .setTitle(getString(R.string.soft_start_named_title, titleName))
             .setMessage("Duración del fade-in en milisegundos.")
             .setView(input)
             .setNegativeButton(R.string.cancel, null)
@@ -4414,7 +4515,7 @@ private fun showFadeDurationDialog(
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             texts.addView(TextView(this).apply {
-                text = getString(R.string.widget_title, index + 1)
+                text = widgetDisplayName(layer, index + 1)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             val valueTv = TextView(this).apply {
@@ -4443,7 +4544,8 @@ private fun showFadeDurationDialog(
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.delay_start_widget_title, idx))
+            .setTitle(getString(R.string.delay_start_named_title, 
+                if (idx >= 1) widgetDisplayName(layer, idx) else layerId))
             .setMessage(getString(R.string.delay_before_soft_message))
             .setView(input)
             .setNegativeButton(R.string.cancel, null)
@@ -4482,12 +4584,37 @@ private fun showFadeDurationDialog(
             setPadding(pad, pad, pad, pad)
         }
 
-        // Título
-        root.addView(TextView(this).apply {
-            text = getString(R.string.pics_layer_title, displayIndex)
+        // Título (tocar para renombrar)
+        val titleTv = TextView(this).apply {
+            text = imageDisplayName(layer, displayIndex)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-        })
+            setPadding(0, (2 * density).toInt(), 0, (2 * density).toInt())
+            // Aspecto de campo editable
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0x18FFFFFF)
+                cornerRadius = 8 * density
+                setStroke((1 * density).toInt().coerceAtLeast(1), 0x55FFFFFF)
+            }
+            setPadding((10 * density).toInt(), (8 * density).toInt(), (10 * density).toInt(), (8 * density).toInt())
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                val liveLayer = ProjectManager.getProject().imageLayers.find { it.id == layerId } ?: return@setOnClickListener
+                showRenameLayerDialog(
+                    liveLayer.customName,
+                    getString(R.string.pics_layer_title, displayIndex)
+                ) { name ->
+                    liveLayer.customName = name
+                    text = imageDisplayName(liveLayer, displayIndex)
+                    editor.save()
+                    rebuildAnimationLayerCards()
+                    rebuildImageSoftStartRows()
+                    rebuildImageDelayStartRows()
+                }
+            }
+        }
+        root.addView(titleTv)
 
         // Botones cargar / eliminar
         val rowBtns = LinearLayout(this).apply {
@@ -4823,8 +4950,14 @@ private fun showFadeDurationDialog(
         val imgIdx = project.imageLayers.indexOfFirst { it.id == layerId }
         val wdgIdx = project.widgetLayers.indexOfFirst { it.id == layerId }
         val title = when {
-            imgIdx >= 0 -> getString(R.string.pics_layer_pos_title, imgIdx + 1)
-            wdgIdx >= 0 -> getString(R.string.widget_layer_pos_title, wdgIdx + 1)
+            imgIdx >= 0 -> {
+                val name = imageDisplayName(project.imageLayers[imgIdx], imgIdx + 1)
+                getString(R.string.layer_pos_title_named, name)
+            }
+            wdgIdx >= 0 -> {
+                val name = widgetDisplayName(project.widgetLayers[wdgIdx], wdgIdx + 1)
+                getString(R.string.layer_pos_title_named, name)
+            }
             else -> getString(R.string.pics_select_layer_pos)
         }
 

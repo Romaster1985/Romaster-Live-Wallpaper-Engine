@@ -492,4 +492,10 @@ Vérifiez la connexion et réessayez.</string>
     <string name="anim_clock_motion_continuous">Continu</string>
     <string name="anim_formula_functions">Fonctions</string>
     <string name="anim_formula_globals">Variables globales</string>
+    <string name="layer_rename_title">Nom de la couche</string>
+    <string name="layer_rename_message">Entrez un nom pour identifier cette couche. Laissez vide ou Réinitialiser pour le nom par défaut.</string>
+    <string name="layer_rename_reset">Réinitialiser</string>
+    <string name="layer_pos_title_named">Position : %1$s</string>
+    <string name="soft_start_named_title">Soft Start — %1$s</string>
+    <string name="delay_start_named_title">Delay Start — %1$s</string>
 </resources>

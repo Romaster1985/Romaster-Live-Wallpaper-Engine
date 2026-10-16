@@ -492,4 +492,10 @@ Controlla la connessione e riprova.</string>
     <string name="anim_clock_motion_continuous">Continuo</string>
     <string name="anim_formula_functions">Funzioni</string>
     <string name="anim_formula_globals">Variabili globali</string>
+    <string name="layer_rename_title">Nome livello</string>
+    <string name="layer_rename_message">Inserisci un nome per identificare questo livello. Lascia vuoto o Ripristina per il nome predefinito.</string>
+    <string name="layer_rename_reset">Ripristina</string>
+    <string name="layer_pos_title_named">Posizione: %1$s</string>
+    <string name="soft_start_named_title">Soft Start — %1$s</string>
+    <string name="delay_start_named_title">Delay Start — %1$s</string>
 </resources>

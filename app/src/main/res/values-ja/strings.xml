@@ -492,4 +492,10 @@ Apache 2.0 ライセンス</string>
     <string name="anim_clock_motion_continuous">連続</string>
     <string name="anim_formula_functions">関数</string>
     <string name="anim_formula_globals">グローバル変数</string>
+    <string name="layer_rename_title">レイヤー名</string>
+    <string name="layer_rename_message">このレイヤーを識別する名前を入力します。空にするかリセットで既定名に戻ります。</string>
+    <string name="layer_rename_reset">リセット</string>
+    <string name="layer_pos_title_named">位置: %1$s</string>
+    <string name="soft_start_named_title">Soft Start — %1$s</string>
+    <string name="delay_start_named_title">Delay Start — %1$s</string>
 </resources>

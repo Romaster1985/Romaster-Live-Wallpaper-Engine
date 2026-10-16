@@ -506,4 +506,10 @@ Check your connection and try again.</string>
     <string name="anim_clock_motion_continuous">Continuous</string>
     <string name="anim_formula_functions">Functions</string>
     <string name="anim_formula_globals">Global Variables</string>
+    <string name="layer_rename_title">Layer name</string>
+    <string name="layer_rename_message">Enter a name to identify this layer. Leave empty or use Reset for the default name.</string>
+    <string name="layer_rename_reset">Reset</string>
+    <string name="layer_pos_title_named">Position: %1$s</string>
+    <string name="soft_start_named_title">Soft Start — %1$s</string>
+    <string name="delay_start_named_title">Delay Start — %1$s</string>
 </resources>

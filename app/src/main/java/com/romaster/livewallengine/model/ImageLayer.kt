@@ -36,6 +36,11 @@ import java.util.UUID
 @Serializable
 data class ImageLayer(
     var id: String = UUID.randomUUID().toString(),
+    /**
+     * Nombre visible opcional. Vacío = "Capa de imagen N".
+     * Se muestra en la card, orden Z y selector de animaciones.
+     */
+    var customName: String = "",
     /** Nombre de archivo en files/images/ */
     var fileName: String? = null,
     /** 0f..1f */

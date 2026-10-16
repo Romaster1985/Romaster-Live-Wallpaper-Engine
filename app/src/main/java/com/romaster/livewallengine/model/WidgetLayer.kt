@@ -29,6 +29,12 @@ import java.util.UUID
 data class WidgetLayer(
     var id: String = UUID.randomUUID().toString(),
 
+    /**
+     * Nombre visible opcional. Vacío = "Widget N".
+     * Se muestra en la card, orden Z y selector de animaciones.
+     */
+    var customName: String = "",
+
     /** Fórmula estilo KLWP, p.ej. $df(hh:mm)$ o $bi(level)$% */
     var formula: String = "\$df(hh:mm)\$",
 

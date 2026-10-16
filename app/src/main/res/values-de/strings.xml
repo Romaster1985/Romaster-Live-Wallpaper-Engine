@@ -492,4 +492,10 @@ Verbindung prüfen und erneut versuchen.</string>
     <string name="anim_clock_motion_continuous">Kontinuierlich</string>
     <string name="anim_formula_functions">Funktionen</string>
     <string name="anim_formula_globals">Globale Variablen</string>
+    <string name="layer_rename_title">Ebenenname</string>
+    <string name="layer_rename_message">Geben Sie einen Namen ein. Leer lassen oder Zurücksetzen für den Standardnamen.</string>
+    <string name="layer_rename_reset">Zurücksetzen</string>
+    <string name="layer_pos_title_named">Position: %1$s</string>
+    <string name="soft_start_named_title">Soft Start — %1$s</string>
+    <string name="delay_start_named_title">Delay Start — %1$s</string>
 </resources>

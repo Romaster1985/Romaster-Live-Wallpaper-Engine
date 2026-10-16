@@ -115,10 +115,18 @@ object LayerStack {
             ID_VOL -> context.getString(R.string.layer_label_vol)
             ID_CLOCK -> context.getString(R.string.layer_label_clock)
             else -> {
-                val idx = project.imageLayers.indexOfFirst { it.id == id }
-                if (idx >= 0) return context.getString(R.string.layer_label_image, idx + 1)
+                val imgIdx = project.imageLayers.indexOfFirst { it.id == id }
+                if (imgIdx >= 0) {
+                    val custom = project.imageLayers[imgIdx].customName.trim()
+                    if (custom.isNotEmpty()) return custom
+                    return context.getString(R.string.layer_label_image, imgIdx + 1)
+                }
                 val wIdx = project.widgetLayers.indexOfFirst { it.id == id }
-                if (wIdx >= 0) return context.getString(R.string.layer_label_widget, wIdx + 1)
+                if (wIdx >= 0) {
+                    val custom = project.widgetLayers[wIdx].customName.trim()
+                    if (custom.isNotEmpty()) return custom
+                    return context.getString(R.string.layer_label_widget, wIdx + 1)
+                }
                 context.getString(R.string.layer_label_generic)
             }
         }

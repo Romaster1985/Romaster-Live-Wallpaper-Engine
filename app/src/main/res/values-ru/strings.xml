@@ -492,4 +492,10 @@ Reddit · Patreon · Gmail</string>
     <string name="anim_clock_motion_continuous">Непрерывно</string>
     <string name="anim_formula_functions">Функции</string>
     <string name="anim_formula_globals">Глобальные переменные</string>
+    <string name="layer_rename_title">Имя слоя</string>
+    <string name="layer_rename_message">Введите имя для этого слоя. Оставьте пустым или сбросьте для имени по умолчанию.</string>
+    <string name="layer_rename_reset">Сбросить</string>
+    <string name="layer_pos_title_named">Позиция: %1$s</string>
+    <string name="soft_start_named_title">Soft Start — %1$s</string>
+    <string name="delay_start_named_title">Delay Start — %1$s</string>
 </resources>
