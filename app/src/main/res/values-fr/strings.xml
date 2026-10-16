@@ -307,6 +307,7 @@ Quand vous ajoutez ZIP + PNG dans le dossier LiveWallpapers du dépôt de thème
     <string name="pics_select_layer_pos">Choisir la position du calque</string>
     <string name="label_transparency">Transparence</string>
     <string name="pics_layer_pos_title">Position du calque image %1$d</string>
+    <string name="widget_layer_pos_title">Position du widget %1$d</string>
     <string name="pics_layer_pos_note">Utilisez Haut / Bas pour déplacer le calque dans l\'ordre de dessin (arrière vers avant).</string>
     <string name="pics_layer_current">%1$s  · actuel</string>
     <string name="pics_move_up">Haut</string>

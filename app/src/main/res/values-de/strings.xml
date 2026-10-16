@@ -307,6 +307,7 @@ Wenn du ZIP + PNG in den Ordner LiveWallpapers des Theme-Repos legst, erscheinen
     <string name="pics_select_layer_pos">Ebenenposition wählen</string>
     <string name="label_transparency">Transparenz</string>
     <string name="pics_layer_pos_title">Position Bildebenen %1$d</string>
+    <string name="widget_layer_pos_title">Widget-Position %1$d</string>
     <string name="pics_layer_pos_note">Mit Hoch / Runter die aktuelle Ebene in der Zeichenreihenfolge verschieben (hinten nach vorne).</string>
     <string name="pics_layer_current">%1$s  · aktuell</string>
     <string name="pics_move_up">Hoch</string>

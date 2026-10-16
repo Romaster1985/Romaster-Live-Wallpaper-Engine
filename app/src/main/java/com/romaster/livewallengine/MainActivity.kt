@@ -4678,6 +4678,8 @@ private fun showFadeDurationDialog(
 
         val density = resources.displayMetrics.density
         val pad = (20 * density).toInt()
+        // Altura máxima de la lista (~40 % de pantalla) para que Subir/Bajar queden siempre visibles
+        val maxListH = (resources.displayMetrics.heightPixels * 0.40f).toInt().coerceAtLeast((200 * density).toInt())
 
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -4695,7 +4697,42 @@ private fun showFadeDurationDialog(
             orientation = LinearLayout.VERTICAL
             setPadding((8 * density).toInt(), (8 * density).toInt(), (8 * density).toInt(), (8 * density).toInt())
         }
-        container.addView(listBox)
+
+        val scroll = object : android.widget.ScrollView(this) {
+            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                val hSpec = View.MeasureSpec.makeMeasureSpec(maxListH, View.MeasureSpec.AT_MOST)
+                super.onMeasure(widthMeasureSpec, hSpec)
+            }
+        }.apply {
+            isFillViewport = false
+            isVerticalScrollBarEnabled = true
+            addView(
+                listBox,
+                android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+        container.addView(
+            scroll,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        fun scrollToCurrent() {
+            val idx = working.indexOf(layerId)
+            if (idx < 0) return
+            scroll.post {
+                if (idx >= listBox.childCount) return@post
+                val child = listBox.getChildAt(idx) ?: return@post
+                // Centrar aproximadamente la fila actual en el viewport
+                val targetY = (child.top - (scroll.height - child.height) / 2).coerceAtLeast(0)
+                scroll.smoothScrollTo(0, targetY)
+            }
+        }
 
         fun refreshList() {
             listBox.removeAllViews()
@@ -4713,10 +4750,11 @@ private fun showFadeDurationDialog(
                 }
                 listBox.addView(tv)
             }
+            scrollToCurrent()
         }
         refreshList()
 
-        // Botones Material 3 con iconos de flecha (sin emoji)
+        // Botones Material 3 siempre debajo del scroll (siempre visibles)
         val btnRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER
@@ -4738,12 +4776,10 @@ private fun showFadeDurationDialog(
                     this@MainActivity,
                     iconRes
                 )
-                iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-                iconPadding = (8 * density).toInt()
-                text = label
+                this.text = label
                 contentDescription = contentDesc
-                insetTop = 0
-                insetBottom = 0
+                iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+                iconPadding = (6 * density).toInt()
                 layoutParams = LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -4784,9 +4820,16 @@ private fun showFadeDurationDialog(
         btnRow.addView(btnDown)
         container.addView(btnRow)
 
-        val titleIdx = project.imageLayers.indexOfFirst { it.id == layerId } + 1
+        val imgIdx = project.imageLayers.indexOfFirst { it.id == layerId }
+        val wdgIdx = project.widgetLayers.indexOfFirst { it.id == layerId }
+        val title = when {
+            imgIdx >= 0 -> getString(R.string.pics_layer_pos_title, imgIdx + 1)
+            wdgIdx >= 0 -> getString(R.string.widget_layer_pos_title, wdgIdx + 1)
+            else -> getString(R.string.pics_select_layer_pos)
+        }
+
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.pics_layer_pos_title, titleIdx))
+            .setTitle(title)
             .setView(container)
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.ok) { _, _ ->
@@ -4799,12 +4842,13 @@ private fun showFadeDurationDialog(
                 )
                 editor.save()
                 notifyImageLayersChanged()
+                notifyWidgetLayersChanged()
                 Toast.makeText(this, getString(R.string.pics_order_updated), Toast.LENGTH_SHORT).show()
             }
             .show()
     }
 
-    
+
     private fun setupSettingsTab() {
         findViewById<MaterialButton>(R.id.buttonLanguages).setOnClickListener {
             showLanguageDialog()

@@ -307,6 +307,7 @@ Quando carichi ZIP + PNG nella cartella LiveWallpapers del repository temi, appa
     <string name="pics_select_layer_pos">Seleziona posizione livello</string>
     <string name="label_transparency">Trasparenza</string>
     <string name="pics_layer_pos_title">Posizione livello immagine %1$d</string>
+    <string name="widget_layer_pos_title">Posizione widget %1$d</string>
     <string name="pics_layer_pos_note">Usa Su / Giù per spostare il livello nell\'ordine di disegno (dal fondo alla cima).</string>
     <string name="pics_layer_current">%1$s  · attuale</string>
     <string name="pics_move_up">Su</string>

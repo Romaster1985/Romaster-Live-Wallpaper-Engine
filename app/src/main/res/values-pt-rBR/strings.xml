@@ -307,6 +307,7 @@ Quando você enviar arquivos ZIP + PNG para a pasta LiveWallpapers do repositór
     <string name="pics_select_layer_pos">Selecionar posição da camada</string>
     <string name="label_transparency">Transparência</string>
     <string name="pics_layer_pos_title">Posição da camada de imagem %1$d</string>
+    <string name="widget_layer_pos_title">Posição do widget %1$d</string>
     <string name="pics_layer_pos_note">Use Cima / Baixo para mover a camada na ordem de desenho (de trás para frente).</string>
     <string name="pics_layer_current">%1$s  · atual</string>
     <string name="pics_move_up">Cima</string>

@@ -307,6 +307,7 @@ Apache 2.0 许可证</string>
     <string name="pics_select_layer_pos">选择图层位置</string>
     <string name="label_transparency">透明度</string>
     <string name="pics_layer_pos_title">图片图层位置 %1$d</string>
+    <string name="widget_layer_pos_title">小组件位置 %1$d</string>
     <string name="pics_layer_pos_note">使用上/下调整当前图层的绘制顺序（从后到前）。</string>
     <string name="pics_layer_current">%1$s  · 当前</string>
     <string name="pics_move_up">上移</string>

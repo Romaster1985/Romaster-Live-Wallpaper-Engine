@@ -330,6 +330,7 @@ Máximo permitido para este loop: %1$d ms.</string>
     <string name="pics_select_layer_pos">Seleccionar ubicación de capa</string>
     <string name="label_transparency">Transparencia</string>
     <string name="pics_layer_pos_title">Ubicación Capa de Imagen %1$d</string>
+    <string name="widget_layer_pos_title">Ubicación Widget %1$d</string>
     <string name="pics_layer_pos_note">Usá Subir / Bajar para mover la capa actual en el orden de dibujo (de atrás hacia adelante).</string>
     <string name="pics_layer_current">%1$s  · actual</string>
     <string name="pics_move_up">Subir</string>

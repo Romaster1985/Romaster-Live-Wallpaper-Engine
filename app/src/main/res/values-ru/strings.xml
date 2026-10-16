@@ -307,6 +307,7 @@ Reddit · Patreon · Gmail</string>
     <string name="pics_select_layer_pos">Выбрать позицию слоя</string>
     <string name="label_transparency">Прозрачность</string>
     <string name="pics_layer_pos_title">Позиция слоя изображения %1$d</string>
+    <string name="widget_layer_pos_title">Позиция виджета %1$d</string>
     <string name="pics_layer_pos_note">Используйте Вверх / Вниз, чтобы переместить слой в порядке отрисовки (сзади вперёд).</string>
     <string name="pics_layer_current">%1$s  · текущий</string>
     <string name="pics_move_up">Вверх</string>

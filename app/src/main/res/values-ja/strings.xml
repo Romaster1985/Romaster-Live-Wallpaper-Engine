@@ -307,6 +307,7 @@ Apache 2.0 ライセンス</string>
     <string name="pics_select_layer_pos">レイヤー位置を選択</string>
     <string name="label_transparency">透明度</string>
     <string name="pics_layer_pos_title">画像レイヤー位置 %1$d</string>
+    <string name="widget_layer_pos_title">ウィジェット位置 %1$d</string>
     <string name="pics_layer_pos_note">上／下で描画順を変更します（後ろ→前）。</string>
     <string name="pics_layer_current">%1$s  · 現在</string>
     <string name="pics_move_up">上へ</string>
