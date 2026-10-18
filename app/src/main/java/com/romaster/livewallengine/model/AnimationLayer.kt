@@ -104,6 +104,30 @@ data class AnimationLayer(
     /** Ángulo de inclinación objetivo en grados (0..359). */
     var gyroDegrees: Int = 90,
 
+    /**
+     * Si true, la capa rota al instante en sentido opuesto al tilt del dispositivo
+     * (efecto “brújula” / orientación fija respecto al suelo).
+     * Oculta umbral, acción, velocidad y retorno invertido.
+     */
+    var gyroInstantRotation: Boolean = false,
+
+    /**
+     * Grados de precisión / histéresis de la rotación instantánea por giroscopio (0..10).
+     * 0 = seguimiento continuo e instantáneo (−tilt).
+     * N > 0 = bandas de ancho 2N centradas en …, −2N, 0, 2N, 4N, …
+     *   Se mantiene el centro mientras |tilt − centro| < N; al salir salta al centro vecino.
+     *   Ejemplo N=10: 0° si tilt∈(−10,10); 20° si tilt∈(10,30); 40° si tilt∈(30,50)…
+     *   La capa aplica siempre el opuesto (−centro). Con N>0, [speed]/[acceleration] suavizan el salto.
+     */
+    var gyroPrecisionDeg: Float = 0f,
+
+    /**
+     * Si true, invierte el sentido de la rotación instantánea por giroscopio
+     * (la capa queda alineada al suelo real: “piso real” paralelo al piso).
+     * Si false, la capa sigue el mismo sentido que el dispositivo.
+     */
+    var gyroInvertRotation: Boolean = false,
+
     // --- Reacción: Fórmula ---
     var formula: String = "\$if(1, 1, 0)\$",
 

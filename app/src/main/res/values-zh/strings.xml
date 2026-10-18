@@ -498,4 +498,9 @@ Apache 2.0 许可证</string>
     <string name="layer_pos_title_named">位置：%1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">直接即时旋转</string>
+    <string name="anim_gyro_instant_hint">图层与设备反向旋转。精度 0°＝连续。N° 时：陀螺仪在中心 ±N° 内保持角度，越界则按 2N° 跳变（例如 N=10 → 0、20、40…）。</string>
+    <string name="anim_gyro_sensitivity">灵敏度（防抖）</string>
+    <string name="anim_gyro_precision">精度（度）</string>
+    <string name="anim_gyro_invert_rotation">反转旋转</string>
 </resources>

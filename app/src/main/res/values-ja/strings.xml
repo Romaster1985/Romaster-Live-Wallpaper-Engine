@@ -498,4 +498,9 @@ Apache 2.0 ライセンス</string>
     <string name="layer_pos_title_named">位置: %1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">直接リアルタイム回転</string>
+    <string name="anim_gyro_instant_hint">レイヤーは端末と逆方向に回転。精度 0°＝連続。N°ではジャイロが中心±N°内なら維持し、外れると 2N°単位で段飛び（例: N=10 → 0, 20, 40…）。</string>
+    <string name="anim_gyro_sensitivity">感度（デバウンス）</string>
+    <string name="anim_gyro_precision">精度（度）</string>
+    <string name="anim_gyro_invert_rotation">回転を反転</string>
 </resources>

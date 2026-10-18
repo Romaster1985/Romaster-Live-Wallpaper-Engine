@@ -3578,46 +3578,119 @@ private fun showFadeDurationDialog(
                 }
                 AnimationReaction.GYROSCOPE -> {
                     reactionExtra.visibility = View.VISIBLE
-                    reactionExtra.addView(TextView(this@MainActivity).apply {
-                        text = getString(R.string.anim_gyro_degrees)
+                    val instant = cur.gyroInstantRotation
+
+                    // Checkbox: rotación instantánea directa (efecto brújula)
+                    val instantCb = com.google.android.material.checkbox.MaterialCheckBox(this@MainActivity).apply {
+                        text = getString(R.string.anim_gyro_instant_rotation)
+                        isChecked = instant
                         setPadding(0, (8 * density).toInt(), 0, 0)
-                    })
-                    val gyroRow = LinearLayout(this@MainActivity).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        gravity = android.view.Gravity.CENTER_VERTICAL
+                        setOnCheckedChangeListener { _, checked ->
+                            if (loadingUI) return@setOnCheckedChangeListener
+                            live()?.gyroInstantRotation = checked
+                            editor.save()
+                            refreshReactionExtra()
+                        }
                     }
-                    val valueTv = TextView(this@MainActivity).apply {
-                        text = "${cur.gyroDegrees}°"
-                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    reactionExtra.addView(instantCb)
+
+                    if (instant) {
+                        reactionExtra.addView(com.google.android.material.checkbox.MaterialCheckBox(this@MainActivity).apply {
+                            text = getString(R.string.anim_gyro_invert_rotation)
+                            isChecked = cur.gyroInvertRotation
+                            setPadding(0, (4 * density).toInt(), 0, 0)
+                            setOnCheckedChangeListener { _, checked ->
+                                if (loadingUI) return@setOnCheckedChangeListener
+                                live()?.gyroInvertRotation = checked
+                                editor.save()
+                            }
+                        })
                     }
-                    gyroRow.addView(valueTv)
-                    reactionExtra.addView(gyroRow)
-                    val gyroSlider = com.google.android.material.slider.Slider(this@MainActivity).apply {
-                        valueFrom = 0f
-                        valueTo = 359f
-                        stepSize = 1f
-                        value = cur.gyroDegrees.toFloat().coerceIn(0f, 359f)
-                        addOnChangeListener { _, v, fromUser ->
-                            if (!fromUser || loadingUI) return@addOnChangeListener
+
+                    if (!instant) {
+                        reactionExtra.addView(TextView(this@MainActivity).apply {
+                            text = getString(R.string.anim_gyro_degrees)
+                            setPadding(0, (8 * density).toInt(), 0, 0)
+                        })
+                        val gyroRow = LinearLayout(this@MainActivity).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = android.view.Gravity.CENTER_VERTICAL
+                        }
+                        val valueTv = TextView(this@MainActivity).apply {
+                            text = "${cur.gyroDegrees}°"
+                            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                        }
+                        gyroRow.addView(valueTv)
+                        reactionExtra.addView(gyroRow)
+                        val gyroSlider = com.google.android.material.slider.Slider(this@MainActivity).apply {
+                            valueFrom = 0f
+                            valueTo = 359f
+                            stepSize = 1f
+                            value = cur.gyroDegrees.toFloat().coerceIn(0f, 359f)
+                            addOnChangeListener { _, v, fromUser ->
+                                if (!fromUser || loadingUI) return@addOnChangeListener
+                                live()?.gyroDegrees = v.toInt()
+                                valueTv.text = "${v.toInt()}°"
+                                editor.save()
+                            }
+                        }
+                        reactionExtra.addView(gyroSlider)
+                        attachSliderResetButton(gyroSlider, valueTv, 90f) { v ->
                             live()?.gyroDegrees = v.toInt()
                             valueTv.text = "${v.toInt()}°"
                             editor.save()
                         }
                     }
-                    reactionExtra.addView(gyroSlider)
-                    attachSliderResetButton(gyroSlider, valueTv, 90f) { v ->
-                        live()?.gyroDegrees = v.toInt()
-                        valueTv.text = "${v.toInt()}°"
-                        editor.save()
-                    }
-                    // Indicador en vivo del ángulo (como nivel / brújula temporal)
+
+                    // Indicador en vivo del ángulo (umbral o rotación directa)
                     val liveAngleTv = TextView(this@MainActivity).apply {
                         text = getString(R.string.anim_gyro_live, 0)
                         setPadding(0, (8 * density).toInt(), 0, 0)
                         setTextColor(0xFF1565C0.toInt())
                     }
                     reactionExtra.addView(liveAngleTv)
-                    // Asegurar sensores activos mientras se mira esta card
+                    if (instant) {
+                        reactionExtra.addView(TextView(this@MainActivity).apply {
+                            text = getString(R.string.anim_gyro_instant_hint)
+                            textSize = 12f
+                            setPadding(0, (4 * density).toInt(), 0, 0)
+                        })
+                        // Grados de precisión 0..10 (0 = continuo e instantáneo)
+                        reactionExtra.addView(TextView(this@MainActivity).apply {
+                            text = getString(R.string.anim_gyro_precision)
+                            setPadding(0, (10 * density).toInt(), 0, 0)
+                        })
+                        val precRow = LinearLayout(this@MainActivity).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = android.view.Gravity.CENTER_VERTICAL
+                        }
+                        val precTv = TextView(this@MainActivity).apply {
+                            text = "${cur.gyroPrecisionDeg.toInt()}°"
+                            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                        }
+                        precRow.addView(precTv)
+                        reactionExtra.addView(precRow)
+                        val precSlider = com.google.android.material.slider.Slider(this@MainActivity).apply {
+                            valueFrom = 0f
+                            valueTo = 10f
+                            stepSize = 1f
+                            value = cur.gyroPrecisionDeg.coerceIn(0f, 10f)
+                            addOnChangeListener { _, v, fromUser ->
+                                if (!fromUser || loadingUI) return@addOnChangeListener
+                                live()?.gyroPrecisionDeg = v
+                                precTv.text = "${v.toInt()}°"
+                                editor.save()
+                            }
+                        }
+                        reactionExtra.addView(precSlider)
+                        attachSliderResetButton(precSlider, precTv, 0f) { v ->
+                            live()?.gyroPrecisionDeg = v
+                            precTv.text = "${v.toInt()}°"
+                            editor.save()
+                        }
+                        // Siempre visibles (con precisión 0 no afectan; evita crash al reconstruir layout)
+                        addAnimSpeedAccel(reactionExtra, cur)
+                    }
                     AnimationEngine.ensureSensors(this@MainActivity)
                     val gyroHandler = android.os.Handler(mainLooper)
                     val gyroTick = object : Runnable {
@@ -3654,18 +3727,21 @@ private fun showFadeDurationDialog(
                     reactionExtra.visibility = View.VISIBLE
                 }
             }
-            // Acción solo si no está desactivado
-            if (cur.reaction == AnimationReaction.DISABLED) {
+            // Acción: oculta si desactivado o giroscopio con rotación instantánea
+            val hideAction = cur.reaction == AnimationReaction.DISABLED ||
+                (cur.reaction == AnimationReaction.GYROSCOPE && cur.gyroInstantRotation)
+            if (hideAction) {
                 actionExtra.visibility = View.GONE
             } else {
                 actionExtra.visibility = View.VISIBLE
                 rebuildAnimationActionExtra(actionExtra, layerId)
             }
-            // Checkbox de retorno invertido: oculto en bucle / bucle con reversa / desactivado
-            reverseCb?.visibility = when (cur.reaction) {
-                AnimationReaction.LOOP,
-                AnimationReaction.LOOP_REVERSE,
-                AnimationReaction.DISABLED -> View.GONE
+            // Retorno invertido: oculto en bucle / desactivado / gyro instantáneo
+            reverseCb?.visibility = when {
+                cur.reaction == AnimationReaction.LOOP ||
+                    cur.reaction == AnimationReaction.LOOP_REVERSE ||
+                    cur.reaction == AnimationReaction.DISABLED -> View.GONE
+                cur.reaction == AnimationReaction.GYROSCOPE && cur.gyroInstantRotation -> View.GONE
                 else -> View.VISIBLE
             }
         }
@@ -3706,9 +3782,10 @@ private fun showFadeDurationDialog(
                 else -> View.VISIBLE
             }
         }
-        root.addView(reverseCb)
-
+        // reactionExtra primero (incluye checkbox de rotación instantánea del gyro)
+        // y después el retorno invertido, para que "instantánea" quede encima
         root.addView(reactionExtra)
+        root.addView(reverseCb)
         root.addView(actionExtra)
         refreshReactionExtra()
 

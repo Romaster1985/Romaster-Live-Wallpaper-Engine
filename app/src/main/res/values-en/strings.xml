@@ -512,4 +512,9 @@ Check your connection and try again.</string>
     <string name="layer_pos_title_named">Position: %1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">Direct instant rotation</string>
+    <string name="anim_gyro_instant_hint">Without “Invert rotation”: the layer follows the device. With it on: opposite direction (real floor parallel to the ground, arrow to the sky). Precision 0° = continuous; N° = ±N bands with 2N° steps.</string>
+    <string name="anim_gyro_sensitivity">Sensitivity (debounce)</string>
+    <string name="anim_gyro_precision">Precision degrees</string>
+    <string name="anim_gyro_invert_rotation">Invert rotation</string>
 </resources>

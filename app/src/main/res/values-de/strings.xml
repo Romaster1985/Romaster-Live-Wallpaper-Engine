@@ -498,4 +498,9 @@ Verbindung prüfen und erneut versuchen.</string>
     <string name="layer_pos_title_named">Position: %1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">Direkte Sofortrotation</string>
+    <string name="anim_gyro_instant_hint">Die Ebene dreht entgegengesetzt zum Gerät. Präzision 0° = kontinuierlich. Mit N°: Winkel bleibt, solange Gyro innerhalb ±N° der Mitte liegt; beim Verlassen Sprung um 2N° (z. B. N=10 → 0, 20, 40…).</string>
+    <string name="anim_gyro_sensitivity">Empfindlichkeit (Entprellung)</string>
+    <string name="anim_gyro_precision">Präzisionsgrade</string>
+    <string name="anim_gyro_invert_rotation">Rotation umkehren</string>
 </resources>

@@ -498,4 +498,9 @@ Controlla la connessione e riprova.</string>
     <string name="layer_pos_title_named">Posizione: %1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">Rotazione istantanea diretta</string>
+    <string name="anim_gyro_instant_hint">Il livello ruota in senso opposto al dispositivo. Precisione 0° = continuo. Con N°: l’angolo resta finché il gyro è entro ±N° dal centro; uscendo salta di 2N° (es. N=10 → 0, 20, 40…).</string>
+    <string name="anim_gyro_sensitivity">Sensibilità (anti-rimbalzo)</string>
+    <string name="anim_gyro_precision">Gradi di precisione</string>
+    <string name="anim_gyro_invert_rotation">Inverti rotazione</string>
 </resources>

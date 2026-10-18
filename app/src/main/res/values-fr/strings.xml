@@ -498,4 +498,9 @@ Vérifiez la connexion et réessayez.</string>
     <string name="layer_pos_title_named">Position : %1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">Rotation instantanée directe</string>
+    <string name="anim_gyro_instant_hint">La couche tourne à l’opposé de l’appareil. Précision 0° = continu. Avec N° : l’angle reste tant que le gyro est dans ±N° du centre ; en sortant, saut de 2N° (ex. N=10 → 0, 20, 40…).</string>
+    <string name="anim_gyro_sensitivity">Sensibilité (anti-rebond)</string>
+    <string name="anim_gyro_precision">Degrés de précision</string>
+    <string name="anim_gyro_invert_rotation">Inverser la rotation</string>
 </resources>

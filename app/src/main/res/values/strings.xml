@@ -521,4 +521,9 @@ Comprobá la conexión e intentá de nuevo.</string>
     <string name="layer_pos_title_named">Ubicación: %1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">Rotación instantánea directa</string>
+    <string name="anim_gyro_instant_hint">Sin “Invertir rotación”: la capa sigue el mismo sentido que el dispositivo. Con la opción activada: sentido opuesto (piso real paralelo al suelo, flecha al cielo). Precisión 0° = continuo; N° = bandas ±N con saltos de 2N°.</string>
+    <string name="anim_gyro_sensitivity">Sensibilidad (anti-rebote)</string>
+    <string name="anim_gyro_precision">Grados de precisión</string>
+    <string name="anim_gyro_invert_rotation">Invertir rotación</string>
 </resources>

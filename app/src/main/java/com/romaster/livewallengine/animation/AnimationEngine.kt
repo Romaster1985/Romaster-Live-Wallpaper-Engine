@@ -86,6 +86,23 @@ object AnimationEngine : SensorEventListener {
         var phaseStartProgress: Float = 0f
         var loopDir: Int = 1
         var loopTimeMs: Float = 0f
+        /** Ángulo ya aplicado en modo rotación instantánea (grados, sentido opuesto al gyro). */
+        var gyroAppliedDeg: Float = 0f
+        /**
+         * Centro de la banda actual en espacio del giroscopio (tilt del dispositivo).
+         * Con precisión P: se mantiene mientras tilt ∈ (center−P, center+P);
+         * al salir salta de a 2P (centros …, −2P, 0, 2P, 4P, …).
+         */
+        var gyroBandCenter: Float = 0f
+        var gyroBandInitialized: Boolean = false
+        /** Última precisión usada; si cambia se reancora el centro de banda. */
+        var gyroLastPrecision: Float = -1f
+        /** Segmento de movimiento angular (misma cinemática que rotación manual). */
+        var gyroMotionStartDeg: Float = 0f
+        var gyroMotionTargetDeg: Float = 0f
+        var gyroMotionStartMs: Long = 0L
+        var gyroMotionActive: Boolean = false
+        var lastGyroUpdateMs: Long = 0L
     }
 
     private val runtime = mutableMapOf<String, AnimRuntime>()
@@ -200,12 +217,33 @@ object AnimationEngine : SensorEventListener {
                     } else {
                         stepLoop(anim, rt, now, reverse = false)
                     }
+                    rt.lastReaction = reaction
+                    applyActionToStates(anim, rt.progress, sw, sh)
                 }
-                AnimationReaction.LOOP_REVERSE -> stepLoop(anim, rt, now, reverse = true)
-                else -> stepBinary(anim, rt, reaction, now)
+                AnimationReaction.LOOP_REVERSE -> {
+                    stepLoop(anim, rt, now, reverse = true)
+                    rt.lastReaction = reaction
+                    applyActionToStates(anim, rt.progress, sw, sh)
+                }
+                AnimationReaction.GYROSCOPE -> {
+                    if (anim.gyroInstantRotation) {
+                        // Rotación continua compensando el tilt (efecto brújula / suelo fijo)
+                        rt.progress = 1f
+                        rt.phase = Phase.HOLD
+                        rt.lastReaction = 1f
+                        applyGyroInstantRotation(anim, rt, now)
+                    } else {
+                        stepBinary(anim, rt, reaction, now)
+                        rt.lastReaction = reaction
+                        applyActionToStates(anim, rt.progress, sw, sh)
+                    }
+                }
+                else -> {
+                    stepBinary(anim, rt, reaction, now)
+                    rt.lastReaction = reaction
+                    applyActionToStates(anim, rt.progress, sw, sh)
+                }
             }
-            rt.lastReaction = reaction
-            applyActionToStates(anim, rt.progress, sw, sh)
         }
     }
 
@@ -508,6 +546,107 @@ object AnimationEngine : SensorEventListener {
                 // speed sea ~1 unidad/ms con distance=fadeDurationMs → T = D/v = fadeDurationMs.
                 anim.fadeDurationMs.coerceAtLeast(1L).toFloat()
         }
+    }
+
+    /**
+     * Rotación compensada por giroscopio (capa fija respecto al suelo).
+     *
+     * Precisión P = [gyroPrecisionDeg]:
+     * - P ≈ 0: ángulo de capa = −tilt, continuo e instantáneo.
+     * - P > 0: histéresis en el tilt del dispositivo.
+     *   Centros en …, −2P, 0, 2P, 4P, … (espacio del gyro).
+     *   Mientras tilt ∈ (centro−P, centro+P) el centro no cambia.
+     *   Al superar centro+P → centro += 2P; al bajar de centro−P → centro −= 2P.
+     *   Ejemplo P=10: en 0° se mantiene si tilt ∈ (−10, 10); al pasar 10° el centro
+     *   pasa a 20° y se mantiene mientras tilt ∈ (10, 30); luego 40° si tilt ∈ (30, 50)…
+     *   La capa recibe siempre el ángulo opuesto: −centro.
+     * - Con P > 0 el paso entre centros usa [speed]/[acceleration].
+     */
+    private fun applyGyroInstantRotation(anim: AnimationLayer, rt: AnimRuntime, now: Long) {
+        val p = anim.gyroPrecisionDeg.coerceIn(0f, 10f)
+        val gyro = tiltSignedDeg
+
+        val bandCenter: Float
+        val precisionChanged = rt.gyroLastPrecision < 0f ||
+            kotlin.math.abs(rt.gyroLastPrecision - p) > 0.01f
+
+        if (p < 0.5f) {
+            // Continuo: el centro sigue al gyro tal cual
+            bandCenter = gyro
+            rt.gyroBandCenter = gyro
+            rt.gyroBandInitialized = true
+            // ángulo aplicado se alinea más abajo si precisionChanged
+        } else {
+            var c = rt.gyroBandCenter
+            if (!rt.gyroBandInitialized || precisionChanged) {
+                // Reancorar al múltiplo de 2P más cercano al tilt ACTUAL del dispositivo.
+                // Evita que, tras usar precisión 0 (centro = gyro vivo), al subir N°
+                // el cero quede “calibrado” en la inclinación previa.
+                val step = 2f * p
+                c = kotlin.math.round(gyro / step) * step
+                rt.gyroBandInitialized = true
+            }
+            // Histéresis: salir de la banda mueve el centro de a 2P
+            while (gyro > c + p) c += 2f * p
+            while (gyro < c - p) c -= 2f * p
+            rt.gyroBandCenter = c
+            bandCenter = c
+        }
+        rt.gyroLastPrecision = p
+
+        // Sin invertir: mismo sentido que el dispositivo (comportamiento actual).
+        // Con invert: sentido opuesto → “piso real” paralelo al suelo del usuario.
+        val target = if (anim.gyroInvertRotation) bandCenter else -bandCenter
+
+        // Precisión 0 o cambio de precisión: aplicar al instante (sin interpolar)
+        if (p < 0.5f || precisionChanged) {
+            rt.gyroAppliedDeg = target
+            rt.gyroMotionActive = false
+            rt.gyroMotionTargetDeg = target
+            rt.gyroMotionStartDeg = target
+            rt.gyroMotionStartMs = now
+            rt.lastGyroUpdateMs = now
+        } else {
+            // Misma cinemática que la rotación manual (distanceCovered / perfil triangular)
+            var deltaToTarget = target - rt.gyroMotionTargetDeg
+            while (deltaToTarget > 180f) deltaToTarget -= 360f
+            while (deltaToTarget < -180f) deltaToTarget += 360f
+
+            if (!rt.gyroMotionActive || kotlin.math.abs(deltaToTarget) > 0.5f) {
+                // Nuevo tramo hacia el centro de banda actual
+                rt.gyroMotionStartDeg = rt.gyroAppliedDeg
+                rt.gyroMotionTargetDeg = target
+                rt.gyroMotionStartMs = now
+                rt.gyroMotionActive = true
+            }
+
+            var span = rt.gyroMotionTargetDeg - rt.gyroMotionStartDeg
+            while (span > 180f) span -= 360f
+            while (span < -180f) span += 360f
+            val distance = kotlin.math.abs(span)
+
+            if (distance <= 0.05f) {
+                rt.gyroAppliedDeg = rt.gyroMotionTargetDeg
+                rt.gyroMotionActive = false
+            } else {
+                val vmax = anim.speed.coerceAtLeast(0.001f)
+                // Igual que integrateForward: acceleration > 0 activa el perfil triangular
+                val useAccel = anim.acceleration > 1e-9f
+                val elapsed = (now - rt.gyroMotionStartMs).toFloat().coerceAtLeast(0f)
+                val covered = distanceCovered(elapsed, distance, vmax, useAccel)
+                val dir = if (span >= 0f) 1f else -1f
+                if (covered >= distance - 0.05f) {
+                    rt.gyroAppliedDeg = rt.gyroMotionTargetDeg
+                    rt.gyroMotionActive = false
+                } else {
+                    rt.gyroAppliedDeg = rt.gyroMotionStartDeg + dir * covered
+                }
+            }
+            rt.lastGyroUpdateMs = now
+        }
+
+        val st = states.getOrPut(anim.targetKey) { LayerAnimState() }
+        st.rotationDeg += rt.gyroAppliedDeg
     }
 
     private fun applyActionToStates(anim: AnimationLayer, p: Float, screenW: Int, screenH: Int) {

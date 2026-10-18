@@ -498,4 +498,9 @@ Reddit · Patreon · Gmail</string>
     <string name="layer_pos_title_named">Позиция: %1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">Мгновенное прямое вращение</string>
+    <string name="anim_gyro_instant_hint">Слой вращается противоположно устройству. Точность 0° = непрерывно. При N° угол держится, пока гироскоп в пределах ±N° от центра; при выходе скачок на 2N° (напр. N=10 → 0, 20, 40…).</string>
+    <string name="anim_gyro_sensitivity">Чувствительность (антидребезг)</string>
+    <string name="anim_gyro_precision">Градусы точности</string>
+    <string name="anim_gyro_invert_rotation">Инвертировать вращение</string>
 </resources>

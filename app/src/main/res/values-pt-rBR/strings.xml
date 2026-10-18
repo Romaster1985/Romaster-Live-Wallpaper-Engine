@@ -498,4 +498,9 @@ Verifique a conexão e tente novamente.</string>
     <string name="layer_pos_title_named">Posição: %1$s</string>
     <string name="soft_start_named_title">Soft Start — %1$s</string>
     <string name="delay_start_named_title">Delay Start — %1$s</string>
+    <string name="anim_gyro_instant_rotation">Rotação instantânea direta</string>
+    <string name="anim_gyro_instant_hint">A camada gira no sentido oposto ao dispositivo. Precisão 0° = contínuo. Com N°: o ângulo se mantém enquanto o gyro fica em ±N° do centro; ao sair, salta de 2N° (ex. N=10 → 0, 20, 40…).</string>
+    <string name="anim_gyro_sensitivity">Sensibilidade (anti-rebote)</string>
+    <string name="anim_gyro_precision">Graus de precisão</string>
+    <string name="anim_gyro_invert_rotation">Inverter rotação</string>
 </resources>
