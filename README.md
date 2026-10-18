@@ -8,7 +8,7 @@
 
 > Crea fondos animados con varias capas, chroma key, audio independiente, ping-pong, crossfade de loops, soft start, widgets de hora/batería/clima y comportamientos distintos cuando el teléfono está bloqueado o desbloqueado.
 
-**Versión actual:** `1.0.0-beta1` (versionCode 5)
+**Versión actual:** `1.0.0-beta2` (versionCode 6)
 
 <p align="center">
   <img src="pictures/imagen_1.png" alt="Editor con preview en vivo" width="280"/>
@@ -114,8 +114,11 @@ Sistema de animaciones por capa inspirado en motores de themes (reacciones + acc
 | **Retorno** | Checkbox opcional de retorno con animación invertida (no aplica a bucle / bucle con reversa) |
 | **Rotación de reloj** | En bucle + rotación: manecillas de hora / minutos / segundos, paso a paso o continuo |
 | **Fórmulas de reacción** | Diálogo con botones **Funciones** (`df`, `wi`, `bi`, `if`) y **Variables globales** (tokens de fecha, batería, clima, íconos y **`locked`** = 1 bloqueado / 0 desbloqueado) |
+| **Rotación instantánea (giroscopio)** | Checkbox **Rotación instantánea directa**: la capa sigue el inclinómetro en tiempo real. **Invertir rotación** para alinear al suelo real (efecto brújula). **Grados de precisión** (0–10°) con histéresis (±N, saltos de 2N°). Velocidad y aceleración con el **mismo perfil triangular** que la rotación manual. |
 
 El desplazamiento, zoom y fade del **reloj** se interpolan a **~60 FPS** (el bitmap del reloj sigue regenerándose ~1 vez por segundo). Video-BG, Video-OL, imágenes y widgets también reciben transformaciones de animación en el pipeline OpenGL.
+
+**Nombres personalizados** en cards de imagen, widget y animación (tocar el título): se reflejan en diálogos de orden Z y en el selector de capa a animar. Diálogo de posición de capa con altura fija, scroll y botones subir/bajar siempre visibles.
 
 Posiciones unificadas en **X/Y de −300 a +300** (centro = 0) para videos, reloj, imágenes y widgets, con migración automática de proyectos antiguos.
 
@@ -350,6 +353,15 @@ Claves de clima (`$wi(icon)$`) alineadas con KLWP:
 
 
 ## Historial de versiones
+
+### 1.0.0-beta2
+
+- **Giroscopio → Rotación instantánea directa**: seguimiento en vivo del inclinómetro
+- **Invertir rotación**: alinear capa al suelo real (piso paralelo / flecha al cielo)
+- **Grados de precisión** (0–10°) con bandas de histéresis; reanclaje al cambiar la precisión
+- Aceleración/desaceleración del gyro con la **misma cinemática** que la rotación manual
+- Nombres personalizados de capas (imagen / widget / animación) y diálogo de orden Z con scroll fijo
+- Estabilidad de visibilidad Video-BG/OL, audio en 0 y preview vs servicio
 
 ### 1.0.0-beta1
 
