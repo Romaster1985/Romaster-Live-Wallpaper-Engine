@@ -475,7 +475,10 @@ class GLRenderer(
 
         when (layer.fitMode) {
             VideoFitMode.STRETCH -> {
-                // Pantalla completa + offsets/zoom/rotación de animación
+                // Quad ±1 → rectángulo completo del ortho (-screenRatio..screenRatio, -1..1).
+                // Así el video ocupa todo el viewport (ancho y alto), distorsionando si el
+                // aspect del video no coincide con el de la pantalla.
+                android.opengl.Matrix.scaleM(modelMatrix, 0, screenRatio, 1f, 1f)
             }
             VideoFitMode.FREE -> {
                 val zoom = layer.scale / 100f
