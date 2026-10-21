@@ -211,7 +211,10 @@ Wenn du ZIP + PNG in den Ordner LiveWallpapers des Theme-Repos legst, erscheinen
     <string name="hide_collapse">ausblenden [-]</string>
     <string name="show_time">Zeit anzeigen</string>
     <string name="show_date">Datum anzeigen</string>
-    <string name="hhmm_vertical_gap">Abstand HH/MM</string>
+        <string name="date_uppercase">Großbuchstaben</string>
+    <string name="date_title_case">Kapitalisieren</string>
+    <string name="date_strip_diacritics">Ohne diakritische Zeichen</string>
+<string name="hhmm_vertical_gap">Abstand HH/MM</string>
     <string name="fonts_title">Schriftarten</string>
     <string name="font_gallery_button">Schriftgalerie 🌎📲</string>
     <string name="import_font">Schrift importieren</string>

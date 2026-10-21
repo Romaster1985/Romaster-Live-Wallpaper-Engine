@@ -234,7 +234,10 @@ Máximo permitido para este loop: %1$d ms.</string>
     <string name="hide_collapse">ocultar [-]</string>
     <string name="show_time">Mostrar Hora</string>
     <string name="show_date">Mostrar Fecha</string>
-    <string name="hhmm_vertical_gap">Separación HH/MM</string>
+        <string name="date_uppercase">Mayúsculas</string>
+    <string name="date_title_case">Capitalizar</string>
+    <string name="date_strip_diacritics">Sin signos diacríticos</string>
+<string name="hhmm_vertical_gap">Separación HH/MM</string>
     <string name="fonts_title">Fuentes</string>
     <string name="font_gallery_button">Galería de Fuentes 🌎📲</string>
     <string name="import_font">Importar fuente</string>

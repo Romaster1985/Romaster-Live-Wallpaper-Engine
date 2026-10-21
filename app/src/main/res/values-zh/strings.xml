@@ -211,7 +211,10 @@ Apache 2.0 许可证</string>
     <string name="hide_collapse">隐藏 [-]</string>
     <string name="show_time">显示时间</string>
     <string name="show_date">显示日期</string>
-    <string name="hhmm_vertical_gap">时/分间距</string>
+        <string name="date_uppercase">大写</string>
+    <string name="date_title_case">首字母大写</string>
+    <string name="date_strip_diacritics">去除变音符号</string>
+<string name="hhmm_vertical_gap">时/分间距</string>
     <string name="fonts_title">字体</string>
     <string name="font_gallery_button">字体图库 🌎📲</string>
     <string name="import_font">导入字体</string>

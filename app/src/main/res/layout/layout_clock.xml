@@ -265,6 +265,24 @@
                         android:layout_height="wrap_content"
                         android:text="@string/show_date"/>
 
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/checkDateUppercase"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/date_uppercase"/>
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/checkDateTitleCase"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/date_title_case"/>
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/checkDateStripDiacritics"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/date_strip_diacritics"/>
+
                     <RadioGroup
                         android:id="@+id/radioDateFormat"
                         android:layout_width="match_parent"

@@ -211,7 +211,10 @@ Reddit · Patreon · Gmail</string>
     <string name="hide_collapse">скрыть [-]</string>
     <string name="show_time">Показывать время</string>
     <string name="show_date">Показывать дату</string>
-    <string name="hhmm_vertical_gap">Интервал ЧЧ/ММ</string>
+        <string name="date_uppercase">Заглавные</string>
+    <string name="date_title_case">С заглавной</string>
+    <string name="date_strip_diacritics">Без диакритики</string>
+<string name="hhmm_vertical_gap">Интервал ЧЧ/ММ</string>
     <string name="fonts_title">Шрифты</string>
     <string name="font_gallery_button">Галерея шрифтов 🌎📲</string>
     <string name="import_font">Импорт шрифта</string>

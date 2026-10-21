@@ -211,7 +211,10 @@ Quand vous ajoutez ZIP + PNG dans le dossier LiveWallpapers du dépôt de thème
     <string name="hide_collapse">masquer [-]</string>
     <string name="show_time">Afficher l’heure</string>
     <string name="show_date">Afficher la date</string>
-    <string name="hhmm_vertical_gap">Écart HH/MM</string>
+        <string name="date_uppercase">Majuscules</string>
+    <string name="date_title_case">Capitaliser</string>
+    <string name="date_strip_diacritics">Sans signes diacritiques</string>
+<string name="hhmm_vertical_gap">Écart HH/MM</string>
     <string name="fonts_title">Polices</string>
     <string name="font_gallery_button">Galerie de polices 🌎📲</string>
     <string name="import_font">Importer une police</string>

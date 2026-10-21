@@ -6405,6 +6405,10 @@ findViewById<CheckBox>(
         ).isChecked =
             clock.showDate
 
+        findViewById<CheckBox>(R.id.checkDateUppercase).isChecked = clock.dateUppercase
+        findViewById<CheckBox>(R.id.checkDateTitleCase).isChecked = clock.dateTitleCase
+        findViewById<CheckBox>(R.id.checkDateStripDiacritics).isChecked = clock.dateStripDiacritics
+
         when (
             clock.timeFormat
         ) {
@@ -6743,6 +6747,32 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             if (loadingUI)
                 return@setOnCheckedChangeListener
         
+            updatePreviewProject()
+        }
+
+        // Mayúsculas / Justificar excluyentes
+        findViewById<CheckBox>(R.id.checkDateUppercase).setOnCheckedChangeListener { _, checked ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            if (checked) {
+                val title = findViewById<CheckBox>(R.id.checkDateTitleCase)
+                if (title.isChecked) {
+                    title.isChecked = false
+                }
+            }
+            updatePreviewProject()
+        }
+        findViewById<CheckBox>(R.id.checkDateTitleCase).setOnCheckedChangeListener { _, checked ->
+            if (loadingUI) return@setOnCheckedChangeListener
+            if (checked) {
+                val upper = findViewById<CheckBox>(R.id.checkDateUppercase)
+                if (upper.isChecked) {
+                    upper.isChecked = false
+                }
+            }
+            updatePreviewProject()
+        }
+        findViewById<CheckBox>(R.id.checkDateStripDiacritics).setOnCheckedChangeListener { _, _ ->
+            if (loadingUI) return@setOnCheckedChangeListener
             updatePreviewProject()
         }
 
@@ -8367,6 +8397,13 @@ clock.enabled =
             findViewById<CheckBox>(
                 R.id.checkDate
             ).isChecked
+
+        clock.dateUppercase =
+            findViewById<CheckBox>(R.id.checkDateUppercase).isChecked
+        clock.dateTitleCase =
+            findViewById<CheckBox>(R.id.checkDateTitleCase).isChecked
+        clock.dateStripDiacritics =
+            findViewById<CheckBox>(R.id.checkDateStripDiacritics).isChecked
     
         clock.timeFormat =
             when (

@@ -211,7 +211,10 @@ Quando você enviar arquivos ZIP + PNG para a pasta LiveWallpapers do repositór
     <string name="hide_collapse">ocultar [-]</string>
     <string name="show_time">Mostrar hora</string>
     <string name="show_date">Mostrar data</string>
-    <string name="hhmm_vertical_gap">Separação HH/MM</string>
+        <string name="date_uppercase">Maiúsculas</string>
+    <string name="date_title_case">Capitalizar</string>
+    <string name="date_strip_diacritics">Sem sinais diacríticos</string>
+<string name="hhmm_vertical_gap">Separação HH/MM</string>
     <string name="fonts_title">Fontes</string>
     <string name="font_gallery_button">Galeria de fontes 🌎📲</string>
     <string name="import_font">Importar fonte</string>

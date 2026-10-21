@@ -41,6 +41,15 @@ data class ClockSettings(
     var dateFormat: DateFormat =
         DateFormat.DOW_DD_MON,
 
+    /** Fecha en mayúsculas (MIÉ, 21 OCT). Excluyente con dateTitleCase. */
+    var dateUppercase: Boolean = false,
+
+    /** Primera letra de cada parte en mayúscula (Mié, 21 Oct). Excluyente con dateUppercase. */
+    var dateTitleCase: Boolean = false,
+
+    /** Quita acentos/diacríticos del texto de fecha (mie / Mie / MIE). */
+    var dateStripDiacritics: Boolean = false,
+
     var fontFile: String? = null,
 
     var clockSize: Float = 64f,

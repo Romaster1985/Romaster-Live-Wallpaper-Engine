@@ -40,6 +40,7 @@ import com.romaster.livewallengine.model.DateFormat
 import com.romaster.livewallengine.model.TextAlignment
 import com.romaster.livewallengine.model.TimeFormat
 
+import java.text.Normalizer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -1069,6 +1070,49 @@ class ClockRenderer {
             DateFormat.DD_MM_YYYY -> "dd/MM/yyyy"
             DateFormat.DOW_DD_MON_YYYY -> "EEE, dd MMM yyyy"
         }
-        return SimpleDateFormat(pattern, Locale.getDefault()).format(Date())
+        var text = SimpleDateFormat(pattern, Locale.getDefault()).format(Date())
+        if (settings.dateStripDiacritics) {
+            text = stripDiacritics(text)
+        }
+        // Mayúsculas y Justificar son excluyentes; prioridad a Mayúsculas si ambos quedaran true
+        text = when {
+            settings.dateUppercase -> text.uppercase(Locale.getDefault())
+            settings.dateTitleCase -> titleCaseDateParts(text)
+            else -> text
+        }
+        return text
+    }
+
+    private fun stripDiacritics(input: String): String {
+        val normalized = Normalizer.normalize(input, Normalizer.Form.NFD)
+        return buildString(normalized.length) {
+            for (ch in normalized) {
+                if (Character.getType(ch) != Character.NON_SPACING_MARK.toInt()) {
+                    append(ch)
+                }
+            }
+        }
+    }
+
+    private fun titleCaseDateParts(input: String): String {
+        val locale = Locale.getDefault()
+        return input.split(" ").joinToString(" ") { part ->
+            if (part.isEmpty()) part
+            else {
+                // Conservar puntuación pegada (ej. "mié," → "Mié,")
+                val letters = part.toCharArray()
+                val firstLetterIdx = letters.indexOfFirst { it.isLetter() }
+                if (firstLetterIdx < 0) return@joinToString part
+                val sb = StringBuilder()
+                for (i in letters.indices) {
+                    when {
+                        i == firstLetterIdx -> sb.append(letters[i].titlecase(locale))
+                        letters[i].isLetter() -> sb.append(letters[i].lowercase(locale))
+                        else -> sb.append(letters[i])
+                    }
+                }
+                sb.toString()
+            }
+        }
     }
 }

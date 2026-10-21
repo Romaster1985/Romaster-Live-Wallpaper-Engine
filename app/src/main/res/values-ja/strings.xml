@@ -211,7 +211,10 @@ Apache 2.0 ライセンス</string>
     <string name="hide_collapse">非表示 [-]</string>
     <string name="show_time">時刻を表示</string>
     <string name="show_date">日付を表示</string>
-    <string name="hhmm_vertical_gap">HH/MM 間隔</string>
+        <string name="date_uppercase">大文字</string>
+    <string name="date_title_case">先頭大文字</string>
+    <string name="date_strip_diacritics">ダイアクリティカルマークなし</string>
+<string name="hhmm_vertical_gap">HH/MM 間隔</string>
     <string name="fonts_title">フォント</string>
     <string name="font_gallery_button">フォントギャラリー 🌎📲</string>
     <string name="import_font">フォントをインポート</string>

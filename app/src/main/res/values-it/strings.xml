@@ -211,7 +211,10 @@ Quando carichi ZIP + PNG nella cartella LiveWallpapers del repository temi, appa
     <string name="hide_collapse">nascondi [-]</string>
     <string name="show_time">Mostra ora</string>
     <string name="show_date">Mostra data</string>
-    <string name="hhmm_vertical_gap">Separazione HH/MM</string>
+        <string name="date_uppercase">Maiuscole</string>
+    <string name="date_title_case">Capitalizzare</string>
+    <string name="date_strip_diacritics">Senza segni diacritici</string>
+<string name="hhmm_vertical_gap">Separazione HH/MM</string>
     <string name="fonts_title">Font</string>
     <string name="font_gallery_button">Galleria font 🌎📲</string>
     <string name="import_font">Importa font</string>
