@@ -31,9 +31,15 @@ import com.romaster.livewallengine.formula.FormulaEngine
 import com.romaster.livewallengine.LocaleHelper
 import com.romaster.livewallengine.font.FontManager
 import com.romaster.livewallengine.font.IconFontStorage
+import android.graphics.RectF
+import android.graphics.SweepGradient
+import com.romaster.livewallengine.model.ProgressColorMode
+import com.romaster.livewallengine.model.ProgressFillMode
+import com.romaster.livewallengine.model.ProgressShape
 import com.romaster.livewallengine.model.TextAlignment
 import com.romaster.livewallengine.model.VerticalAlignment
 import com.romaster.livewallengine.model.WidgetLayer
+import com.romaster.livewallengine.model.WidgetType
 import com.romaster.livewallengine.project.ProjectManager
 import com.romaster.livewallengine.animation.AnimationEngine
 import java.nio.ByteBuffer
@@ -252,12 +258,17 @@ class GLWidgetLayersRenderer {
 
     private fun rebuildLayerBitmap(layer: WidgetLayer, force: Boolean) {
         val ctx = context ?: return
+        if (layer.widgetType == WidgetType.PROGRESS) {
+            rebuildProgressBitmap(layer, force)
+            return
+        }
         val text = try {
             FormulaEngine.evaluate(layer.formula, ctx)
         } catch (_: Exception) {
             layer.formula
         }
         val styleKey = listOf(
+            layer.widgetType,
             layer.textSize, layer.textColor, layer.borderWidth, layer.borderColor,
             layer.fontName, layer.iconFontName, layer.iconGlyphMap.entries.sortedBy { it.key },
             layer.enableFontVariations, layer.fontWidth, layer.fontWeight, layer.fontOpticalSize,
@@ -370,6 +381,301 @@ class GLWidgetLayersRenderer {
         lastText[layer.id] = text
         lastStyle[layer.id] = styleKey
         lastEvalMs[layer.id] = SystemClock.elapsedRealtime()
+    }
+
+    /**
+     * Rasteriza barra / anillo de progreso según [WidgetLayer] tipo PROGRESS.
+     * Nivel se normaliza entre min y max de las fórmulas evaluadas.
+     */
+    private fun rebuildProgressBitmap(layer: WidgetLayer, force: Boolean) {
+        val ctx = context ?: return
+        val minV = evalProgressNumber(layer.progressMinFormula, ctx, 0f)
+        val maxV = evalProgressNumber(layer.progressMaxFormula, ctx, 100f)
+        val levelV = evalProgressNumber(layer.progressLevelFormula, ctx, 0f)
+        val range = (maxV - minV).let { if (kotlin.math.abs(it) < 1e-6f) 1f else it }
+        val fraction = ((levelV - minV) / range).coerceIn(0f, 1f)
+
+        val styleKey = listOf(
+            "PROGRESS",
+            layer.progressMinFormula, layer.progressMaxFormula, layer.progressLevelFormula,
+            layer.progressFillMode, layer.progressSections, layer.progressShape,
+            layer.progressSize, layer.progressThickness, layer.progressColorMode,
+            layer.progressFgColor, layer.progressGrColor, layer.progressBgColor,
+            // incluir valores numéricos para refrescar cuando cambian batería/etc.
+            minV, maxV, levelV
+        ).joinToString("|")
+        val textKey = "p:$fraction"
+        if (!force && textKey == lastText[layer.id] && styleKey == lastStyle[layer.id] && layer.id in textures) {
+            lastEvalMs[layer.id] = SystemClock.elapsedRealtime()
+            return
+        }
+
+        val designScale = (screenH / 1920f).coerceIn(0.25f, 4f)
+        val sizePx = (layer.progressSize.coerceIn(20f, 2000f) * designScale).toInt().coerceAtLeast(8)
+        val thickPx = (layer.progressThickness.coerceIn(2f, 500f) * designScale).toInt().coerceAtLeast(2)
+        val sections = layer.progressSections.coerceIn(2, 100)
+        val gapRatio = 0.25f // espacio entre segmentos en modo dividido
+        // Borde exterior crece hacia afuera → padding del bitmap
+        val borderPx = (layer.progressBorderWidth.coerceIn(0f, 50f) * designScale).toInt().coerceAtLeast(0)
+        val pad = borderPx // margen en cada lado para que el stroke no se recorte
+
+        val bmp: Bitmap
+        val canvas: Canvas
+        when (layer.progressShape) {
+            ProgressShape.LINEAR -> {
+                val w = sizePx
+                val h = thickPx
+                val bw = (w + pad * 2).coerceAtLeast(1)
+                val bh = (h + pad * 2).coerceAtLeast(1)
+                bmp = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
+                canvas = Canvas(bmp)
+                canvas.drawColor(Color.TRANSPARENT)
+                canvas.save()
+                canvas.translate(pad.toFloat(), pad.toFloat())
+                drawLinearProgress(
+                    canvas, w.toFloat(), h.toFloat(), fraction, sections, gapRatio, layer
+                )
+                canvas.restore()
+                if (borderPx > 0) {
+                    val stroke = borderPx.toFloat()
+                    val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        style = Paint.Style.STROKE
+                        strokeWidth = stroke
+                        color = layer.progressBorderColor
+                    }
+                    // Rect centrado en el área del progreso + mitad del stroke hacia afuera
+                    val half = stroke / 2f
+                    canvas.drawRect(
+                        pad - half, pad - half,
+                        pad + w + half, pad + h + half,
+                        borderPaint
+                    )
+                }
+            }
+            ProgressShape.CIRCULAR -> {
+                val d = sizePx
+                val bw = (d + pad * 2).coerceAtLeast(1)
+                val bh = bw
+                bmp = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888)
+                canvas = Canvas(bmp)
+                canvas.drawColor(Color.TRANSPARENT)
+                canvas.save()
+                canvas.translate(pad.toFloat(), pad.toFloat())
+                drawCircularProgress(
+                    canvas, d.toFloat(), thickPx.toFloat(), fraction, sections, gapRatio, layer
+                )
+                canvas.restore()
+                if (borderPx > 0) {
+                    val stroke = borderPx.toFloat()
+                    val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        style = Paint.Style.STROKE
+                        strokeWidth = stroke
+                        color = layer.progressBorderColor
+                    }
+                    val cx = pad + d / 2f
+                    val cy = pad + d / 2f
+                    // Contorno exterior del anillo (radio exterior + mitad del stroke)
+                    val outerR = d / 2f + stroke / 2f
+                    canvas.drawCircle(cx, cy, outerR, borderPaint)
+                }
+            }
+        }
+
+        val outW: Int = bmp.width
+        val outH: Int = bmp.height
+        val existing = textures[layer.id]
+        if (existing != null) {
+            existing.upload(bmp)
+        } else {
+            val tex = GLTexture()
+            tex.initialize()
+            tex.upload(bmp)
+            textures[layer.id] = tex
+        }
+        if (!bmp.isRecycled) bmp.recycle()
+
+        bitmapSize[layer.id] = outW to outH
+        lastText[layer.id] = textKey
+        lastStyle[layer.id] = styleKey
+        lastEvalMs[layer.id] = SystemClock.elapsedRealtime()
+    }
+
+    private fun evalProgressNumber(formula: String, ctx: Context, fallback: Float): Float {
+        val raw = try {
+            FormulaEngine.evaluate(formula, ctx)
+        } catch (_: Exception) {
+            formula
+        }
+        // Extraer primer número (soporta "57", "57%", "57.5", etc.)
+        val m = Regex("""-?\d+(?:[.,]\d+)?""").find(raw.replace(',', '.'))
+        return m?.value?.toFloatOrNull() ?: fallback
+    }
+
+    private fun drawLinearProgress(
+        canvas: Canvas,
+        w: Float,
+        h: Float,
+        fraction: Float,
+        sections: Int,
+        gapRatio: Float,
+        layer: WidgetLayer
+    ) {
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = layer.progressBgColor
+        }
+        val fgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = layer.progressFgColor
+        }
+
+        when (layer.progressFillMode) {
+            ProgressFillMode.FLAT -> {
+                canvas.drawRect(0f, 0f, w, h, bgPaint)
+                val fw = w * fraction
+                if (fw > 0.5f) {
+                    if (layer.progressColorMode == ProgressColorMode.GRADIENT) {
+                        fgPaint.shader = android.graphics.LinearGradient(
+                            0f, 0f, w, 0f,
+                            layer.progressFgColor, layer.progressGrColor,
+                            android.graphics.Shader.TileMode.CLAMP
+                        )
+                    }
+                    canvas.drawRect(0f, 0f, fw, h, fgPaint)
+                    fgPaint.shader = null
+                }
+            }
+            ProgressFillMode.DIVIDED -> {
+                // Segmentos completos: ceil(fraction * n) segmentos llenos (sin medias pintadas)
+                val n = sections.coerceAtLeast(1)
+                val gap = (w / n) * gapRatio
+                val seg = (w - gap * (n - 1)) / n
+                val filledCount = if (fraction <= 0f) 0
+                else kotlin.math.ceil((fraction * n) - 1e-6).toInt().coerceIn(0, n)
+                for (i in 0 until n) {
+                    val left = i * (seg + gap)
+                    val right = left + seg
+                    canvas.drawRect(left, 0f, right, h, bgPaint)
+                    if (i < filledCount) {
+                        if (layer.progressColorMode == ProgressColorMode.GRADIENT) {
+                            val t0 = i.toFloat() / n
+                            val t1 = (i + 1).toFloat() / n
+                            val c0 = lerpColor(layer.progressFgColor, layer.progressGrColor, t0)
+                            val c1 = lerpColor(layer.progressFgColor, layer.progressGrColor, t1)
+                            fgPaint.shader = android.graphics.LinearGradient(
+                                left, 0f, right, 0f, c0, c1,
+                                android.graphics.Shader.TileMode.CLAMP
+                            )
+                        } else {
+                            fgPaint.shader = null
+                            fgPaint.color = layer.progressFgColor
+                        }
+                        canvas.drawRect(left, 0f, right, h, fgPaint)
+                        fgPaint.shader = null
+                    }
+                }
+            }
+        }
+    }
+
+    private fun drawCircularProgress(
+        canvas: Canvas,
+        diameter: Float,
+        stroke: Float,
+        fraction: Float,
+        sections: Int,
+        gapRatio: Float,
+        layer: WidgetLayer
+    ) {
+        val cx = diameter / 2f
+        val cy = diameter / 2f
+        val strokeW = stroke.coerceAtMost(diameter * 0.45f)
+        val radius = (diameter - strokeW) / 2f
+        val oval = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
+
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = strokeW
+            strokeCap = Paint.Cap.BUTT
+            color = layer.progressBgColor
+        }
+        val fgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = strokeW
+            strokeCap = Paint.Cap.BUTT
+            color = layer.progressFgColor
+        }
+
+        // Ángulo: 0° = arriba, sentido horario (como KLWP / reloj)
+        fun drawArcSweep(paint: Paint, startDeg: Float, sweepDeg: Float) {
+            if (kotlin.math.abs(sweepDeg) < 0.1f) return
+            // Canvas: 0° = derecha, antihorario positivo → ajustar
+            val canvasStart = startDeg - 90f
+            canvas.drawArc(oval, canvasStart, sweepDeg, false, paint)
+        }
+
+        when (layer.progressFillMode) {
+            ProgressFillMode.FLAT -> {
+                drawArcSweep(bgPaint, 0f, 360f)
+                val sweep = 360f * fraction
+                if (sweep > 0.1f) {
+                    if (layer.progressColorMode == ProgressColorMode.GRADIENT) {
+                        // SweepGradient: 0 = este (derecha); rotamos -90° para empezar arriba
+                        val shader = SweepGradient(
+                            cx, cy,
+                            intArrayOf(layer.progressFgColor, layer.progressGrColor, layer.progressFgColor),
+                            floatArrayOf(0f, fraction.coerceIn(0.01f, 1f), 1f)
+                        )
+                        val m = android.graphics.Matrix()
+                        m.postRotate(-90f, cx, cy)
+                        shader.setLocalMatrix(m)
+                        fgPaint.shader = shader
+                    }
+                    drawArcSweep(fgPaint, 0f, sweep)
+                    fgPaint.shader = null
+                }
+            }
+            ProgressFillMode.DIVIDED -> {
+                // Segmentos completos (sin arcos parciales)
+                val n = sections.coerceAtLeast(1)
+                val gapDeg = (360f / n) * gapRatio
+                val segDeg = (360f / n) - gapDeg
+                val filledCount = if (fraction <= 0f) 0
+                else kotlin.math.ceil((fraction * n) - 1e-6).toInt().coerceIn(0, n)
+                for (i in 0 until n) {
+                    val start = i * (segDeg + gapDeg)
+                    drawArcSweep(bgPaint, start, segDeg)
+                    if (i < filledCount) {
+                        if (layer.progressColorMode == ProgressColorMode.GRADIENT) {
+                            val tt = (i + 0.5f) / n
+                            fgPaint.shader = null
+                            fgPaint.color = lerpColor(layer.progressFgColor, layer.progressGrColor, tt)
+                        } else {
+                            fgPaint.shader = null
+                            fgPaint.color = layer.progressFgColor
+                        }
+                        drawArcSweep(fgPaint, start, segDeg)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun lerpColor(c0: Int, c1: Int, t: Float): Int {
+        val a = t.coerceIn(0f, 1f)
+        val a0 = (c0 ushr 24) and 0xFF
+        val r0 = (c0 ushr 16) and 0xFF
+        val g0 = (c0 ushr 8) and 0xFF
+        val b0 = c0 and 0xFF
+        val a1 = (c1 ushr 24) and 0xFF
+        val r1 = (c1 ushr 16) and 0xFF
+        val g1 = (c1 ushr 8) and 0xFF
+        val b1 = c1 and 0xFF
+        val aa = (a0 + (a1 - a0) * a).toInt().coerceIn(0, 255)
+        val rr = (r0 + (r1 - r0) * a).toInt().coerceIn(0, 255)
+        val gg = (g0 + (g1 - g0) * a).toInt().coerceIn(0, 255)
+        val bb = (b0 + (b1 - b0) * a).toInt().coerceIn(0, 255)
+        return (aa shl 24) or (rr shl 16) or (gg shl 8) or bb
     }
 
     private fun layerFadeAlpha(layer: WidgetLayer): Float {

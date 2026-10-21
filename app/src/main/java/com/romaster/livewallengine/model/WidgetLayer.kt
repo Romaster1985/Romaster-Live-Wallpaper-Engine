@@ -22,7 +22,7 @@ import kotlinx.serialization.Serializable
 import java.util.UUID
 
 /**
- * Capa de widget de texto/fórmula (Widgets-OL).
+ * Capa de widget (Widgets-OL): texto/ícono o barra de progreso.
  * Mismo sistema de capas Z que Pics-OL vía [WallpaperProject.layerStack].
  */
 @Serializable
@@ -34,6 +34,42 @@ data class WidgetLayer(
      * Se muestra en la card, orden Z y selector de animaciones.
      */
     var customName: String = "",
+
+    /** Tipo de widget: texto/ícono (default) o progreso. */
+    var widgetType: WidgetType = WidgetType.TEXT_ICON,
+
+    // --- Progreso (solo si widgetType == PROGRESS) ---
+    /** Fórmula del mínimo (inicio de la barra). */
+    var progressMinFormula: String = "0",
+    /** Fórmula del máximo (fin de la barra). */
+    var progressMaxFormula: String = "100",
+    /** Fórmula del nivel actual (ej. $bi(level)$). */
+    var progressLevelFormula: String = "\$bi(level)\$",
+    /** Plano (sólido) o Dividido (segmentos). */
+    var progressFillMode: ProgressFillMode = ProgressFillMode.FLAT,
+    /** Número de secciones en modo dividido (2..100). */
+    var progressSections: Int = 20,
+    /** Lineal o Circular. */
+    var progressShape: ProgressShape = ProgressShape.LINEAR,
+    /**
+     * Tamaño en px de diseño (ref. alto 1920):
+     * lineal = largo de la barra; circular = diámetro.
+     */
+    var progressSize: Float = 400f,
+    /** Grosor de la barra / anillo en px de diseño. */
+    var progressThickness: Float = 40f,
+    /** Color del progreso: plano o gradiente. */
+    var progressColorMode: ProgressColorMode = ProgressColorMode.FLAT,
+    /** Color del progreso actual (ARGB). */
+    var progressFgColor: Int = 0xFFFFDC00.toInt(),
+    /** Color del extremo del gradiente (ARGB); solo en modo Gradiente. */
+    var progressGrColor: Int = 0xFFFF0000.toInt(),
+    /** Color del tramo restante / fondo (ARGB). */
+    var progressBgColor: Int = 0xFFFFFFFF.toInt(),
+    /** Color del contorno/marco exterior (ARGB). */
+    var progressBorderColor: Int = 0xFF000000.toInt(),
+    /** Grosor del contorno exterior en px de diseño (crece hacia afuera; 0 = sin borde). */
+    var progressBorderWidth: Float = 0f,
 
     /** Fórmula estilo KLWP, p.ej. $df(hh:mm)$ o $bi(level)$% */
     var formula: String = "\$df(hh:mm)\$",

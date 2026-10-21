@@ -91,6 +91,10 @@ import com.romaster.livewallengine.video.GifToMp4Converter
 import com.romaster.livewallengine.video.VideoTranscoder
 import com.romaster.livewallengine.model.ImageLayer
 import com.romaster.livewallengine.model.WidgetLayer
+import com.romaster.livewallengine.model.ProgressColorMode
+import com.romaster.livewallengine.model.ProgressShape
+import com.romaster.livewallengine.model.ProgressFillMode
+import com.romaster.livewallengine.model.WidgetType
 import com.romaster.livewallengine.model.AnimationLayer
 import com.romaster.livewallengine.animation.AnimationEngine
 import com.romaster.livewallengine.model.AnimationReaction
@@ -2186,6 +2190,406 @@ private fun showFadeDurationDialog(
         }
         root.addView(titleTv)
 
+        // --- Tipo de Widget ---
+        val typeLabels = listOf(
+            getString(R.string.widget_type_text_icon),
+            getString(R.string.widget_type_progress)
+        )
+        val typeSelected = when (layer.widgetType) {
+            WidgetType.PROGRESS -> typeLabels[1]
+            else -> typeLabels[0]
+        }
+        root.addView(
+            buildWidgetFontDropdown(
+                hint = getString(R.string.widget_type_title),
+                items = typeLabels,
+                selected = typeSelected
+            ) { chosen ->
+                val w = live() ?: return@buildWidgetFontDropdown
+                w.widgetType = if (chosen == typeLabels[1]) WidgetType.PROGRESS
+                else WidgetType.TEXT_ICON
+                editor.save()
+                rebuildWidgetLayerCards()
+                notifyWidgetLayersChanged()
+            }
+        )
+
+        val isProgress = layer.widgetType == WidgetType.PROGRESS
+
+        fun addSliderRow(
+            title: String,
+            valueFrom: Float,
+            valueTo: Float,
+            value: Float,
+            defaultValue: Float,
+            format: (Float) -> String,
+            onChange: (Float) -> Unit
+        ) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (10 * density).toInt(), 0, 0)
+            }
+            row.addView(TextView(this).apply {
+                text = title
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            val valueTv = TextView(this).apply { text = format(value) }
+            row.addView(valueTv)
+            root.addView(row)
+            val slider = com.google.android.material.slider.Slider(this).apply {
+                this.valueFrom = valueFrom
+                this.valueTo = valueTo
+                stepSize = 1f
+                this.value = value.coerceIn(valueFrom, valueTo)
+                addOnChangeListener { _, v, fromUser ->
+                    valueTv.text = format(v)
+                    if (fromUser && !loadingUI) {
+                        onChange(v)
+                        notifyWidgetLayersChanged()
+                    }
+                }
+            }
+            root.addView(slider)
+            attachSliderResetButton(slider, valueTv, defaultValue) { v ->
+                valueTv.text = format(v)
+                onChange(v)
+                notifyWidgetLayersChanged()
+            }
+        }
+
+
+        if (isProgress) {
+            // ---- UI Progreso ----
+            fun evalPreview(formula: String): String = try {
+                FormulaEngine.evaluate(formula, this@MainActivity)
+            } catch (_: Exception) {
+                formula
+            }
+
+            /** Divisor sutil, más corto que el ancho de la card. */
+            fun addSectionDivider() {
+                val div = android.view.View(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        (1 * density).toInt().coerceAtLeast(1)
+                    ).apply {
+                        topMargin = (12 * density).toInt()
+                        bottomMargin = (12 * density).toInt()
+                        marginStart = (20 * density).toInt()
+                        marginEnd = (20 * density).toInt()
+                    }
+                    setBackgroundColor(0x44FFFFFF)
+                }
+                root.addView(div)
+            }
+
+            fun addFormulaLimitRow(
+                label: String,
+                getFormula: (WidgetLayer) -> String,
+                setFormula: (WidgetLayer, String) -> Unit
+            ) {
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    setPadding(0, (6 * density).toInt(), 0, 0)
+                }
+                row.addView(TextView(this).apply {
+                    text = label
+                    layoutParams = LinearLayout.LayoutParams(
+                        (72 * density).toInt(),
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                })
+                val resultTv = TextView(this).apply {
+                    text = evalPreview(getFormula(layer))
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    setPadding((6 * density).toInt(), 0, (6 * density).toInt(), 0)
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                }
+                row.addView(resultTv)
+                row.addView(
+                    MaterialButton(
+                        this, null,
+                        com.google.android.material.R.attr.materialButtonOutlinedStyle
+                    ).apply {
+                        text = "f(x)"
+                        isAllCaps = false
+                        minimumWidth = 0
+                        minWidth = 0
+                        setPadding((12 * density).toInt(), 0, (12 * density).toInt(), 0)
+                        setOnClickListener {
+                            val cur = live() ?: return@setOnClickListener
+                            showProgressFormulaDialog(getFormula(cur)) { newFx ->
+                                live()?.let { setFormula(it, newFx) }
+                                resultTv.text = evalPreview(newFx)
+                                editor.save()
+                                notifyWidgetLayersChanged()
+                            }
+                        }
+                    }
+                )
+                root.addView(row)
+            }
+
+            root.addView(TextView(this).apply {
+                text = getString(R.string.widget_progress_limits)
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setPadding(0, (10 * density).toInt(), 0, (4 * density).toInt())
+            })
+            addFormulaLimitRow(
+                getString(R.string.widget_progress_min),
+                { it.progressMinFormula },
+                { w, v -> w.progressMinFormula = v }
+            )
+            addFormulaLimitRow(
+                getString(R.string.widget_progress_max),
+                { it.progressMaxFormula },
+                { w, v -> w.progressMaxFormula = v }
+            )
+            addFormulaLimitRow(
+                getString(R.string.widget_progress_level),
+                { it.progressLevelFormula },
+                { w, v -> w.progressLevelFormula = v }
+            )
+
+            addSectionDivider()
+
+            // Modo Plano / Dividido
+            val fillLabels = listOf(
+                getString(R.string.widget_progress_fill_flat),
+                getString(R.string.widget_progress_fill_divided)
+            )
+            root.addView(
+                buildWidgetFontDropdown(
+                    hint = getString(R.string.widget_progress_fill_mode),
+                    items = fillLabels,
+                    selected = if (layer.progressFillMode == ProgressFillMode.DIVIDED)
+                        fillLabels[1] else fillLabels[0]
+                ) { chosen ->
+                    live()?.progressFillMode =
+                        if (chosen == fillLabels[1]) ProgressFillMode.DIVIDED
+                        else ProgressFillMode.FLAT
+                    editor.save()
+                    rebuildWidgetLayerCards()
+                    notifyWidgetLayersChanged()
+                }
+            )
+
+            // Secciones (solo dividido, siempre visible pero útil en dividido)
+            val secRow = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, (8 * density).toInt(), 0, 0)
+            }
+            secRow.addView(TextView(this).apply {
+                text = getString(R.string.widget_progress_sections)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            val secTv = TextView(this).apply {
+                text = layer.progressSections.toString()
+                setPadding((8 * density).toInt(), 0, (8 * density).toInt(), 0)
+            }
+            fun bumpSections(delta: Int) {
+                val w = live() ?: return
+                w.progressSections = (w.progressSections + delta).coerceIn(2, 100)
+                secTv.text = w.progressSections.toString()
+                editor.save()
+                notifyWidgetLayersChanged()
+            }
+            secRow.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = "−"
+                minimumWidth = 0; minWidth = 0
+                setOnClickListener { bumpSections(-1) }
+            })
+            secRow.addView(secTv)
+            secRow.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = "+"
+                minimumWidth = 0; minWidth = 0
+                setOnClickListener { bumpSections(1) }
+            })
+            root.addView(secRow)
+
+            // Forma Lineal / Circular
+            addSectionDivider()
+
+            val shapeLabels = listOf(
+                getString(R.string.widget_progress_shape_linear),
+                getString(R.string.widget_progress_shape_circular)
+            )
+            root.addView(
+                buildWidgetFontDropdown(
+                    hint = getString(R.string.widget_progress_shape),
+                    items = shapeLabels,
+                    selected = if (layer.progressShape == ProgressShape.CIRCULAR)
+                        shapeLabels[1] else shapeLabels[0]
+                ) { chosen ->
+                    live()?.progressShape =
+                        if (chosen == shapeLabels[1]) ProgressShape.CIRCULAR
+                        else ProgressShape.LINEAR
+                    editor.save()
+                    rebuildWidgetLayerCards()
+                    notifyWidgetLayersChanged()
+                }
+            )
+
+            fun addIntStepper(
+                label: String,
+                value: Float,
+                minV: Float,
+                maxV: Float,
+                step: Float,
+                onChange: (Float) -> Unit
+            ) {
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    setPadding(0, (6 * density).toInt(), 0, 0)
+                }
+                row.addView(TextView(this).apply {
+                    text = label
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                })
+                val valTv = TextView(this).apply {
+                    text = value.toInt().toString()
+                    setPadding((8 * density).toInt(), 0, (8 * density).toInt(), 0)
+                }
+                fun bump(d: Float) {
+                    val nv = (value + d).coerceIn(minV, maxV) // wrong - need live value
+                }
+                // use mutable holder
+                var curVal = value
+                fun applyBump(d: Float) {
+                    curVal = (curVal + d).coerceIn(minV, maxV)
+                    valTv.text = curVal.toInt().toString()
+                    onChange(curVal)
+                }
+                row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    text = "−"; minimumWidth = 0; minWidth = 0
+                    setOnClickListener { applyBump(-step) }
+                })
+                row.addView(valTv)
+                row.addView(MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                    text = "+"; minimumWidth = 0; minWidth = 0
+                    setOnClickListener { applyBump(step) }
+                })
+                root.addView(row)
+            }
+            addIntStepper(
+                getString(R.string.widget_progress_size),
+                layer.progressSize, 20f, 2000f, 10f
+            ) { v -> live()?.progressSize = v; editor.save(); notifyWidgetLayersChanged() }
+            addIntStepper(
+                getString(R.string.widget_progress_thickness),
+                layer.progressThickness, 2f, 500f, 2f
+            ) { v -> live()?.progressThickness = v; editor.save(); notifyWidgetLayersChanged() }
+
+            addSectionDivider()
+
+            // Color mode
+            val colorModeLabels = listOf(
+                getString(R.string.widget_progress_color_flat),
+                getString(R.string.widget_progress_color_gradient)
+            )
+            root.addView(
+                buildWidgetFontDropdown(
+                    hint = getString(R.string.widget_progress_color_mode),
+                    items = colorModeLabels,
+                    selected = if (layer.progressColorMode == ProgressColorMode.GRADIENT)
+                        colorModeLabels[1] else colorModeLabels[0]
+                ) { chosen ->
+                    live()?.progressColorMode =
+                        if (chosen == colorModeLabels[1]) ProgressColorMode.GRADIENT
+                        else ProgressColorMode.FLAT
+                    editor.save()
+                    rebuildWidgetLayerCards()
+                    notifyWidgetLayersChanged()
+                }
+            )
+
+            fun addColorBtn(label: String, color: Int, setter: (WidgetLayer, Int) -> Unit) {
+                val row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    setPadding(0, (6 * density).toInt(), 0, 0)
+                }
+                row.addView(TextView(this).apply {
+                    text = label
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                })
+                val hexTv = TextView(this).apply {
+                    text = colorToHex(color)
+                    setPadding(0, 0, (8 * density).toInt(), 0)
+                }
+                row.addView(hexTv)
+                val swatch = android.view.View(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        (36 * density).toInt(), (28 * density).toInt()
+                    )
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        setColor(color)
+                        cornerRadius = 6 * density
+                        setStroke((1 * density).toInt(), 0x88FFFFFF.toInt())
+                    }
+                    setOnClickListener {
+                        val cur = live() ?: return@setOnClickListener
+                        ColorPickerDialog.show(
+                            this@MainActivity,
+                            colorToHex(color)
+                        ) { hex ->
+                            val parsed = try {
+                                android.graphics.Color.parseColor(hex)
+                            } catch (_: Exception) {
+                                return@show
+                            }
+                            setter(cur, parsed)
+                            hexTv.text = colorToHex(parsed)
+                            (background as? android.graphics.drawable.GradientDrawable)
+                                ?.setColor(parsed)
+                            // refresh swatch
+                            background = android.graphics.drawable.GradientDrawable().apply {
+                                setColor(parsed)
+                                cornerRadius = 6 * density
+                                setStroke((1 * density).toInt(), 0x88FFFFFF.toInt())
+                            }
+                            editor.save()
+                            notifyWidgetLayersChanged()
+                        }
+                    }
+                }
+                row.addView(swatch)
+                root.addView(row)
+            }
+            addColorBtn(getString(R.string.widget_progress_fg), layer.progressFgColor) { w, c ->
+                w.progressFgColor = c
+            }
+            if (layer.progressColorMode == ProgressColorMode.GRADIENT) {
+                addColorBtn(getString(R.string.widget_progress_gr), layer.progressGrColor) { w, c ->
+                    w.progressGrColor = c
+                }
+            }
+            addColorBtn(getString(R.string.widget_progress_bg), layer.progressBgColor) { w, c ->
+                w.progressBgColor = c
+            }
+            addColorBtn(getString(R.string.widget_progress_bd), layer.progressBorderColor) { w, c ->
+                w.progressBorderColor = c
+            }
+            // Grosor del contorno exterior (crece hacia afuera)
+            addSliderRow(
+                getString(R.string.widget_progress_border_width),
+                0f, 50f,
+                layer.progressBorderWidth.coerceIn(0f, 50f),
+                0f,
+                { "${it.toInt()} px" }
+            ) { v ->
+                live()?.progressBorderWidth = v
+                editor.save()
+                notifyWidgetLayersChanged()
+            }
+
+        } else {
+        // ---- UI Texto / Ícono (existente) ----
         val previewTv = TextView(this).apply {
             text = try {
                 FormulaEngine.evaluate(layer.formula, this@MainActivity)
@@ -2390,48 +2794,6 @@ private fun showFadeDurationDialog(
         colorRow.addView(btnBorderColor)
         root.addView(colorRow)
 
-        fun addSliderRow(
-            title: String,
-            valueFrom: Float,
-            valueTo: Float,
-            value: Float,
-            defaultValue: Float,
-            format: (Float) -> String,
-            onChange: (Float) -> Unit
-        ) {
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                setPadding(0, (10 * density).toInt(), 0, 0)
-            }
-            row.addView(TextView(this).apply {
-                text = title
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            })
-            val valueTv = TextView(this).apply { text = format(value) }
-            row.addView(valueTv)
-            root.addView(row)
-            val slider = com.google.android.material.slider.Slider(this).apply {
-                this.valueFrom = valueFrom
-                this.valueTo = valueTo
-                stepSize = 1f
-                this.value = value.coerceIn(valueFrom, valueTo)
-                addOnChangeListener { _, v, fromUser ->
-                    valueTv.text = format(v)
-                    if (fromUser && !loadingUI) {
-                        onChange(v)
-                        notifyWidgetLayersChanged()
-                    }
-                }
-            }
-            root.addView(slider)
-            attachSliderResetButton(slider, valueTv, defaultValue) { v ->
-                valueTv.text = format(v)
-                onChange(v)
-                notifyWidgetLayersChanged()
-            }
-        }
-
         root.addView(
             MaterialButton(
                 this,
@@ -2466,6 +2828,9 @@ private fun showFadeDurationDialog(
             { "${it.toInt()} px" }
         ) { live()?.borderWidth = it }
 
+        } // end Texto / Ícono
+
+        // ---- Controles comunes (texto y progreso) ----
         addSliderRow(
             getString(R.string.label_transparency),
             0f, 100f,
@@ -2525,6 +2890,7 @@ private fun showFadeDurationDialog(
             setOnClickListener { showLayerPositionDialog(layerId) }
         })
 
+        if (!isProgress) {
         root.addView(
             MaterialButton(
                 this,
@@ -2549,6 +2915,7 @@ private fun showFadeDurationDialog(
                 }
             }
         )
+        }
 
         root.addView(MaterialButton(this).apply {
             text = getString(R.string.pics_delete_layer)
@@ -2579,6 +2946,94 @@ private fun showFadeDurationDialog(
         btn.setPadding(h, v, h, v)
         btn.minHeight = (52 * density).toInt()
         btn.includeFontPadding = true
+    }
+
+
+    private fun showProgressFormulaDialog(initial: String, onResult: (String) -> Unit) {
+        val density = resources.displayMetrics.density
+        val input = EditText(this).apply {
+            setText(initial)
+            setSelection(text.length)
+            minLines = 3
+            gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            setHorizontallyScrolling(false)
+        }
+        val livePreview = TextView(this).apply {
+            text = try {
+                FormulaEngine.evaluate(initial, this@MainActivity)
+            } catch (_: Exception) {
+                initial
+            }
+            setPadding(0, (8 * density).toInt(), 0, 0)
+            textSize = 16f
+        }
+        input.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val fx = s?.toString().orEmpty()
+                livePreview.text = try {
+                    FormulaEngine.evaluate(fx, this@MainActivity)
+                } catch (_: Exception) {
+                    fx
+                }
+            }
+        })
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((20 * density).toInt(), (12 * density).toInt(), (20 * density).toInt(), 0)
+            addView(input)
+            addView(livePreview)
+            val hints = listOf(
+                "0",
+                "100",
+                "\$bi(level)\$",
+                "\$df(ss)\$",
+                "\$df(mm)\$"
+            )
+            val scroll = android.widget.HorizontalScrollView(this@MainActivity).apply {
+                isHorizontalScrollBarEnabled = false
+                setPadding(0, (8 * density).toInt(), 0, 0)
+            }
+            val chips = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+            }
+            hints.forEach { label ->
+                chips.addView(
+                    MaterialButton(
+                        this@MainActivity, null,
+                        com.google.android.material.R.attr.materialButtonOutlinedStyle
+                    ).apply {
+                        text = label
+                        isAllCaps = false
+                        textSize = 12f
+                        minimumWidth = 0
+                        minWidth = 0
+                        setPadding((10 * density).toInt(), 0, (10 * density).toInt(), 0)
+                        setOnClickListener {
+                            val start = input.selectionStart.coerceAtLeast(0)
+                            val end = input.selectionEnd.coerceAtLeast(0)
+                            val a = minOf(start, end)
+                            val b = maxOf(start, end)
+                            input.text.replace(a, b, label)
+                            input.setSelection(a + label.length)
+                        }
+                    }
+                )
+            }
+            scroll.addView(chips)
+            addView(scroll)
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.widget_progress_formula_title)
+            .setView(box)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                onResult(input.text.toString())
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun showWidgetFormulaDialog(layer: WidgetLayer, previewTv: TextView) {
