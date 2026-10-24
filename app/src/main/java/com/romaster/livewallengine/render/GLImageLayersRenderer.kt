@@ -51,6 +51,8 @@ class GLImageLayersRenderer {
 
     private lateinit var vertexBuffer: FloatBuffer
     private val textures = mutableMapOf<String, GLTexture>()
+    /** Último chequeo de fórmula por capa (ms elapsed). */
+    private val lastFormulaCheckMs = mutableMapOf<String, Long>()
     private val movies = mutableMapOf<String, Movie>()
     private val movieStart = mutableMapOf<String, Long>()
     private val bitmapSize = mutableMapOf<String, Pair<Int, Int>>()
@@ -325,12 +327,16 @@ class GLImageLayersRenderer {
             .find {
                 it.id == id && (it.fileName != null || it.imageFormula.isNotBlank())
             } ?: return
-        // Reintentar carga si la fórmula ya resolvió un archivo nuevo
+        // Actualizar carátula / fórmula ~3 veces por segundo (detecta cambio de tema)
         if (layer.imageFormula.isNotBlank()) {
             context?.let { ctx ->
-                FormulaImageCache.requestRefresh(ctx, layer.id, layer.imageFormula)
+                val now = android.os.SystemClock.elapsedRealtime()
+                val last = lastFormulaCheckMs[layer.id] ?: 0L
+                if (now - last >= 350L) {
+                    lastFormulaCheckMs[layer.id] = now
+                    FormulaImageCache.requestRefresh(ctx, layer.id, layer.imageFormula)
+                }
                 if (FormulaImageCache.consumeDirty(layer.id) || !textures.containsKey(layer.id)) {
-                    // recarga puntual de esta capa
                     textures.remove(layer.id)?.release()
                     movies.remove(layer.id)
                     movieStart.remove(layer.id)

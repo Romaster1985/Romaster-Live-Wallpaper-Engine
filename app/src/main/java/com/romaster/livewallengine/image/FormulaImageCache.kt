@@ -61,6 +61,11 @@ object FormulaImageCache {
     fun requestRefresh(context: Context, layerId: String, formula: String) {
         if (formula.isBlank()) return
         val app = context.applicationContext
+        // Asegurar metadata de música actualizada antes de evaluar
+        try {
+            com.romaster.livewallengine.media.MusicInfoProvider.refresh(app)
+        } catch (_: Exception) {
+        }
         val source = try {
             FormulaEngine.evaluate(formula, app).trim()
         } catch (_: Exception) {
@@ -69,7 +74,8 @@ object FormulaImageCache {
         if (source.isEmpty()) return
         val prev = lastSource[layerId]
         val file = cacheFile(app, layerId)
-        if (source == prev && file.exists()) return
+        // Mismo origen y archivo listo → nada que hacer
+        if (source == prev && file.exists() && file.length() > 32L) return
         if (inFlight[layerId] == true) return
         inFlight[layerId] = true
         executor.execute {
@@ -111,7 +117,8 @@ object FormulaImageCache {
     }
 
     private fun decodeSource(context: Context, source: String): Bitmap? {
-        val s = source.trim()
+        // Quitar fragmento #mi=… usado solo para invalidar cache
+        val s = source.trim().substringBefore("#mi=").trim()
         if (s.isEmpty()) return null
         return try {
             when {
@@ -124,11 +131,9 @@ object FormulaImageCache {
                     }
                 }
                 s.startsWith("/") -> {
-                    // Ruta absoluta local (p. ej. cache de MusicInfoProvider)
                     BitmapFactory.decodeFile(s, optionsSampled(s))
                 }
                 else -> {
-                    // Intentar como URI genérica o path relativo
                     try {
                         context.contentResolver.openInputStream(Uri.parse(s))?.use { input ->
                             decodeStreamSampled(input.readBytes())

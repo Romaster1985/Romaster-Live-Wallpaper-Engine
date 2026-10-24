@@ -56,6 +56,31 @@ object MusicInfoProvider {
 
     private val cache = AtomicReference(Snapshot())
 
+    @Volatile
+    private var appContext: Context? = null
+
+    private var activeController: MediaController? = null
+
+    private val sessionCallback = object : MediaController.Callback() {
+        override fun onMetadataChanged(metadata: MediaMetadata?) {
+            val ctx = appContext ?: return
+            val c = activeController ?: return
+            try {
+                cache.set(snapshotFrom(c, ctx))
+            } catch (_: Exception) {
+            }
+        }
+
+        override fun onPlaybackStateChanged(state: PlaybackState?) {
+            val ctx = appContext ?: return
+            val c = activeController ?: return
+            try {
+                cache.set(snapshotFrom(c, ctx))
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     fun getPreferredPackage(context: Context): String {
         return prefs(context).getString(KEY_PREFERRED, "") ?: ""
     }
@@ -76,6 +101,7 @@ object MusicInfoProvider {
 
     fun refresh(context: Context) {
         val app = context.applicationContext
+        appContext = app
         try {
             val msm = app.getSystemService(Context.MEDIA_SESSION_SERVICE) as? MediaSessionManager
                 ?: return
@@ -90,13 +116,32 @@ object MusicInfoProvider {
             val preferred = getPreferredPackage(app)
             val chosen = pickController(controllers, preferred)
             if (chosen == null) {
+                unregisterActiveController()
                 cache.set(Snapshot())
                 return
+            }
+            // Registrar callback para detectar cambio de tema en vivo
+            if (activeController !== chosen) {
+                unregisterActiveController()
+                try {
+                    chosen.registerCallback(sessionCallback)
+                    activeController = chosen
+                } catch (_: Exception) {
+                    activeController = null
+                }
             }
             cache.set(snapshotFrom(chosen, app))
         } catch (_: Exception) {
             // mantener cache
         }
+    }
+
+    private fun unregisterActiveController() {
+        try {
+            activeController?.unregisterCallback(sessionCallback)
+        } catch (_: Exception) {
+        }
+        activeController = null
     }
 
     private fun pickController(
@@ -165,7 +210,15 @@ object MusicInfoProvider {
             it.startsWith("https://", ignoreCase = true) || it.startsWith("http://", ignoreCase = true)
         }?.let { return it }
 
-        // Bitmap embebido → archivo local (compatible con capas de imagen / fórmulas)
+        // Identidad del tema para que cada canción tenga archivo distinto (el cache de fórmulas detecta el cambio)
+        val title = meta.getString(MediaMetadata.METADATA_KEY_TITLE) ?: ""
+        val artist = meta.getString(MediaMetadata.METADATA_KEY_ARTIST)
+            ?: meta.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST) ?: ""
+        val album = meta.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: ""
+        val artHint = candidates.firstOrNull() ?: ""
+        val trackKey = "${pkg}|${title}|${artist}|${album}|${artHint}".hashCode().toString()
+
+        // Bitmap embebido → archivo local único por tema
         val bmp: Bitmap? = try {
             meta.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
                 ?: meta.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
@@ -177,16 +230,20 @@ object MusicInfoProvider {
             try {
                 val dir = File(context.cacheDir, "mi_covers")
                 if (!dir.exists()) dir.mkdirs()
-                val f = File(dir, "cover_${pkg.hashCode()}.jpg")
-                FileOutputStream(f).use { out ->
-                    bmp.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                val f = File(dir, "cover_$trackKey.jpg")
+                if (!f.exists() || f.length() < 32L) {
+                    FileOutputStream(f).use { out ->
+                        bmp.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                    }
                 }
                 return f.absolutePath
             } catch (_: Exception) {
             }
         }
 
-        return candidates.firstOrNull() ?: ""
+        // content:// u otras: añadir fragmento con trackKey para invalidar cache de fórmulas
+        val base = candidates.firstOrNull() ?: return ""
+        return if (base.contains("#mi=")) base else "$base#mi=$trackKey"
     }
 
     private fun mapState(state: Int): String = when (state) {
