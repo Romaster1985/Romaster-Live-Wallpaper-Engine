@@ -549,4 +549,6 @@ Vérifiez la connexion et réessayez.</string>
     <string name="settings_music_player_auto">Automatique</string>
     <string name="settings_music_open_settings_failed">Impossible d\u0027ouvrir les réglages</string>
     <string name="formula_cat_music">Musique</string>
+    <string name="pics_image_formula">Image par formule</string>
+    <string name="pics_formula_label">Formule : %1$s</string>
 </resources>

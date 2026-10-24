@@ -27,6 +27,7 @@ import android.graphics.Movie
 import android.opengl.GLES20
 import android.opengl.Matrix
 import com.romaster.livewallengine.image.ImageStorage
+import com.romaster.livewallengine.image.FormulaImageCache
 import com.romaster.livewallengine.model.ImageLayer
 import com.romaster.livewallengine.project.ProjectManager
 import com.romaster.livewallengine.animation.AnimationEngine
@@ -148,12 +149,36 @@ class GLImageLayersRenderer {
             bitmapSize.remove(id)
         }
 
+        // Solicitar actualización de fórmulas (mi(cover), http, content://…)
+        try {
+            FormulaImageCache.refreshAllFromProject(ctx)
+        } catch (_: Exception) {
+        }
+
         for (layer in layers) {
-            val name = layer.fileName ?: continue
-            // Si ya hay textura y no es force, no recargar
-            if (!force && textures.containsKey(layer.id)) continue
-            val file = ImageStorage.getImageFile(ctx, name)
+            val formula = layer.imageFormula
+            val useFormula = formula.isNotBlank()
+            if (useFormula) {
+                FormulaImageCache.requestRefresh(ctx, layer.id, formula)
+            }
+            val file = when {
+                useFormula -> FormulaImageCache.cacheFile(ctx, layer.id)
+                else -> {
+                    val name = layer.fileName ?: continue
+                    ImageStorage.getImageFile(ctx, name)
+                }
+            }
             if (!file.exists()) continue
+            // Recargar si force, no hay textura, o el cache de fórmula cambió
+            val formulaDirty = useFormula && FormulaImageCache.consumeDirty(layer.id)
+            if (!force && !formulaDirty && textures.containsKey(layer.id)) continue
+            if (formulaDirty) {
+                textures.remove(layer.id)?.release()
+                movies.remove(layer.id)
+                movieStart.remove(layer.id)
+                bitmapSize.remove(layer.id)
+            }
+            val name = file.name
 
             if (name.endsWith(".gif", ignoreCase = true)) {
                 try {
@@ -297,7 +322,23 @@ class GLImageLayersRenderer {
     /** Dibuja una capa de imagen por id (orden lo decide layerStack). */
     fun drawById(id: String) {
         val layer = ProjectManager.getProject().imageLayers
-            .find { it.id == id && it.fileName != null } ?: return
+            .find {
+                it.id == id && (it.fileName != null || it.imageFormula.isNotBlank())
+            } ?: return
+        // Reintentar carga si la fórmula ya resolvió un archivo nuevo
+        if (layer.imageFormula.isNotBlank()) {
+            context?.let { ctx ->
+                FormulaImageCache.requestRefresh(ctx, layer.id, layer.imageFormula)
+                if (FormulaImageCache.consumeDirty(layer.id) || !textures.containsKey(layer.id)) {
+                    // recarga puntual de esta capa
+                    textures.remove(layer.id)?.release()
+                    movies.remove(layer.id)
+                    movieStart.remove(layer.id)
+                    bitmapSize.remove(layer.id)
+                    reloadFromProject(force = false)
+                }
+            }
+        }
         drawLayer(layer)
     }
 

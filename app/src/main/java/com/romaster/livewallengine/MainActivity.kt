@@ -104,6 +104,7 @@ import com.romaster.livewallengine.model.ClockHandMotion
 import com.romaster.livewallengine.formula.FormulaEngine
 import com.romaster.livewallengine.formula.FormulaEditorDialog
 import com.romaster.livewallengine.media.MusicInfoProvider
+import com.romaster.livewallengine.image.FormulaImageCache
 import com.romaster.livewallengine.weather.WeatherProvider
 import com.romaster.livewallengine.model.LayerStack
 import com.romaster.livewallengine.image.ImageStorage
@@ -4688,9 +4689,52 @@ private fun showFadeDurationDialog(
         rowBtns.addView(btnDel)
         root.addView(rowBtns)
 
-        // Archivo actual
+        // Imagen por fórmula (p. ej. $mi(cover)$)
+        val btnFormula = com.google.android.material.button.MaterialButton(
+            this,
+            null,
+            com.google.android.material.R.attr.materialButtonOutlinedStyle
+        ).apply {
+            text = getString(R.string.pics_image_formula)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = (6 * density).toInt() }
+            setOnClickListener {
+                val current = liveLayer()?.imageFormula.orEmpty().ifBlank { "\$mi(cover)\$" }
+                FormulaEditorDialog.show(
+                    this@MainActivity,
+                    getString(R.string.pics_image_formula),
+                    current
+                ) { result ->
+                    val live = liveLayer() ?: return@show
+                    live.imageFormula = result.trim()
+                    if (live.imageFormula.isNotBlank()) {
+                        FormulaImageCache.requestRefresh(
+                            this@MainActivity,
+                            live.id,
+                            live.imageFormula
+                        )
+                    } else {
+                        FormulaImageCache.clearLayer(this@MainActivity, live.id)
+                    }
+                    editor.save()
+                    notifyImageLayersChanged(reloadTextures = true)
+                    rebuildImageLayerCards()
+                }
+            }
+        }
+        root.addView(btnFormula)
+
+        // Archivo actual / fórmula
+        val sourceLabel = when {
+            layer.imageFormula.isNotBlank() ->
+                getString(R.string.pics_formula_label, layer.imageFormula)
+            else ->
+                getString(R.string.pics_file_label, layer.fileName ?: getString(R.string.pics_file_none))
+        }
         root.addView(TextView(this).apply {
-            text = getString(R.string.pics_file_label, layer.fileName ?: getString(R.string.pics_file_none))
+            text = sourceLabel
             textSize = 12f
             setPadding(0, (8 * density).toInt(), 0, 0)
             tag = "file_${layer.id}"
@@ -6591,6 +6635,8 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                             .find { it.id == layerId }
                         if (layer != null) {
                             layer.fileName = name
+                            layer.imageFormula = ""
+                            try { FormulaImageCache.clearLayer(this, layerId) } catch (_: Exception) {}
                             editor.save()
                             rebuildImageLayerCards()
                             notifyImageLayersChanged(reloadTextures = true)

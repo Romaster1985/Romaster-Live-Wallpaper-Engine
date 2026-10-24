@@ -549,4 +549,6 @@ Verbindung prüfen und erneut versuchen.</string>
     <string name="settings_music_player_auto">Automatisch</string>
     <string name="settings_music_open_settings_failed">Einstellungen konnten nicht geöffnet werden</string>
     <string name="formula_cat_music">Musik</string>
+    <string name="pics_image_formula">Bild per Formel</string>
+    <string name="pics_formula_label">Formel: %1$s</string>
 </resources>

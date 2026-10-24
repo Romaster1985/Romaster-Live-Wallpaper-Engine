@@ -563,4 +563,6 @@ Check your connection and try again.</string>
     <string name="settings_music_player_auto">Automatic</string>
     <string name="settings_music_open_settings_failed">Could not open Settings</string>
     <string name="formula_cat_music">Music</string>
+    <string name="pics_image_formula">Image from formula</string>
+    <string name="pics_formula_label">Formula: %1$s</string>
 </resources>

@@ -549,4 +549,6 @@ Verifique a conexão e tente novamente.</string>
     <string name="settings_music_player_auto">Automático</string>
     <string name="settings_music_open_settings_failed">Não foi possível abrir Ajustes</string>
     <string name="formula_cat_music">Música</string>
+    <string name="pics_image_formula">Imagem por fórmula</string>
+    <string name="pics_formula_label">Fórmula: %1$s</string>
 </resources>

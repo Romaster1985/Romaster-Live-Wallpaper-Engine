@@ -41,8 +41,13 @@ data class ImageLayer(
      * Se muestra en la card, orden Z y selector de animaciones.
      */
     var customName: String = "",
-    /** Nombre de archivo en files/images/ */
+    /** Nombre de archivo en files/images/ (imagen estática) */
     var fileName: String? = null,
+    /**
+     * Fórmula de imagen (p. ej. `$mi(cover)$`).
+     * Si no está vacía, tiene prioridad sobre [fileName] y se resuelve a un archivo cacheado.
+     */
+    var imageFormula: String = "",
     /** 0f..1f */
     var opacity: Float = 1f,
     /** 0f..1f (centro normalizado) */

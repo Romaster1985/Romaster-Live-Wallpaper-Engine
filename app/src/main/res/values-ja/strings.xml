@@ -549,4 +549,6 @@ Apache 2.0 ライセンス</string>
     <string name="settings_music_player_auto">自動</string>
     <string name="settings_music_open_settings_failed">設定を開けませんでした</string>
     <string name="formula_cat_music">音楽</string>
+    <string name="pics_image_formula">数式で画像</string>
+    <string name="pics_formula_label">数式: %1$s</string>
 </resources>

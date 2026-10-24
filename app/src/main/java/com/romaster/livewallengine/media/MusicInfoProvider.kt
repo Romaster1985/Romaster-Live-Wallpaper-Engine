@@ -21,6 +21,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.media.AudioManager
 import android.media.MediaMetadata
+import java.io.FileOutputStream
+import java.io.File
+import android.graphics.Bitmap
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
@@ -90,7 +93,7 @@ object MusicInfoProvider {
                 cache.set(Snapshot())
                 return
             }
-            cache.set(snapshotFrom(chosen))
+            cache.set(snapshotFrom(chosen, app))
         } catch (_: Exception) {
             // mantener cache
         }
@@ -116,7 +119,7 @@ object MusicInfoProvider {
         return controllers.firstOrNull()
     }
 
-    private fun snapshotFrom(c: MediaController): Snapshot {
+    private fun snapshotFrom(c: MediaController, context: Context): Snapshot {
         val meta = c.metadata
         val state = c.playbackState
         val st = mapState(state?.state ?: PlaybackState.STATE_NONE)
@@ -130,10 +133,8 @@ object MusicInfoProvider {
         val title = meta?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: ""
         val album = meta?.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: ""
         val track = (meta?.getLong(MediaMetadata.METADATA_KEY_TRACK_NUMBER) ?: 0L).toInt()
-        val cover = meta?.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
-            ?: meta?.getString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)
-            ?: meta?.getString(MediaMetadata.METADATA_KEY_ART_URI)
-            ?: ""
+        val pkg = c.packageName ?: ""
+        val cover = resolveCoverUri(meta, context, pkg)
         return Snapshot(
             artist = artist,
             title = title,
@@ -143,10 +144,49 @@ object MusicInfoProvider {
             positionMs = pos,
             positionSampleElapsed = SystemClock.elapsedRealtime(),
             playing = playing,
-            packageName = c.packageName ?: "",
+            packageName = pkg,
             coverUri = cover,
             track = track
         )
+    }
+
+    /**
+     * Prioridad: HTTPS/HTTP (como KLWP/Spotify CDN) → bitmap embebido cacheado → content:// u otras URIs.
+     */
+    private fun resolveCoverUri(meta: MediaMetadata?, context: Context, pkg: String): String {
+        if (meta == null) return ""
+        val candidates = listOfNotNull(
+            meta.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI),
+            meta.getString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI),
+            meta.getString(MediaMetadata.METADATA_KEY_ART_URI)
+        ).map { it.trim() }.filter { it.isNotEmpty() }
+
+        candidates.firstOrNull {
+            it.startsWith("https://", ignoreCase = true) || it.startsWith("http://", ignoreCase = true)
+        }?.let { return it }
+
+        // Bitmap embebido → archivo local (compatible con capas de imagen / fórmulas)
+        val bmp: Bitmap? = try {
+            meta.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+                ?: meta.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+                ?: meta.getBitmap(MediaMetadata.METADATA_KEY_ART)
+        } catch (_: Exception) {
+            null
+        }
+        if (bmp != null && !bmp.isRecycled) {
+            try {
+                val dir = File(context.cacheDir, "mi_covers")
+                if (!dir.exists()) dir.mkdirs()
+                val f = File(dir, "cover_${pkg.hashCode()}.jpg")
+                FileOutputStream(f).use { out ->
+                    bmp.compress(Bitmap.CompressFormat.JPEG, 92, out)
+                }
+                return f.absolutePath
+            } catch (_: Exception) {
+            }
+        }
+
+        return candidates.firstOrNull() ?: ""
     }
 
     private fun mapState(state: Int): String = when (state) {

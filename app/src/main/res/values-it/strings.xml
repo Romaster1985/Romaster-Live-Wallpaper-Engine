@@ -549,4 +549,6 @@ Controlla la connessione e riprova.</string>
     <string name="settings_music_player_auto">Automatico</string>
     <string name="settings_music_open_settings_failed">Impossibile aprire Impostazioni</string>
     <string name="formula_cat_music">Musica</string>
+    <string name="pics_image_formula">Immagine da formula</string>
+    <string name="pics_formula_label">Formula: %1$s</string>
 </resources>

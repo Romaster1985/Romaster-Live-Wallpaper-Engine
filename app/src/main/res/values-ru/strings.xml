@@ -549,4 +549,6 @@ Reddit · Patreon · Gmail</string>
     <string name="settings_music_player_auto">Авто</string>
     <string name="settings_music_open_settings_failed">Не удалось открыть настройки</string>
     <string name="formula_cat_music">Музыка</string>
+    <string name="pics_image_formula">Изображение по формуле</string>
+    <string name="pics_formula_label">Формула: %1$s</string>
 </resources>
