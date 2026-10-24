@@ -351,6 +351,9 @@ Apache 2.0 许可证</string>
     <string name="formula_cat_text">文本</string>
     <string name="formula_cat_math">数学</string>
     <string name="formula_cat_timespan">时间间隔</string>
+    <string name="formula_cat_network">网络</string>
+    <string name="formula_cat_resources">资源</string>
+    <string name="formula_cat_forecast">预报</string>
 <string name="icon_font_dialog_title">图标字体</string>
     <string name="align_fonts_title">字体对齐</string>
     <string name="import_fonts_title">导入字体</string>

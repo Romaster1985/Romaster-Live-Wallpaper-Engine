@@ -324,7 +324,7 @@ object FormulaEngine {
         return out.toString()
     }
 
-    private val KNOWN_FUNCS = setOf("df", "bi", "if", "wi", "si", "tc", "mu", "tf")
+    private val KNOWN_FUNCS = setOf("df", "bi", "if", "wi", "si", "tc", "mu", "tf", "nc", "rm", "wf")
 
     private fun evalFunction(fn: String, args: String, context: Context?): String {
         return when (fn) {
@@ -336,6 +336,9 @@ object FormulaEngine {
             "tc" -> evalTextConvert(args, context)
             "mu" -> evalMathUtil(args, context)
             "tf" -> evalTimeSpan(args, context)
+            "nc" -> evalNetwork(args.trim(), context)
+            "rm" -> evalResourceMonitor(args.trim(), context)
+            "wf" -> evalWeatherForecast(args, context)
             else -> "$fn($args)"
         }
     }
@@ -458,8 +461,8 @@ object FormulaEngine {
     }
 
     /**
-     * tc(mode, text, [extra...]) — conversión de texto.
-     * lower, upper, cap/capitalize, cut, len, trim, rev
+     * tc(mode, text, [extra...]) — alineado a KLWP:
+     * low/up/cap, cut, ell, len, count
      */
     private fun evalTextConvert(args: String, context: Context?): String {
         val parts = splitArgs(args)
@@ -467,9 +470,9 @@ object FormulaEngine {
         val mode = unquote(parts[0]).lowercase(Locale.ROOT)
         val text = if (parts.size > 1) argAsText(parts[1], context) else ""
         return when (mode) {
-            "lower", "low" -> text.lowercase(Locale.getDefault())
-            "upper", "up" -> text.uppercase(Locale.getDefault())
-            "cap", "capitalize", "capital" -> {
+            "lower", "low", "l" -> text.lowercase(Locale.getDefault())
+            "upper", "up", "u" -> text.uppercase(Locale.getDefault())
+            "cap", "capitalize", "capital", "c" -> {
                 if (text.isEmpty()) text
                 else text.split(" ").joinToString(" ") { w ->
                     if (w.isEmpty()) w
@@ -479,15 +482,46 @@ object FormulaEngine {
                 }
             }
             "len", "length" -> text.length.toString()
-            "trim" -> text.trim()
-            "rev", "reverse" -> text.reversed()
             "cut" -> {
-                // tc(cut, text, start, [length])
-                val start = if (parts.size > 2) argAsNumber(parts[2], context).toInt() else 0
-                val len = if (parts.size > 3) argAsNumber(parts[3], context).toInt() else text.length
-                val s = start.coerceIn(0, text.length)
-                val e = (s + len).coerceIn(s, text.length)
-                text.substring(s, e)
+                // tc(cut, text, n) → primeros n; n negativo → últimos |n|
+                // tc(cut, text, start, length) → substring
+                if (parts.size <= 2) return text
+                val a = argAsNumber(parts[2], context).toInt()
+                if (parts.size == 3) {
+                    when {
+                        a >= 0 -> text.take(a.coerceAtMost(text.length))
+                        else -> text.takeLast((-a).coerceAtMost(text.length))
+                    }
+                } else {
+                    val len = argAsNumber(parts[3], context).toInt().coerceAtLeast(0)
+                    val start = a.coerceIn(0, text.length)
+                    val end = (start + len).coerceIn(start, text.length)
+                    text.substring(start, end)
+                }
+            }
+            "ell" -> {
+                // tc(ell, text, maxLen) — corta y añade …
+                val max = if (parts.size > 2) argAsNumber(parts[2], context).toInt() else text.length
+                if (max <= 0) ""
+                else if (text.length <= max) text
+                else if (max <= 1) "…"
+                else text.take(max - 1) + "…"
+            }
+            "count" -> {
+                // tc(count, text, needle)
+                val needle = if (parts.size > 2) argAsText(parts[2], context) else ""
+                if (needle.isEmpty()) "0"
+                else {
+                    var c = 0
+                    var idx = 0
+                    while (true) {
+                        val f = text.indexOf(needle, idx)
+                        if (f < 0) break
+                        c++
+                        idx = f + needle.length
+                    }
+                    c.toString()
+                }
             }
             else -> text
         }
@@ -530,6 +564,119 @@ object FormulaEngine {
             m > 0 -> "${m}m ${s}s"
             else -> "${s}s"
         }
+    }
+
+    /**
+     * nc(type) — conectividad de red.
+     * type | wifi | on | csig
+     */
+    private fun evalNetwork(args: String, context: Context?): String {
+        val type = unquote(args).lowercase(Locale.ROOT)
+        if (context == null) return ""
+        return try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+            val active = cm?.activeNetwork
+            val caps = if (active != null) cm.getNetworkCapabilities(active) else null
+            val hasNet = caps != null && (
+                caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)
+                )
+            when (type) {
+                "on", "connected" -> if (hasNet) "1" else "0"
+                "type" -> when {
+                    caps == null -> "NONE"
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) -> "WIFI"
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) -> "MOBILE"
+                    caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET) -> "ETHERNET"
+                    else -> "OTHER"
+                }
+                "wifi" -> {
+                    if (caps?.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) != true) return ""
+                    try {
+                        @Suppress("DEPRECATION")
+                        val wm = context.applicationContext
+                            .getSystemService(Context.WIFI_SERVICE) as? android.net.wifi.WifiManager
+                        @Suppress("DEPRECATION")
+                        val ssid = wm?.connectionInfo?.ssid
+                            ?.trim()
+                            ?.removePrefix("\"")
+                            ?.removeSuffix("\"")
+                        if (ssid.isNullOrBlank() || ssid == "<unknown ssid>") "" else ssid
+                    } catch (_: Exception) {
+                        ""
+                    }
+                }
+                "csig", "signal" -> {
+                    // Sin API unificada sencilla: 4 si hay red, 0 si no
+                    if (hasNet) "4" else "0"
+                }
+                else -> ""
+            }
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    /**
+     * rm(type) — monitor de recursos.
+     * memf / memt (MB), memp (% usado), storf / stort (MB libres/total)
+     */
+    private fun evalResourceMonitor(args: String, context: Context?): String {
+        val type = unquote(args).lowercase(Locale.ROOT)
+        if (context == null) return ""
+        return try {
+            when (type) {
+                "memf", "memfree" -> {
+                    val am = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                    val mi = android.app.ActivityManager.MemoryInfo()
+                    am.getMemoryInfo(mi)
+                    (mi.availMem / (1024L * 1024L)).toString()
+                }
+                "memt", "memtotal" -> {
+                    val am = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                    val mi = android.app.ActivityManager.MemoryInfo()
+                    am.getMemoryInfo(mi)
+                    (mi.totalMem / (1024L * 1024L)).toString()
+                }
+                "memp", "mempercent" -> {
+                    val am = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                    val mi = android.app.ActivityManager.MemoryInfo()
+                    am.getMemoryInfo(mi)
+                    if (mi.totalMem <= 0L) "0"
+                    else (((mi.totalMem - mi.availMem) * 100L) / mi.totalMem).toString()
+                }
+                "storf", "storfree" -> {
+                    val path = context.filesDir?.absolutePath ?: "/data"
+                    val st = android.os.StatFs(path)
+                    (st.availableBlocksLong * st.blockSizeLong / (1024L * 1024L)).toString()
+                }
+                "stort", "stortotal" -> {
+                    val path = context.filesDir?.absolutePath ?: "/data"
+                    val st = android.os.StatFs(path)
+                    (st.blockCountLong * st.blockSizeLong / (1024L * 1024L)).toString()
+                }
+                else -> ""
+            }
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    /**
+     * wf(field [, day]) — pronóstico diario Open-Meteo.
+     * day 0 = hoy, 1 = mañana…
+     * field: min, max, temp, cond, icon, code
+     */
+    private fun evalWeatherForecast(args: String, context: Context?): String {
+        val parts = splitArgs(args)
+        if (parts.isEmpty()) return ""
+        val field = unquote(parts[0]).lowercase(Locale.ROOT)
+        val day = if (parts.size > 1) argAsNumber(parts[1], context).toInt().coerceAtLeast(0) else 0
+        if (context != null) {
+            WeatherProvider.ensureFresh(context)
+        }
+        return WeatherProvider.forecastField(field, day, context)
     }
 
     /**

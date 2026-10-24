@@ -386,13 +386,14 @@ object FormulaEditorDialog {
                 sOr(R.string.formula_cat_text, "Texto"),
                 "tc() — mayúsculas, cortar, capitalizar…",
                 listOf(
-                    Preset("Mayúsculas", "\$tc(upper, df(EEEE))\$"),
-                    Preset("Minúsculas", "\$tc(lower, df(EEEE))\$"),
+                    Preset("Mayúsculas", "\$tc(up, df(EEEE))\$"),
+                    Preset("Minúsculas", "\$tc(low, df(EEEE))\$"),
                     Preset("Capitalizar", "\$tc(cap, df(EEEE))\$"),
                     Preset("Longitud", "\$tc(len, df(EEEE))\$"),
-                    Preset("Recortar", "\$tc(cut, df(EEEE), 0, 3)\$"),
-                    Preset("Invertir", "\$tc(rev, df(hh:mm))\$"),
-                    Preset("Trim", "\$tc(trim, \"  hola  \")\$")
+                    Preset("Cortar (primeros 3)", "\$tc(cut, df(EEEE), 3)\$"),
+                    Preset("Cortar (últimos 2)", "\$tc(cut, df(EEEE), -2)\$"),
+                    Preset("Ellipsis", "\$tc(ell, df(EEEE), 6)\$"),
+                    Preset("Contar", "\$tc(count, df(EEEE), a)\$")
                 )
             ),
             Category(
@@ -418,6 +419,43 @@ object FormulaEditorDialog {
                     Preset("1 hora", "\$tf(3600)\$", "1h 0m 0s"),
                     Preset("90 minutos", "\$tf(5400)\$"),
                     Preset("Segundos actuales * 60", "\$tf(df(ss)*60)\$")
+                )
+            ),
+            Category(
+                "📶",
+                sOr(R.string.formula_cat_network, "Red"),
+                "nc() — wifi, tipo, conectado…",
+                listOf(
+                    Preset("Conectado", "\$nc(on)\$", "0/1"),
+                    Preset("Tipo de red", "\$nc(type)\$", "WIFI/MOBILE/NONE"),
+                    Preset("Nombre Wi‑Fi", "\$nc(wifi)\$"),
+                    Preset("Señal (aprox.)", "\$nc(csig)\$", "0–4")
+                )
+            ),
+            Category(
+                "💾",
+                sOr(R.string.formula_cat_resources, "Recursos"),
+                "rm() — memoria y almacenamiento",
+                listOf(
+                    Preset("RAM libre (MB)", "\$rm(memf)\$"),
+                    Preset("RAM total (MB)", "\$rm(memt)\$"),
+                    Preset("RAM usada %", "\$rm(memp)\$"),
+                    Preset("Almacenamiento libre (MB)", "\$rm(storf)\$"),
+                    Preset("Almacenamiento total (MB)", "\$rm(stort)\$")
+                )
+            ),
+            Category(
+                "📆",
+                sOr(R.string.formula_cat_forecast, "Pronóstico"),
+                "wf() — min/max/cond por día (0=hoy)",
+                listOf(
+                    Preset("Máx hoy °C", "\$wf(max, 0)\$"),
+                    Preset("Mín hoy °C", "\$wf(min, 0)\$"),
+                    Preset("Máx mañana °C", "\$wf(max, 1)\$"),
+                    Preset("Mín mañana °C", "\$wf(min, 1)\$"),
+                    Preset("Condición hoy", "\$wf(cond, 0)\$"),
+                    Preset("Icono mañana", "\$wf(icon, 1)\$"),
+                    Preset("Temp media hoy", "\$wf(temp, 0)\$")
                 )
             ),
             Category(

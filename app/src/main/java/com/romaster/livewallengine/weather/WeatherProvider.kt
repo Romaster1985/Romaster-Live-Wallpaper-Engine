@@ -36,6 +36,14 @@ import java.util.concurrent.atomic.AtomicReference
  */
 object WeatherProvider {
 
+    data class DayForecast(
+        val minC: Float = 0f,
+        val maxC: Float = 0f,
+        val code: Int = 0,
+        val condition: String = "—",
+        val iconKey: String = "UNKNOWN"
+    )
+
     data class Snapshot(
         val tempC: Float = 0f,
         val tempF: Float = 32f,
@@ -45,7 +53,8 @@ object WeatherProvider {
         val code: Int = 0,
         val condition: String = "—",
         val iconKey: String = "UNKNOWN",
-        val updatedMs: Long = 0L
+        val updatedMs: Long = 0L,
+        val daily: List<DayForecast> = emptyList()
     )
 
     private val cache = AtomicReference(Snapshot())
@@ -82,6 +91,8 @@ object WeatherProvider {
                         "?latitude=$lat&longitude=$lon" +
                         "&current=temperature_2m,relative_humidity_2m,weather_code," +
                         "wind_speed_10m,apparent_temperature" +
+                        "&daily=weather_code,temperature_2m_max,temperature_2m_min" +
+                        "&forecast_days=7" +
                         "&wind_speed_unit=kmh&timezone=auto"
                 val body = httpGet(url)
                 val json = JSONObject(body)
@@ -92,6 +103,29 @@ object WeatherProvider {
                 val wind = cur.optDouble("wind_speed_10m", 0.0).toFloat()
                 val code = cur.optInt("weather_code", 0)
                 val (cond, icon) = mapCode(code)
+                val dailyList = mutableListOf<DayForecast>()
+                val daily = json.optJSONObject("daily")
+                if (daily != null) {
+                    val codes = daily.optJSONArray("weather_code")
+                    val maxs = daily.optJSONArray("temperature_2m_max")
+                    val mins = daily.optJSONArray("temperature_2m_min")
+                    val n = maxOf(
+                        codes?.length() ?: 0,
+                        maxs?.length() ?: 0,
+                        mins?.length() ?: 0
+                    )
+                    for (i in 0 until n) {
+                        val dCode = codes?.optInt(i, 0) ?: 0
+                        val (dCond, dIcon) = mapCode(dCode)
+                        dailyList += DayForecast(
+                            minC = mins?.optDouble(i, 0.0)?.toFloat() ?: 0f,
+                            maxC = maxs?.optDouble(i, 0.0)?.toFloat() ?: 0f,
+                            code = dCode,
+                            condition = dCond,
+                            iconKey = dIcon
+                        )
+                    }
+                }
                 cache.set(
                     Snapshot(
                         tempC = tempC,
@@ -102,7 +136,8 @@ object WeatherProvider {
                         code = code,
                         condition = cond,
                         iconKey = icon,
-                        updatedMs = System.currentTimeMillis()
+                        updatedMs = System.currentTimeMillis(),
+                        daily = dailyList
                     )
                 )
             } catch (_: Exception) {
@@ -122,6 +157,27 @@ object WeatherProvider {
             "code" -> s.code.toString()
             "cond", "condition" -> localizeCondition(context, s.condition)
             "icon" -> s.iconKey
+            else -> ""
+        }
+    }
+
+    /**
+     * Pronóstico diario: day 0 = hoy.
+     * field: min, max, temp (promedio), cond, icon, code
+     */
+    fun forecastField(field: String, day: Int, context: Context? = null): String {
+        val s = cache.get()
+        val d = s.daily.getOrNull(day) ?: return ""
+        return when (field.lowercase(Locale.ROOT)) {
+            "min", "minc" -> formatNum(d.minC)
+            "max", "maxc" -> formatNum(d.maxC)
+            "temp", "tempc" -> formatNum((d.minC + d.maxC) / 2f)
+            "tempf" -> formatNum(((d.minC + d.maxC) / 2f) * 9f / 5f + 32f)
+            "minf" -> formatNum(d.minC * 9f / 5f + 32f)
+            "maxf" -> formatNum(d.maxC * 9f / 5f + 32f)
+            "code" -> d.code.toString()
+            "cond", "condition" -> localizeCondition(context, d.condition)
+            "icon" -> d.iconKey
             else -> ""
         }
     }

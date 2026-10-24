@@ -351,6 +351,9 @@ Reddit · Patreon · Gmail</string>
     <string name="formula_cat_text">Текст</string>
     <string name="formula_cat_math">Математика</string>
     <string name="formula_cat_timespan">Интервал</string>
+    <string name="formula_cat_network">Сеть</string>
+    <string name="formula_cat_resources">Ресурсы</string>
+    <string name="formula_cat_forecast">Прогноз</string>
 <string name="icon_font_dialog_title">Шрифт иконок</string>
     <string name="align_fonts_title">Выравнивание шрифта</string>
     <string name="import_fonts_title">Импорт шрифтов</string>

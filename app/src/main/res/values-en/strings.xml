@@ -365,6 +365,9 @@ Maximum allowed for this loop: %1$d ms.</string>
     <string name="formula_cat_text">Text</string>
     <string name="formula_cat_math">Math</string>
     <string name="formula_cat_timespan">Time span</string>
+    <string name="formula_cat_network">Network</string>
+    <string name="formula_cat_resources">Resources</string>
+    <string name="formula_cat_forecast">Forecast</string>
 <string name="icon_font_dialog_title">Icon font</string>
     <string name="align_fonts_title">Font alignment</string>
     <string name="import_fonts_title">Import Fonts</string>

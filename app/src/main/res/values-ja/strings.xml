@@ -351,6 +351,9 @@ Apache 2.0 ライセンス</string>
     <string name="formula_cat_text">テキスト</string>
     <string name="formula_cat_math">数学</string>
     <string name="formula_cat_timespan">時間間隔</string>
+    <string name="formula_cat_network">ネットワーク</string>
+    <string name="formula_cat_resources">リソース</string>
+    <string name="formula_cat_forecast">予報</string>
 <string name="icon_font_dialog_title">アイコンフォント</string>
     <string name="align_fonts_title">フォント配置</string>
     <string name="import_fonts_title">フォントをインポート</string>

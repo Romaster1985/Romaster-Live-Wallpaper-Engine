@@ -351,6 +351,9 @@ Quand vous ajoutez ZIP + PNG dans le dossier LiveWallpapers du dépôt de thème
     <string name="formula_cat_text">Texte</string>
     <string name="formula_cat_math">Mathématiques</string>
     <string name="formula_cat_timespan">Intervalle</string>
+    <string name="formula_cat_network">Réseau</string>
+    <string name="formula_cat_resources">Ressources</string>
+    <string name="formula_cat_forecast">Prévisions</string>
 <string name="icon_font_dialog_title">Police d\'icônes</string>
     <string name="align_fonts_title">Alignement des polices</string>
     <string name="import_fonts_title">Importer des polices</string>
