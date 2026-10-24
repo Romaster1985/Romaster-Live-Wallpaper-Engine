@@ -103,6 +103,7 @@ import com.romaster.livewallengine.model.ClockHand
 import com.romaster.livewallengine.model.ClockHandMotion
 import com.romaster.livewallengine.formula.FormulaEngine
 import com.romaster.livewallengine.formula.FormulaEditorDialog
+import com.romaster.livewallengine.media.MusicInfoProvider
 import com.romaster.livewallengine.weather.WeatherProvider
 import com.romaster.livewallengine.model.LayerStack
 import com.romaster.livewallengine.image.ImageStorage
@@ -5024,6 +5025,109 @@ private fun showFadeDurationDialog(
         findViewById<MaterialButton>(R.id.buttonAbout).setOnClickListener {
             startActivity(Intent(this, AboutActivity::class.java))
         }
+        setupMusicSettingsUi()
+    }
+
+    private fun setupMusicSettingsUi() {
+        refreshMusicSettingsLabels()
+        findViewById<MaterialButton>(R.id.buttonMusicNotificationAccess).setOnClickListener {
+            try {
+                startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+            } catch (_: Exception) {
+                try {
+                    startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                } catch (_: Exception) {
+                    android.widget.Toast.makeText(
+                        this,
+                        R.string.settings_music_open_settings_failed,
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+        findViewById<MaterialButton>(R.id.buttonMusicPreferredPlayer).setOnClickListener {
+            showPreferredMusicPlayerDialog()
+        }
+    }
+
+    private fun refreshMusicSettingsLabels() {
+        val statusTv = findViewById<TextView>(R.id.textMusicAccessStatus) ?: return
+        val enabled = MusicInfoProvider.isNotificationAccessEnabled(this)
+        statusTv.text = getString(
+            if (enabled) R.string.settings_music_access_on
+            else R.string.settings_music_access_off
+        )
+        val pref = MusicInfoProvider.getPreferredPackage(this)
+        val prefTv = findViewById<TextView>(R.id.textMusicPreferredPlayer)
+        prefTv?.text = if (pref.isBlank()) {
+            getString(R.string.settings_music_player_auto)
+        } else {
+            try {
+                val pm = packageManager
+                val appInfo = pm.getApplicationInfo(pref, 0)
+                pm.getApplicationLabel(appInfo).toString() + " ($pref)"
+            } catch (_: Exception) {
+                pref
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        try {
+            if (::panelSettings.isInitialized && panelSettings.visibility == View.VISIBLE) {
+                refreshMusicSettingsLabels()
+            }
+        } catch (_: Exception) {
+        }
+        try {
+            MusicInfoProvider.refresh(this)
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun showPreferredMusicPlayerDialog() {
+        data class Item(val label: String, val pkg: String)
+        val items = mutableListOf(Item(getString(R.string.settings_music_player_auto), ""))
+        // Paquetes comunes + el actual detectado
+        val known = linkedSetOf(
+            "com.spotify.music",
+            "com.google.android.apps.youtube.music",
+            "com.google.android.music",
+            "com.amazon.mp3",
+            "com.apple.android.music",
+            "com.soundcloud.android",
+            "deezer.android.app",
+            "com.aspiro.tidal",
+            "com.sec.android.app.music",
+            "com.miui.player",
+            "com.maxmpz.audioplayer",
+            "com.vanced.android.youtube.music"
+        )
+        MusicInfoProvider.refresh(this)
+        val current = MusicInfoProvider.get().packageName
+        if (current.isNotBlank()) known.add(current)
+        val pm = packageManager
+        for (pkg in known) {
+            try {
+                val info = pm.getApplicationInfo(pkg, 0)
+                val label = pm.getApplicationLabel(info).toString()
+                items += Item(label, pkg)
+            } catch (_: Exception) {
+            }
+        }
+        val labels = items.map { it.label }.toTypedArray()
+        val currentPref = MusicInfoProvider.getPreferredPackage(this)
+        val checked = items.indexOfFirst { it.pkg == currentPref }.coerceAtLeast(0)
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.settings_music_preferred_player)
+            .setSingleChoiceItems(labels, checked) { dialog, which ->
+                MusicInfoProvider.setPreferredPackage(this, items[which].pkg)
+                refreshMusicSettingsLabels()
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun showLanguageDialog() {

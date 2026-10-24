@@ -26,6 +26,7 @@ import android.os.BatteryManager
 import java.util.Calendar
 import java.util.Locale
 import com.romaster.livewallengine.weather.WeatherProvider
+import com.romaster.livewallengine.media.MusicInfoProvider
 
 /**
  * Motor de fórmulas estilo KLWP.
@@ -324,7 +325,7 @@ object FormulaEngine {
         return out.toString()
     }
 
-    private val KNOWN_FUNCS = setOf("df", "bi", "if", "wi", "si", "tc", "mu", "tf", "nc", "rm", "wf")
+    private val KNOWN_FUNCS = setOf("df", "bi", "if", "wi", "si", "tc", "mu", "tf", "nc", "rm", "wf", "mi")
 
     private fun evalFunction(fn: String, args: String, context: Context?): String {
         return when (fn) {
@@ -339,6 +340,7 @@ object FormulaEngine {
             "nc" -> evalNetwork(args.trim(), context)
             "rm" -> evalResourceMonitor(args.trim(), context)
             "wf" -> evalWeatherForecast(args, context)
+            "mi" -> evalMusic(args.trim(), context)
             else -> "$fn($args)"
         }
     }
@@ -555,7 +557,22 @@ object FormulaEngine {
      * El argumento puede ser una expresión ya expandida o un número.
      */
     private fun evalTimeSpan(args: String, context: Context?): String {
-        val secs = argAsNumber(args, context).toLong().coerceAtLeast(0L)
+        val parts = splitArgs(args)
+        val secs = argAsNumber(parts.getOrElse(0) { "0" }, context).toLong().coerceAtLeast(0L)
+        val fmt = if (parts.size > 1) unquote(parts[1]).lowercase(Locale.ROOT).replace(""", "") else ""
+        // Formatos estilo KLWP: mm:ss, hh:mm:ss, o vacío → Xh Ym Zs
+        if (fmt.contains("mm") || fmt.contains("ss") || fmt.contains("hh")) {
+            val total = secs
+            val h = total / 3600
+            val m = (total % 3600) / 60
+            val s = total % 60
+            return when {
+                fmt.contains("hh") || h > 0 && fmt.contains("h") ->
+                    String.format(Locale.US, "%02d:%02d:%02d", h, m, s)
+                else ->
+                    String.format(Locale.US, "%02d:%02d", (total / 60), s)
+            }
+        }
         val h = secs / 3600
         val m = (secs % 3600) / 60
         val s = secs % 60
@@ -564,6 +581,12 @@ object FormulaEngine {
             m > 0 -> "${m}m ${s}s"
             else -> "${s}s"
         }
+    }
+
+    /** mi(field) — info del reproductor de medios activo. */
+    private fun evalMusic(args: String, context: Context?): String {
+        val field = unquote(args).lowercase(Locale.ROOT)
+        return MusicInfoProvider.field(field, context)
     }
 
     /**

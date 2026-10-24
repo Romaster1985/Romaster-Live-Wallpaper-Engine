@@ -538,4 +538,15 @@ Reddit · Patreon · Gmail</string>
         <string name="widget_progress_bd">BdColor</string>
     <string name="widget_progress_border_width">Толщина рамки</string>
 <string name="widget_progress_formula_title">Progress formula</string>
+
+    <string name="media_listener_label">Воспроизведение (формулы mi)</string>
+    <string name="settings_music_section">Музыка / Медиа</string>
+    <string name="settings_music_enable_notifications">Включить доступ к уведомлениям</string>
+    <string name="settings_music_access_on">Доступ к уведомлениям: вкл ✓</string>
+    <string name="settings_music_access_off">Доступ к уведомлениям: выкл</string>
+    <string name="settings_music_preferred_player">Предпочитаемый плеер</string>
+    <string name="settings_music_choose_player">Выбрать плеер</string>
+    <string name="settings_music_player_auto">Авто</string>
+    <string name="settings_music_open_settings_failed">Не удалось открыть настройки</string>
+    <string name="formula_cat_music">Музыка</string>
 </resources>

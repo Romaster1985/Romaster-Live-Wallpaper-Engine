@@ -422,6 +422,26 @@ object FormulaEditorDialog {
                 )
             ),
             Category(
+                "🎵",
+                sOr(R.string.formula_cat_music, "Música"),
+                "mi() — artista, título, estado, posición…",
+                listOf(
+                    Preset("Artista", "\$mi(artist)\$"),
+                    Preset("Título", "\$mi(title)\$"),
+                    Preset("Álbum", "\$mi(album)\$"),
+                    Preset("Estado", "\$mi(state)\$", "PLAYING/PAUSED/…"),
+                    Preset("Duración (s)", "\$mi(len)\$"),
+                    Preset("Posición (s)", "\$mi(pos)\$"),
+                    Preset("Duración mm:ss", "\$tf(mi(len), mm:ss)\$"),
+                    Preset("Posición mm:ss", "\$tf(mi(pos), mm:ss)\$"),
+                    Preset("Progreso %", "\$mi(percent)\$"),
+                    Preset("Volumen música", "\$mi(vol)\$"),
+                    Preset("Paquete", "\$mi(package)\$"),
+                    Preset("Carátula (URI)", "\$mi(cover)\$"),
+                    Preset("Reproduciendo", "\$mi(playing)\$", "0/1")
+                )
+            ),
+            Category(
                 "📶",
                 sOr(R.string.formula_cat_network, "Red"),
                 "nc() — wifi, tipo, conectado…",

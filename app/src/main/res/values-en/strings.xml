@@ -552,4 +552,15 @@ Check your connection and try again.</string>
         <string name="widget_progress_bd">BdColor</string>
     <string name="widget_progress_border_width">Border width</string>
 <string name="widget_progress_formula_title">Progress formula</string>
+
+    <string name="media_listener_label">Media playback (mi formulas)</string>
+    <string name="settings_music_section">Music / Media</string>
+    <string name="settings_music_enable_notifications">Enable notification access</string>
+    <string name="settings_music_access_on">Notification access: on ✓</string>
+    <string name="settings_music_access_off">Notification access: off — enable for mi()</string>
+    <string name="settings_music_preferred_player">Preferred music player</string>
+    <string name="settings_music_choose_player">Choose player</string>
+    <string name="settings_music_player_auto">Automatic</string>
+    <string name="settings_music_open_settings_failed">Could not open Settings</string>
+    <string name="formula_cat_music">Music</string>
 </resources>

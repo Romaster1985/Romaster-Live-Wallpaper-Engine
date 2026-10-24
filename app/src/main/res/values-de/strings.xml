@@ -538,4 +538,15 @@ Verbindung prüfen und erneut versuchen.</string>
         <string name="widget_progress_bd">BdColor</string>
     <string name="widget_progress_border_width">Randstärke</string>
 <string name="widget_progress_formula_title">Progress formula</string>
+
+    <string name="media_listener_label">Medienwiedergabe (mi-Formeln)</string>
+    <string name="settings_music_section">Musik / Medien</string>
+    <string name="settings_music_enable_notifications">Benachrichtigungszugriff aktivieren</string>
+    <string name="settings_music_access_on">Benachrichtigungszugriff: an ✓</string>
+    <string name="settings_music_access_off">Benachrichtigungszugriff: aus</string>
+    <string name="settings_music_preferred_player">Bevorzugter Player</string>
+    <string name="settings_music_choose_player">Player wählen</string>
+    <string name="settings_music_player_auto">Automatisch</string>
+    <string name="settings_music_open_settings_failed">Einstellungen konnten nicht geöffnet werden</string>
+    <string name="formula_cat_music">Musik</string>
 </resources>

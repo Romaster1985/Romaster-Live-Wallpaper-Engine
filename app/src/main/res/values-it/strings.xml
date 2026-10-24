@@ -538,4 +538,15 @@ Controlla la connessione e riprova.</string>
         <string name="widget_progress_bd">BdColor</string>
     <string name="widget_progress_border_width">Spessore bordo</string>
 <string name="widget_progress_formula_title">Progress formula</string>
+
+    <string name="media_listener_label">Riproduzione media (formule mi)</string>
+    <string name="settings_music_section">Musica / Media</string>
+    <string name="settings_music_enable_notifications">Attiva accesso alle notifiche</string>
+    <string name="settings_music_access_on">Accesso notifiche: attivo ✓</string>
+    <string name="settings_music_access_off">Accesso notifiche: disattivo</string>
+    <string name="settings_music_preferred_player">Lettore preferito</string>
+    <string name="settings_music_choose_player">Scegli lettore</string>
+    <string name="settings_music_player_auto">Automatico</string>
+    <string name="settings_music_open_settings_failed">Impossibile aprire Impostazioni</string>
+    <string name="formula_cat_music">Musica</string>
 </resources>

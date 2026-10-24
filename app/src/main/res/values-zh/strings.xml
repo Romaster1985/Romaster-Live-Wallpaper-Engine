@@ -538,4 +538,15 @@ Apache 2.0 许可证</string>
         <string name="widget_progress_bd">BdColor</string>
     <string name="widget_progress_border_width">边框宽度</string>
 <string name="widget_progress_formula_title">Progress formula</string>
+
+    <string name="media_listener_label">媒体播放（mi 公式）</string>
+    <string name="settings_music_section">音乐 / 媒体</string>
+    <string name="settings_music_enable_notifications">启用通知访问权限</string>
+    <string name="settings_music_access_on">通知访问：已开启 ✓</string>
+    <string name="settings_music_access_off">通知访问：未开启</string>
+    <string name="settings_music_preferred_player">首选播放器</string>
+    <string name="settings_music_choose_player">选择播放器</string>
+    <string name="settings_music_player_auto">自动</string>
+    <string name="settings_music_open_settings_failed">无法打开设置</string>
+    <string name="formula_cat_music">音乐</string>
 </resources>

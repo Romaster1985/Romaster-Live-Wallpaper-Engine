@@ -538,4 +538,15 @@ Vérifiez la connexion et réessayez.</string>
         <string name="widget_progress_bd">BdColor</string>
     <string name="widget_progress_border_width">Épaisseur du bord</string>
 <string name="widget_progress_formula_title">Progress formula</string>
+
+    <string name="media_listener_label">Lecture multimédia (formules mi)</string>
+    <string name="settings_music_section">Musique / Médias</string>
+    <string name="settings_music_enable_notifications">Activer l'accès aux notifications</string>
+    <string name="settings_music_access_on">Accès notifications : activé ✓</string>
+    <string name="settings_music_access_off">Accès notifications : désactivé</string>
+    <string name="settings_music_preferred_player">Lecteur préféré</string>
+    <string name="settings_music_choose_player">Choisir le lecteur</string>
+    <string name="settings_music_player_auto">Automatique</string>
+    <string name="settings_music_open_settings_failed">Impossible d'ouvrir les réglages</string>
+    <string name="formula_cat_music">Musique</string>
 </resources>
