@@ -559,7 +559,7 @@ object FormulaEngine {
     private fun evalTimeSpan(args: String, context: Context?): String {
         val parts = splitArgs(args)
         val secs = argAsNumber(parts.getOrElse(0) { "0" }, context).toLong().coerceAtLeast(0L)
-        val fmt = if (parts.size > 1) unquote(parts[1]).lowercase(Locale.ROOT).replace(""", "") else ""
+        val fmt = if (parts.size > 1) unquote(parts[1]).lowercase(Locale.ROOT).replace("\"", "") else ""
         // Formatos estilo KLWP: mm:ss, hh:mm:ss, o vacío → Xh Ym Zs
         if (fmt.contains("mm") || fmt.contains("ss") || fmt.contains("hh")) {
             val total = secs
