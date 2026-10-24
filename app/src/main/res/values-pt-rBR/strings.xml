@@ -347,7 +347,11 @@ Quando você enviar arquivos ZIP + PNG para a pasta LiveWallpapers do repositór
     <string name="formula_examples">Exemplos (toque para inserir na posição do cursor)</string>
     <string name="formula_back_categories">← Voltar às categorias</string>
     <string name="formula_dialog_title">Fórmula / Texto</string>
-    <string name="icon_font_dialog_title">Fonte de ícones</string>
+        <string name="formula_cat_system">Sistema</string>
+    <string name="formula_cat_text">Texto</string>
+    <string name="formula_cat_math">Matemática</string>
+    <string name="formula_cat_timespan">Intervalo</string>
+<string name="icon_font_dialog_title">Fonte de ícones</string>
     <string name="align_fonts_title">Alinhamento das fontes</string>
     <string name="import_fonts_title">Importar fontes</string>
     <string name="import_font_text_local">Importar fonte de texto (Local)</string>

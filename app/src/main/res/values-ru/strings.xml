@@ -347,7 +347,11 @@ Reddit · Patreon · Gmail</string>
     <string name="formula_examples">Примеры (нажмите, чтобы вставить у курсора)</string>
     <string name="formula_back_categories">← К категориям</string>
     <string name="formula_dialog_title">Формула / Текст</string>
-    <string name="icon_font_dialog_title">Шрифт иконок</string>
+        <string name="formula_cat_system">Система</string>
+    <string name="formula_cat_text">Текст</string>
+    <string name="formula_cat_math">Математика</string>
+    <string name="formula_cat_timespan">Интервал</string>
+<string name="icon_font_dialog_title">Шрифт иконок</string>
     <string name="align_fonts_title">Выравнивание шрифта</string>
     <string name="import_fonts_title">Импорт шрифтов</string>
     <string name="import_font_text_local">Импорт текстового шрифта (локально)</string>

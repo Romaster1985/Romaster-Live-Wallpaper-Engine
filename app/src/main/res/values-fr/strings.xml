@@ -347,7 +347,11 @@ Quand vous ajoutez ZIP + PNG dans le dossier LiveWallpapers du dépôt de thème
     <string name="formula_examples">Exemples (appuyer pour insérer au curseur)</string>
     <string name="formula_back_categories">← Retour aux catégories</string>
     <string name="formula_dialog_title">Formule / Texte</string>
-    <string name="icon_font_dialog_title">Police d\'icônes</string>
+        <string name="formula_cat_system">Système</string>
+    <string name="formula_cat_text">Texte</string>
+    <string name="formula_cat_math">Mathématiques</string>
+    <string name="formula_cat_timespan">Intervalle</string>
+<string name="icon_font_dialog_title">Police d\'icônes</string>
     <string name="align_fonts_title">Alignement des polices</string>
     <string name="import_fonts_title">Importer des polices</string>
     <string name="import_font_text_local">Importer police texte (Local)</string>

@@ -347,7 +347,11 @@ Quando carichi ZIP + PNG nella cartella LiveWallpapers del repository temi, appa
     <string name="formula_examples">Esempi (tocca per inserire al cursore)</string>
     <string name="formula_back_categories">← Torna alle categorie</string>
     <string name="formula_dialog_title">Formula / Testo</string>
-    <string name="icon_font_dialog_title">Font icone</string>
+        <string name="formula_cat_system">Sistema</string>
+    <string name="formula_cat_text">Testo</string>
+    <string name="formula_cat_math">Matematica</string>
+    <string name="formula_cat_timespan">Intervallo</string>
+<string name="icon_font_dialog_title">Font icone</string>
     <string name="align_fonts_title">Allineamento font</string>
     <string name="import_fonts_title">Importa font</string>
     <string name="import_font_text_local">Importa font testo (Locale)</string>

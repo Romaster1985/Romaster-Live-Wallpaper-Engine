@@ -370,7 +370,11 @@ Máximo permitido para este loop: %1$d ms.</string>
     <string name="formula_examples">Ejemplos (tocar para insertar en el cursor)</string>
     <string name="formula_back_categories">← Volver a categorías</string>
     <string name="formula_dialog_title">Fórmula / Texto</string>
-    <string name="icon_font_dialog_title">Fuente de íconos</string>
+        <string name="formula_cat_system">Sistema</string>
+    <string name="formula_cat_text">Texto</string>
+    <string name="formula_cat_math">Matemática</string>
+    <string name="formula_cat_timespan">Intervalo de tiempo</string>
+<string name="icon_font_dialog_title">Fuente de íconos</string>
     <string name="align_fonts_title">Alineación de fuentes</string>
     <string name="import_fonts_title">Importar Fuentes</string>
     <string name="import_font_text_local">Importar Fuente de Texto (Local)</string>

@@ -308,9 +308,11 @@ object FormulaEngine {
                 if (j < n && input[j] == '(') {
                     val name = input.substring(nameStart, j).lowercase(Locale.ROOT)
                     val argsEnd = findMatchingParen(input, j)
-                    if (argsEnd >= 0 && (name == "df" || name == "bi" || name == "if" || name == "wi")) {
+                    if (argsEnd >= 0 && name in KNOWN_FUNCS) {
                         val args = input.substring(j + 1, argsEnd)
-                        out.append(evalFunction(name, args, context))
+                        // Expandir primero args anidados (df dentro de tc, etc.)
+                        val expandedArgs = expandFunctions(args, context)
+                        out.append(evalFunction(name, expandedArgs, context))
                         i = argsEnd + 1
                         continue
                     }
@@ -322,13 +324,211 @@ object FormulaEngine {
         return out.toString()
     }
 
+    private val KNOWN_FUNCS = setOf("df", "bi", "if", "wi", "si", "tc", "mu", "tf")
+
     private fun evalFunction(fn: String, args: String, context: Context?): String {
         return when (fn) {
             "df" -> evalDateFormat(args.trim())
             "bi" -> evalBattery(args.trim(), context)
             "if" -> evalIf(args, context)
             "wi" -> evalWeather(args.trim(), context)
+            "si" -> evalSystemInfo(args.trim(), context)
+            "tc" -> evalTextConvert(args, context)
+            "mu" -> evalMathUtil(args, context)
+            "tf" -> evalTimeSpan(args, context)
             else -> "$fn($args)"
+        }
+    }
+
+    private fun unquote(s: String): String {
+        val t = s.trim()
+        return if (t.length >= 2 && t.startsWith("\"") && t.endsWith("\"")) {
+            t.substring(1, t.length - 1)
+        } else t
+    }
+
+    private fun argAsNumber(raw: String, context: Context?): Double {
+        val expanded = expandGlobals(expandFunctions(raw.trim(), context), context).trim()
+        expanded.toDoubleOrNull()?.let { return it }
+        return try {
+            evalMath(expanded)
+        } catch (_: Exception) {
+            0.0
+        }
+    }
+
+    private fun argAsText(raw: String, context: Context?): String {
+        val u = unquote(raw)
+        // Si parece función/math, evaluar; si no, texto
+        val expanded = expandGlobals(expandFunctions(u, context), context)
+        val trimmed = expanded.trim()
+        if (trimmed.isNotEmpty() && looksLikeMath(trimmed) && hasMathOperator(trimmed)) {
+            return try {
+                formatNumber(evalMath(trimmed))
+            } catch (_: Exception) {
+                expanded
+            }
+        }
+        return stripResolvedQuotes(expanded)
+    }
+
+    /** si(type) — info del sistema (estilo KLWP). */
+    private fun evalSystemInfo(args: String, context: Context?): String {
+        val type = unquote(args).lowercase(Locale.ROOT)
+        if (context == null) {
+            return when (type) {
+                "locked" -> if (resolveLocked(null)) "1" else "0"
+                else -> ""
+            }
+        }
+        return try {
+            when (type) {
+                "locked" -> if (resolveLocked(context)) "1" else "0"
+                "model" -> android.os.Build.MODEL ?: ""
+                "man" -> android.os.Build.MANUFACTURER ?: ""
+                "build" -> android.os.Build.DISPLAY ?: ""
+                "aver" -> android.os.Build.VERSION.RELEASE ?: ""
+                "land" -> {
+                    val o = context.resources.configuration.orientation
+                    if (o == android.content.res.Configuration.ORIENTATION_LANDSCAPE) "1" else "0"
+                }
+                "darkmode" -> {
+                    val night = context.resources.configuration.uiMode and
+                        android.content.res.Configuration.UI_MODE_NIGHT_MASK
+                    if (night == android.content.res.Configuration.UI_MODE_NIGHT_YES) "1" else "0"
+                }
+                "powersave" -> {
+                    val pm = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+                    if (pm?.isPowerSaveMode == true) "1" else "0"
+                }
+                "swidth" -> context.resources.displayMetrics.widthPixels.toString()
+                "sheight" -> context.resources.displayMetrics.heightPixels.toString()
+                "sdpi" -> context.resources.displayMetrics.densityDpi.toString()
+                "sdensity" -> String.format(Locale.US, "%.2f", context.resources.displayMetrics.density)
+                "volr" -> {
+                    val am = context.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+                    if (am == null) "0"
+                    else {
+                        val max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_RING).coerceAtLeast(1)
+                        val cur = am.getStreamVolume(android.media.AudioManager.STREAM_RING)
+                        ((cur * 100) / max).toString()
+                    }
+                }
+                "vola" -> {
+                    val am = context.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+                    if (am == null) "0"
+                    else {
+                        val max = am.getStreamMaxVolume(android.media.AudioManager.STREAM_ALARM).coerceAtLeast(1)
+                        val cur = am.getStreamVolume(android.media.AudioManager.STREAM_ALARM)
+                        ((cur * 100) / max).toString()
+                    }
+                }
+                "ringer" -> {
+                    val am = context.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+                    when (am?.ringerMode) {
+                        android.media.AudioManager.RINGER_MODE_SILENT -> "SILENT"
+                        android.media.AudioManager.RINGER_MODE_VIBRATE -> "VIBRATE"
+                        else -> "NORMAL"
+                    }
+                }
+                "alarmon" -> {
+                    val am = context.getSystemService(Context.ALARM_SERVICE) as? android.app.AlarmManager
+                    val next = try { am?.nextAlarmClock } catch (_: Exception) { null }
+                    if (next != null) "1" else "0"
+                }
+                "alarmt" -> {
+                    val am = context.getSystemService(Context.ALARM_SERVICE) as? android.app.AlarmManager
+                    val next = try { am?.nextAlarmClock } catch (_: Exception) { null }
+                    if (next == null) ""
+                    else {
+                        val cal = java.util.Calendar.getInstance().apply { timeInMillis = next.triggerTime }
+                        String.format(
+                            Locale.getDefault(),
+                            "%02d:%02d",
+                            cal.get(java.util.Calendar.HOUR_OF_DAY),
+                            cal.get(java.util.Calendar.MINUTE)
+                        )
+                    }
+                }
+                else -> ""
+            }
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    /**
+     * tc(mode, text, [extra...]) — conversión de texto.
+     * lower, upper, cap/capitalize, cut, len, trim, rev
+     */
+    private fun evalTextConvert(args: String, context: Context?): String {
+        val parts = splitArgs(args)
+        if (parts.isEmpty()) return ""
+        val mode = unquote(parts[0]).lowercase(Locale.ROOT)
+        val text = if (parts.size > 1) argAsText(parts[1], context) else ""
+        return when (mode) {
+            "lower", "low" -> text.lowercase(Locale.getDefault())
+            "upper", "up" -> text.uppercase(Locale.getDefault())
+            "cap", "capitalize", "capital" -> {
+                if (text.isEmpty()) text
+                else text.split(" ").joinToString(" ") { w ->
+                    if (w.isEmpty()) w
+                    else w.replaceFirstChar { ch ->
+                        if (ch.isLowerCase()) ch.titlecase(Locale.getDefault()) else ch.toString()
+                    }
+                }
+            }
+            "len", "length" -> text.length.toString()
+            "trim" -> text.trim()
+            "rev", "reverse" -> text.reversed()
+            "cut" -> {
+                // tc(cut, text, start, [length])
+                val start = if (parts.size > 2) argAsNumber(parts[2], context).toInt() else 0
+                val len = if (parts.size > 3) argAsNumber(parts[3], context).toInt() else text.length
+                val s = start.coerceIn(0, text.length)
+                val e = (s + len).coerceIn(s, text.length)
+                text.substring(s, e)
+            }
+            else -> text
+        }
+    }
+
+    /** mu(op, a, [b]) — utilidades matemáticas. */
+    private fun evalMathUtil(args: String, context: Context?): String {
+        val parts = splitArgs(args)
+        if (parts.isEmpty()) return ""
+        val op = unquote(parts[0]).lowercase(Locale.ROOT)
+        fun n(i: Int) = if (parts.size > i) argAsNumber(parts[i], context) else 0.0
+        return try {
+            when (op) {
+                "floor" -> kotlin.math.floor(n(1)).toLong().toString()
+                "ceil" -> kotlin.math.ceil(n(1)).toLong().toString()
+                "round" -> kotlin.math.round(n(1)).toLong().toString()
+                "abs" -> kotlin.math.abs(n(1)).let { formatNumber(it) }
+                "sqrt" -> formatNumber(kotlin.math.sqrt(n(1).coerceAtLeast(0.0)))
+                "min" -> formatNumber(kotlin.math.min(n(1), n(2)))
+                "max" -> formatNumber(kotlin.math.max(n(1), n(2)))
+                "pow" -> formatNumber(Math.pow(n(1), n(2)))
+                else -> ""
+            }
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    /**
+     * tf(seconds) — formatea un intervalo en segundos como "Xh Ym Zs".
+     * El argumento puede ser una expresión ya expandida o un número.
+     */
+    private fun evalTimeSpan(args: String, context: Context?): String {
+        val secs = argAsNumber(args, context).toLong().coerceAtLeast(0L)
+        val h = secs / 3600
+        val m = (secs % 3600) / 60
+        val s = secs % 60
+        return when {
+            h > 0 -> "${h}h ${m}m ${s}s"
+            m > 0 -> "${m}m ${s}s"
+            else -> "${s}s"
         }
     }
 
