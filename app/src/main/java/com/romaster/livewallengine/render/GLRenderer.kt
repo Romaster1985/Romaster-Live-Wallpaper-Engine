@@ -534,7 +534,7 @@ class GLRenderer(
         GLES20.glUniformMatrix4fv(transformHandle, 1, false, transformMatrix, 0)
         GLES20.glUniform1f(alphaHandle, drawAlpha)
         EffectEngine.bindColorFx(program, EffectEngine.paramsFor("vbg"))
-        val scr = renderWidth.toFloat() / renderHeight.toFloat().coerceAtLeast(1)
+        val scr = renderWidth.toFloat() / renderHeight.toFloat().coerceAtLeast(1f)
         EffectEngine.setScreenRatio(scr)
         EffectEngine.bindMaskFx(program, "vbg", scr)
 
