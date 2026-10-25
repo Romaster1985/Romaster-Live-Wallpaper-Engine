@@ -42,6 +42,7 @@ import com.romaster.livewallengine.model.WidgetLayer
 import com.romaster.livewallengine.model.WidgetType
 import com.romaster.livewallengine.project.ProjectManager
 import com.romaster.livewallengine.animation.AnimationEngine
+import com.romaster.livewallengine.effect.EffectEngine
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -100,8 +101,59 @@ class GLWidgetLayersRenderer {
         uniform sampler2D uTexture;
         uniform float uAlpha;
         varying vec2 vTexCoord;
+
+        uniform float uFxSat;
+        uniform float uFxHue;
+        uniform float uFxInvert;
+        uniform float uFxInvertLuma;
+        uniform float uFxSolar;
+        uniform vec3  uFxTint;
+        uniform float uFxTintStr;
+        uniform float uFxTintMode;
+        vec3 fxRgb2Hsv(vec3 c) {
+            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+            float d = q.x - min(q.w, q.y);
+            float e = 1.0e-10;
+            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+        }
+        vec3 fxHsv2Rgb(vec3 c) {
+            vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+            vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+            return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+        }
+        vec3 fxApplyColor(vec3 c) {
+            float gray = dot(c, vec3(0.299, 0.587, 0.114));
+            c = mix(vec3(gray), c, uFxSat);
+            if (abs(uFxHue) > 0.01) {
+                vec3 hsv = fxRgb2Hsv(clamp(c, 0.0, 1.0));
+                hsv.x = fract(hsv.x + uFxHue / 360.0);
+                c = fxHsv2Rgb(hsv);
+            }
+            if (uFxTintStr > 0.001) {
+                if (uFxTintMode > 0.5) c = mix(c, c * uFxTint, uFxTintStr);
+                else c = mix(c, uFxTint, uFxTintStr);
+            }
+            if (uFxSolar >= 0.0) {
+                float l = dot(c, vec3(0.299, 0.587, 0.114));
+                if (l > uFxSolar) c = 1.0 - c;
+            }
+            if (uFxInvert > 0.5) {
+                if (uFxInvertLuma > 0.5) {
+                    vec3 hsv = fxRgb2Hsv(clamp(c, 0.0, 1.0));
+                    hsv.x = fract(hsv.x + 0.5);
+                    c = fxHsv2Rgb(hsv);
+                } else {
+                    c = 1.0 - c;
+                }
+            }
+            return clamp(c, 0.0, 1.0);
+        }
+
         void main() {
             vec4 c = texture2D(uTexture, vTexCoord);
+            c.rgb = fxApplyColor(c.rgb);
             gl_FragColor = vec4(c.rgb, c.a * uAlpha);
         }
     """.trimIndent()
@@ -239,6 +291,7 @@ class GLWidgetLayersRenderer {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, tex.getTextureId())
         GLES20.glUniform1i(samplerHandle, 0)
         GLES20.glUniform1f(alphaHandle, alphaAnim)
+        EffectEngine.bindColorFx(program, EffectEngine.paramsFor("wdg:" + id))
 
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)

@@ -3515,12 +3515,19 @@ private fun showFadeDurationDialog(
         fun live(): EffectLayer? =
             ProjectManager.getProject().effectLayers.find { it.id == layer.id }
 
-        // Title (renombrable)
+        // Título (tocar para renombrar) — mismo estilo que Pics-OL / Widgets-OL
         val titleTv = TextView(this).apply {
             text = effectDisplayName(layer, number)
             textSize = 16f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setPadding(0, 0, 0, (6 * density).toInt())
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(0x18FFFFFF)
+                cornerRadius = 8 * density
+                setStroke((1 * density).toInt().coerceAtLeast(1), 0x55FFFFFF)
+            }
+            setPadding((10 * density).toInt(), (8 * density).toInt(), (10 * density).toInt(), (8 * density).toInt())
+            isClickable = true
+            isFocusable = true
             setOnClickListener {
                 val liveLayer = live() ?: return@setOnClickListener
                 showRenameLayerDialog(
