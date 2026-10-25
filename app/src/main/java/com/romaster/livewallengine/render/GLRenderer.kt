@@ -94,6 +94,9 @@ class GLRenderer(
     private var videoVertexBuffer: java.nio.FloatBuffer? = null
     private var videoVertices = FloatArray(24)
     private var transformHandle = 0
+    /** Aspect del quad VBG dibujado (ancho/alto en pantalla). */
+    private var lastVbgDisplayAspect = 1f
+
     private val transformMatrix = FloatArray(16)
 
     private val quadVertices = floatArrayOf(
@@ -113,13 +116,13 @@ class GLRenderer(
     uniform mat4 uTexMatrix;
     uniform mat4 uTransform;
     varying vec2 vTexCoord;
-    varying vec2 vOrtho;
+    varying vec2 vMaskCoord;
     void main() {
         vec4 tex = uTexMatrix * vec4(aTexCoord, 0.0, 1.0);
         vTexCoord = tex.xy;
-        vec4 o = uTransform * vec4(aPosition, 0.0, 1.0);
-        vOrtho = o.xy;
-        gl_Position = o;
+        // Máscara anclada al quad geométrico (centro estable; sin offset del transform OES)
+        vMaskCoord = aTexCoord;
+        gl_Position = uTransform * vec4(aPosition, 0.0, 1.0);
     }
     """.trimIndent()
 
@@ -127,6 +130,7 @@ class GLRenderer(
     #extension GL_OES_EGL_image_external : require
     precision mediump float;
     varying vec2 vTexCoord;
+    varying vec2 vMaskCoord;
     uniform samplerExternalOES uTexture;
     uniform float uAlpha;
 
@@ -138,6 +142,17 @@ class GLRenderer(
     uniform vec3  uFxTint;
     uniform float uFxTintStr;
     uniform float uFxTintMode;
+
+    uniform sampler2D uMask;
+    uniform float uMaskEnabled;
+    uniform vec2 uMaskOffset;
+    uniform float uMaskScale;
+    uniform float uMaskRot;
+    uniform float uMaskInvert;
+    uniform float uMaskAspect;
+    uniform float uLayerAspect;
+    uniform float uMaskFit;
+
     vec3 fxRgb2Hsv(vec3 c) {
         vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
         vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
@@ -178,32 +193,34 @@ class GLRenderer(
         }
         return clamp(c, 0.0, 1.0);
     }
-
-    uniform sampler2D uMask;
-    uniform float uMaskEnabled;
-    uniform vec2 uMaskCenter;
-    uniform float uMaskScale;
-    uniform float uMaskAspect;
-    uniform float uMaskRot;
-    uniform float uMaskInvert;
-    varying vec2 vOrtho;
     float fxMaskAlpha() {
         if (uMaskEnabled < 0.5) return 1.0;
-        vec2 d = vOrtho - uMaskCenter;
+        vec2 p = vMaskCoord - 0.5;
+        p -= uMaskOffset;
+        float la = max(uLayerAspect, 0.01);
+        float ma = max(uMaskAspect, 0.01);
+        vec2 s = vec2(p.x * la, p.y);
         float c0 = cos(-uMaskRot);
         float s0 = sin(-uMaskRot);
-        vec2 r = vec2(c0 * d.x - s0 * d.y, s0 * d.x + c0 * d.y);
-        float halfH = max(uMaskScale, 0.001);
-        float halfW = halfH * max(uMaskAspect, 0.001);
-        vec2 uv = vec2(r.x / halfW, r.y / halfH) * 0.5 + 0.5;
+        s = vec2(c0 * s.x - s0 * s.y, s0 * s.x + c0 * s.y);
+        float sc = max(uMaskScale, 0.001);
+        s /= sc;
+        vec2 uv;
+        if (uMaskFit > 0.5) {
+            uv = vec2(s.x / la, s.y) + 0.5;
+        } else {
+            uv = vec2(s.x / ma, s.y) + 0.5;
+        }
         float m = 0.0;
         if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
             vec4 mt = texture2D(uMask, uv);
-            m = max(mt.a, max(mt.r, max(mt.g, mt.b)));
+            float lum = max(mt.r, max(mt.g, mt.b));
+            m = mt.a * lum;
         }
         if (uMaskInvert > 0.5) m = 1.0 - m;
         return m;
     }
+
     void main() {
         vec4 color = texture2D(uTexture, vTexCoord);
         color.rgb = fxApplyColor(color.rgb);
@@ -226,6 +243,7 @@ class GLRenderer(
         }
 
         EffectEngine.setContext(context)
+        EffectEngine.clearTextureCache()
         initializeTriangle()
         textureId = createExternalTexture()
         surfaceTexture = SurfaceTexture(textureId)
@@ -460,6 +478,10 @@ class GLRenderer(
                     context = context
                 )
             )
+            EffectEngine.updateFrame(
+                deviceLocked = animDeviceLocked,
+                homeScreenPage = animHomePage
+            )
         } catch (_: Exception) {
         }
 
@@ -536,7 +558,11 @@ class GLRenderer(
         EffectEngine.bindColorFx(program, EffectEngine.paramsFor("vbg"))
         val scr = renderWidth.toFloat() / renderHeight.toFloat().coerceAtLeast(1f)
         EffectEngine.setScreenRatio(scr)
-        EffectEngine.bindMaskFx(program, "vbg", scr)
+        EffectEngine.bindMaskFx(program, "vbg", lastVbgDisplayAspect.coerceAtLeast(0.01f))
+        // Re-bind OES en unidad 0 (bindMaskFx usa TEXTURE1)
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
+        GLES20.glUniform1i(samplerHandle, 0)
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)
 
@@ -564,6 +590,7 @@ class GLRenderer(
                 // Así el video ocupa todo el viewport (ancho y alto), distorsionando si el
                 // aspect del video no coincide con el de la pantalla.
                 android.opengl.Matrix.scaleM(modelMatrix, 0, screenRatio, 1f, 1f)
+                lastVbgDisplayAspect = screenRatio
             }
             VideoFitMode.FREE -> {
                 val zoom = layer.scale / 100f
@@ -580,22 +607,29 @@ class GLRenderer(
                     1f * zoom,
                     1f
                 )
+                lastVbgDisplayAspect = targetRatio.coerceAtLeast(0.01f)
             }
             VideoFitMode.FIT -> {
-                val videoRatio = videoPlayerWidth.toFloat() / videoPlayerHeight.toFloat()
+                val videoRatio = if (videoPlayerHeight > 0) {
+                    videoPlayerWidth.toFloat() / videoPlayerHeight.toFloat()
+                } else screenRatio
                 if (videoRatio > screenRatio) {
                     android.opengl.Matrix.scaleM(modelMatrix, 0, screenRatio, screenRatio / videoRatio, 1f)
                 } else {
                     android.opengl.Matrix.scaleM(modelMatrix, 0, videoRatio, 1f, 1f)
                 }
+                lastVbgDisplayAspect = videoRatio.coerceAtLeast(0.01f)
             }
             VideoFitMode.FILL -> {
-                val videoRatio = videoPlayerWidth.toFloat() / videoPlayerHeight.toFloat()
+                val videoRatio = if (videoPlayerHeight > 0) {
+                    videoPlayerWidth.toFloat() / videoPlayerHeight.toFloat()
+                } else screenRatio
                 if (videoRatio > screenRatio) {
                     android.opengl.Matrix.scaleM(modelMatrix, 0, videoRatio, 1f, 1f)
                 } else {
                     android.opengl.Matrix.scaleM(modelMatrix, 0, screenRatio, screenRatio / videoRatio, 1f)
                 }
+                lastVbgDisplayAspect = videoRatio.coerceAtLeast(0.01f)
             }
         }
 

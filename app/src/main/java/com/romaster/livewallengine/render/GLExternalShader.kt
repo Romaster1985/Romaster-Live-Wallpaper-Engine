@@ -57,20 +57,18 @@ class GLExternalShader {
         uniform mat4 uMVPMatrix; // AGREGADO
 
         varying vec2 vTexCoord;
-        varying vec2 vOrtho;
+        varying vec2 vMaskCoord;
 
         void main() {
 
             // MODIFICADO: Multiplicamos por la matriz MVP para corregir el Aspect Ratio y Rotar
-            vec4 pos =
+            gl_Position =
                 uMVPMatrix *
                 vec4(
                     aPosition,
                     0.0,
                     1.0
                 );
-            vOrtho = pos.xy;
-            gl_Position = pos;
 
             vec4 tex =
                 uTexMatrix *
@@ -82,6 +80,9 @@ class GLExternalShader {
 
             vTexCoord =
                 tex.xy;
+            // Máscara anclada al quad geométrico (centro estable)
+            vMaskCoord =
+                aTexCoord;
         }
         """.trimIndent()
 
@@ -92,6 +93,7 @@ class GLExternalShader {
         precision mediump float;
     
         varying vec2 vTexCoord;
+        varying vec2 vMaskCoord;
     
         uniform samplerExternalOES uTexture;
     
@@ -113,6 +115,17 @@ class GLExternalShader {
         uniform vec3  uFxTint;
         uniform float uFxTintStr;
         uniform float uFxTintMode;
+
+        uniform sampler2D uMask;
+        uniform float uMaskEnabled;
+        uniform vec2 uMaskOffset;
+        uniform float uMaskScale;
+        uniform float uMaskRot;
+        uniform float uMaskInvert;
+        uniform float uMaskAspect;
+        uniform float uLayerAspect;
+        uniform float uMaskFit;
+
         vec3 fxRgb2Hsv(vec3 c) {
             vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
             vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
@@ -125,31 +138,6 @@ class GLExternalShader {
             vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
             vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
             return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-        }
-        uniform sampler2D uMask;
-        uniform float uMaskEnabled;
-        uniform vec2 uMaskCenter;
-        uniform float uMaskScale;
-        uniform float uMaskAspect;
-        uniform float uMaskRot;
-        uniform float uMaskInvert;
-        varying vec2 vOrtho;
-        float fxMaskAlpha() {
-            if (uMaskEnabled < 0.5) return 1.0;
-            vec2 d = vOrtho - uMaskCenter;
-            float c0 = cos(-uMaskRot);
-            float s0 = sin(-uMaskRot);
-            vec2 r = vec2(c0 * d.x - s0 * d.y, s0 * d.x + c0 * d.y);
-            float halfH = max(uMaskScale, 0.001);
-            float halfW = halfH * max(uMaskAspect, 0.001);
-            vec2 uv = vec2(r.x / halfW, r.y / halfH) * 0.5 + 0.5;
-            float m = 0.0;
-            if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
-                vec4 mt = texture2D(uMask, uv);
-                m = max(mt.a, max(mt.r, max(mt.g, mt.b)));
-            }
-            if (uMaskInvert > 0.5) m = 1.0 - m;
-            return m;
         }
         vec3 fxApplyColor(vec3 c) {
             float gray = dot(c, vec3(0.299, 0.587, 0.114));
@@ -177,6 +165,33 @@ class GLExternalShader {
                 }
             }
             return clamp(c, 0.0, 1.0);
+        }
+        float fxMaskAlpha() {
+            if (uMaskEnabled < 0.5) return 1.0;
+            vec2 p = vMaskCoord - 0.5;
+            p -= uMaskOffset;
+            float la = max(uLayerAspect, 0.01);
+            float ma = max(uMaskAspect, 0.01);
+            vec2 s = vec2(p.x * la, p.y);
+            float c0 = cos(-uMaskRot);
+            float s0 = sin(-uMaskRot);
+            s = vec2(c0 * s.x - s0 * s.y, s0 * s.x + c0 * s.y);
+            float sc = max(uMaskScale, 0.001);
+            s /= sc;
+            vec2 uv;
+            if (uMaskFit > 0.5) {
+                uv = vec2(s.x / la, s.y) + 0.5;
+            } else {
+                uv = vec2(s.x / ma, s.y) + 0.5;
+            }
+            float m = 0.0;
+            if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+                vec4 mt = texture2D(uMask, uv);
+                float lum = max(mt.r, max(mt.g, mt.b));
+                m = mt.a * lum;
+            }
+            if (uMaskInvert > 0.5) m = 1.0 - m;
+            return m;
         }
 
         void main() {
@@ -313,7 +328,8 @@ class GLExternalShader {
         chromaEnabled: Boolean,
         chromaColor: Int,
         threshold: Float,
-        softness: Float
+        softness: Float,
+        layerAspect: Float = 1f
     ) {
 
         vertexBuffer.position(0)
@@ -433,7 +449,10 @@ class GLExternalShader {
         )
 
         EffectEngine.bindColorFx(program, EffectEngine.paramsFor("vol"))
-        EffectEngine.bindMaskFx(program, "vol", EffectEngine.lastScreenRatio)
+        EffectEngine.bindMaskFx(program, "vol", layerAspect.coerceAtLeast(0.01f))
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
+        GLES20.glUniform1i(samplerHandle, 0)
 
         GLES20.glDrawArrays(
 

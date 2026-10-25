@@ -19,6 +19,7 @@
 package com.romaster.livewallengine.render
 
 import android.opengl.GLES20
+import com.romaster.livewallengine.effect.EffectEngine
 import android.opengl.Matrix
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -63,6 +64,7 @@ class GLExternalQuadRenderer {
      */
     fun setSize(screenWidth: Int, screenHeight: Int) {
         screenAspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
+        EffectEngine.setScreenRatio(screenAspectRatio)
         
         // Matriz ortográfica que compensa el estiramiento de pantalla
         Matrix.orthoM(
@@ -167,6 +169,7 @@ class GLExternalQuadRenderer {
 
         shader.use()
 
+        val volAspect = (width / height.coerceAtLeast(0.0001f)).coerceAtLeast(0.01f)
         shader.draw(
             vertexBuffer,
             mvpMatrix,
@@ -176,7 +179,8 @@ class GLExternalQuadRenderer {
             chromaEnabled,
             chromaColor,
             threshold,
-            softness
+            softness,
+            volAspect
         )
 
         GLES20.glDisable(GLES20.GL_BLEND)

@@ -21,6 +21,19 @@ package com.romaster.livewallengine.model
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
+/** Reacción que habilita el efecto (instantánea, sin fade). */
+@Serializable
+enum class EffectReaction {
+    /** Siempre activo. */
+    ALWAYS,
+    /** Solo con el dispositivo desbloqueado. */
+    UNLOCK,
+    /** Solo en la página N del launcher. */
+    HOME_SCROLL,
+    /** Solo cuando la fórmula evalúa a 1 / true. */
+    FORMULA
+}
+
 /** Tipo de efecto de color / máscara (tab Efectos). */
 @Serializable
 enum class EffectType {
@@ -58,6 +71,15 @@ data class EffectLayer(
     /** Capa objetivo (mismo esquema que animaciones). */
     var targetKey: String = "vbg",
 
+    /** Cuándo se aplica el efecto (por defecto siempre). */
+    var reaction: EffectReaction = EffectReaction.ALWAYS,
+
+    /** Página del launcher para [EffectReaction.HOME_SCROLL] (0 = home). */
+    var homeScreenIndex: Int = 0,
+
+    /** Fórmula 0/1 para [EffectReaction.FORMULA]. */
+    var formula: String = "",
+
     var type: EffectType = EffectType.SATURATION,
 
     // --- Saturación ---
@@ -82,6 +104,13 @@ data class EffectLayer(
     // --- Matiz (Hue) ---
     /** Desplazamiento de matiz en grados −180…+180. */
     var hueShift: Float = 0f,
+    /** Si true, recorre el matiz en bucle −180…+180 automáticamente. */
+    var hueAuto: Boolean = false,
+    /**
+     * Velocidad del recorrido automático (1 = muy lento, 100 = muy rápido).
+     * ~2 °/s en 1 y ~720 °/s en 100 (ciclo completo ~0.5 s).
+     */
+    var hueAutoSpeed: Float = 25f,
 
     // --- Máscara de recorte ---
     /** Nombre de archivo en storage de máscaras (p. ej. mask_xxx.png). */
@@ -92,5 +121,7 @@ data class EffectLayer(
     var maskY: Float = 0f,
     /** Rotación 0–359. */
     var maskRotation: Float = 0f,
-    var maskInvert: Boolean = false
+    var maskInvert: Boolean = false,
+    /** Si true, estira la máscara al aspect de la capa; si false, conserva aspect de la máscara. */
+    var maskFitToLayer: Boolean = false
 )

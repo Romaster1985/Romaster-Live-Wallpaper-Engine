@@ -23,7 +23,10 @@ import android.graphics.BitmapFactory
 import android.opengl.GLES20
 import android.opengl.GLUtils
 import com.romaster.livewallengine.image.MaskStorage
+import com.romaster.livewallengine.model.EffectLayer
+import com.romaster.livewallengine.model.EffectReaction
 import com.romaster.livewallengine.model.EffectType
+import com.romaster.livewallengine.formula.FormulaEngine
 import com.romaster.livewallengine.project.ProjectManager
 import java.util.concurrent.ConcurrentHashMap
 
@@ -33,6 +36,11 @@ import java.util.concurrent.ConcurrentHashMap
  * targetKey: "vbg" | "vol" | "ckol" | "img:<id>" | "wdg:<id>"
  */
 object EffectEngine {
+
+    @Volatile private var screenRatio: Float = 1f
+
+    @Volatile private var frameDeviceLocked: Boolean = false
+    @Volatile private var frameHomePage: Int = 0
 
     data class ColorFxParams(
         val saturation: Float = 1f,
@@ -49,15 +57,18 @@ object EffectEngine {
 
     data class MaskParams(
         val fileName: String,
-        /** Centro en espacio ortográfico (mismo sistema que capas). */
-        val centerX: Float,
-        val centerY: Float,
-        /** Escala lineal (1 = 100% → altura de pantalla completa). */
+        /** Offset UV de la máscara sobre la capa (fracción, 0 = centrada). */
+        val offsetX: Float,
+        val offsetY: Float,
+        /** Escala lineal (1 = 100% → cubre toda la capa). */
         val scale: Float,
         /** Rotación en radianes. */
         val rotationRad: Float,
         val invert: Boolean,
-        val aspect: Float
+        /** Aspect ratio de la textura de máscara (w/h). */
+        val maskAspect: Float,
+        /** true = estirar a la capa; false = conservar aspect de la máscara. */
+        val fitToLayer: Boolean
     )
 
     val IDENTITY = ColorFxParams()
@@ -66,6 +77,7 @@ object EffectEngine {
     private val maskTexIds = ConcurrentHashMap<String, Int>()
     private val maskAspect = ConcurrentHashMap<String, Float>()
     private val maskMtime = ConcurrentHashMap<String, Long>()
+    private var whiteTexId = 0
     @Volatile private var appContext: Context? = null
     /** Último aspect ratio de pantalla (width/height) reportado por los renderers. */
     @Volatile var lastScreenRatio: Float = 1f
@@ -74,13 +86,53 @@ object EffectEngine {
         appContext = ctx.applicationContext
     }
 
+    fun getScreenRatio(): Float = screenRatio
+
     fun setScreenRatio(ratio: Float) {
+        screenRatio = ratio.coerceAtLeast(0.01f)
         if (ratio > 0.01f) lastScreenRatio = ratio
+    }
+
+
+    /** Actualizar cada frame junto con AnimationEngine.update. */
+    fun updateFrame(deviceLocked: Boolean, homeScreenPage: Int) {
+        frameDeviceLocked = deviceLocked
+        frameHomePage = homeScreenPage
+    }
+
+    private fun isReactionActive(e: EffectLayer): Boolean {
+        return when (e.reaction) {
+            EffectReaction.ALWAYS -> true
+            EffectReaction.UNLOCK -> !frameDeviceLocked
+            EffectReaction.HOME_SCROLL -> frameHomePage == e.homeScreenIndex
+            EffectReaction.FORMULA -> evalFormula01(e.formula)
+        }
+    }
+
+    private fun evalFormula01(formula: String): Boolean {
+        val ctx = appContext ?: return false
+        if (formula.isBlank()) return false
+        return try {
+            FormulaEngine.lockStateOverride = frameDeviceLocked
+            val raw = FormulaEngine.evaluate(formula, ctx).trim()
+            val n = raw.replace(',', '.').toFloatOrNull()
+            when {
+                n != null -> n >= 0.5f
+                raw.equals("true", true) || raw == "1" -> true
+                else -> false
+            }
+        } catch (_: Exception) {
+            false
+        } finally {
+            FormulaEngine.lockStateOverride = null
+        }
     }
 
     fun paramsFor(targetKey: String): ColorFxParams {
         val list = try {
-            ProjectManager.getProject().effectLayers.filter { it.targetKey == targetKey }
+            ProjectManager.getProject().effectLayers.filter {
+                it.targetKey == targetKey && isReactionActive(it)
+            }
         } catch (_: Exception) {
             return IDENTITY
         }
@@ -100,7 +152,18 @@ object EffectEngine {
         for (e in list) {
             when (e.type) {
                 EffectType.SATURATION -> sat = (e.saturation / 100f).coerceIn(0f, 2f)
-                EffectType.HUE -> hue = e.hueShift.coerceIn(-180f, 180f)
+                EffectType.HUE -> {
+                    hue = if (e.hueAuto) {
+                        // Velocidad 1…100 → ~2 °/s … ~720 °/s (ciclo 360° en ~180s … ~0.5s)
+                        val speed = e.hueAutoSpeed.coerceIn(1f, 100f)
+                        val degPerSec = 2f + (speed - 1f) / 99f * 718f
+                        val elapsed = android.os.SystemClock.elapsedRealtime() / 1000.0
+                        val raw = ((elapsed * degPerSec) % 360.0).toFloat()
+                        if (raw > 180f) raw - 360f else raw
+                    } else {
+                        e.hueShift.coerceIn(-180f, 180f)
+                    }
+                }
                 EffectType.INVERT -> {
                     invert = true
                     invertLuma = e.invertLumaPreserve
@@ -124,23 +187,23 @@ object EffectEngine {
      * Parámetros de máscara para [targetKey] (último CLIP_MASK con archivo válido).
      * [screenRatio] = width/height de la superficie de render.
      */
-    fun maskFor(targetKey: String, screenRatio: Float): MaskParams? {
+    fun maskFor(targetKey: String, screenRatio: Float = 1f): MaskParams? {
         val list = try {
             ProjectManager.getProject().effectLayers.filter {
                 it.targetKey == targetKey && it.type == EffectType.CLIP_MASK &&
-                    !it.maskFileName.isNullOrBlank()
+                    !it.maskFileName.isNullOrBlank() && isReactionActive(it)
             }
         } catch (_: Exception) {
             return null
         }
         val e = list.lastOrNull() ?: return null
         val name = e.maskFileName ?: return null
-        val aspect = maskAspect[name] ?: 1f
         val scale = (e.maskScale / 100f).coerceIn(0.05f, 4f)
-        val cx = (e.maskX / 100f) * screenRatio
-        val cy = -(e.maskY / 100f)
+        val ox = (e.maskX / 100f)
+        val oy = -(e.maskY / 100f)
         val rot = Math.toRadians(e.maskRotation.toDouble()).toFloat()
-        return MaskParams(name, cx, cy, scale, rot, e.maskInvert, aspect)
+        val aspect = maskAspect[name] ?: 1f
+        return MaskParams(name, ox, oy, scale, rot, e.maskInvert, aspect, e.maskFitToLayer)
     }
 
     /**
@@ -153,8 +216,11 @@ object EffectEngine {
         if (!file.exists()) return 0
         val mtime = file.lastModified()
         maskTexIds[fileName]?.let { id ->
-            if (id != 0 && maskMtime[fileName] == mtime) return id
-            if (id != 0) GLES20.glDeleteTextures(1, intArrayOf(id), 0)
+            // glIsTexture=false tras pérdida de contexto GL (preview↔wallpaper, app background)
+            if (id != 0 && GLES20.glIsTexture(id) && maskMtime[fileName] == mtime) return id
+            if (id != 0 && GLES20.glIsTexture(id)) {
+                GLES20.glDeleteTextures(1, intArrayOf(id), 0)
+            }
             maskTexIds.remove(fileName)
         }
         return try {
@@ -188,6 +254,13 @@ object EffectEngine {
         maskAspect.remove(fileName)
     }
 
+    /** Llamar al (re)crear el contexto GL. */
+    fun clearTextureCache() {
+        maskTexIds.clear()
+        // maskAspect y mtime se conservan; las texturas se regeneran al dibujar
+        whiteTexId = 0
+    }
+
     fun releaseMaskTextures() {
         for ((_, id) in maskTexIds) {
             if (id != 0) {
@@ -196,6 +269,26 @@ object EffectEngine {
         }
         maskTexIds.clear()
         maskAspect.clear()
+    }
+
+    private fun ensureWhiteTexture(): Int {
+        if (whiteTexId != 0) return whiteTexId
+        val ids = IntArray(1)
+        GLES20.glGenTextures(1, ids, 0)
+        whiteTexId = ids[0]
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, whiteTexId)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+        // RGBA white opaque
+        val px = java.nio.ByteBuffer.allocateDirect(4).order(java.nio.ByteOrder.nativeOrder())
+        px.put(0xFF.toByte()).put(0xFF.toByte()).put(0xFF.toByte()).put(0xFF.toByte()).position(0)
+        GLES20.glTexImage2D(
+            GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 1, 1, 0,
+            GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, px
+        )
+        return whiteTexId
     }
 
     fun bindColorFx(program: Int, p: ColorFxParams = IDENTITY) {
@@ -214,29 +307,42 @@ object EffectEngine {
     /**
      * Bindea máscara en TEXTURE1 y uniforms. Si no hay máscara, desactiva uMaskEnabled.
      */
-    fun bindMaskFx(program: Int, targetKey: String, screenRatio: Float) {
+    /**
+     * @param layerAspect aspect ratio visual de la capa (ancho/alto), para conservar proporciones de la máscara.
+     */
+    fun bindMaskFx(program: Int, targetKey: String, layerAspect: Float = 1f) {
         if (program == 0) return
         fun loc(name: String) = GLES20.glGetUniformLocation(program, name)
-        val enabledLoc = loc("uMaskEnabled")
-        val mask = maskFor(targetKey, screenRatio)
-        if (mask == null) {
-            if (enabledLoc >= 0) GLES20.glUniform1f(enabledLoc, 0f)
-            return
-        }
-        val texId = ensureMaskTexture(mask.fileName)
-        if (texId == 0) {
-            if (enabledLoc >= 0) GLES20.glUniform1f(enabledLoc, 0f)
-            return
-        }
-        if (enabledLoc >= 0) GLES20.glUniform1f(enabledLoc, 1f)
+        val mask = maskFor(targetKey)
+        val texId = if (mask != null) ensureMaskTexture(mask.fileName) else 0
+        val enabled = mask != null && texId != 0
+        // Aspect real tras cargar la textura (primer frame)
+        val resolvedAspect = if (mask != null) {
+            (maskAspect[mask.fileName] ?: mask.maskAspect).coerceAtLeast(0.01f)
+        } else 1f
+
         GLES20.glActiveTexture(GLES20.GL_TEXTURE1)
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, if (enabled) texId else ensureWhiteTexture())
         loc("uMask").takeIf { it >= 0 }?.let { GLES20.glUniform1i(it, 1) }
-        loc("uMaskCenter").takeIf { it >= 0 }?.let { GLES20.glUniform2f(it, mask.centerX, mask.centerY) }
-        loc("uMaskScale").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, mask.scale) }
-        loc("uMaskAspect").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, mask.aspect) }
-        loc("uMaskRot").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, mask.rotationRad) }
-        loc("uMaskInvert").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, if (mask.invert) 1f else 0f) }
+
+        loc("uMaskEnabled").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, if (enabled) 1f else 0f) }
+        if (enabled && mask != null) {
+            loc("uMaskOffset").takeIf { it >= 0 }?.let { GLES20.glUniform2f(it, mask.offsetX, mask.offsetY) }
+            loc("uMaskScale").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, mask.scale) }
+            loc("uMaskRot").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, mask.rotationRad) }
+            loc("uMaskInvert").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, if (mask.invert) 1f else 0f) }
+            loc("uMaskAspect").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, resolvedAspect) }
+            loc("uLayerAspect").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, layerAspect.coerceAtLeast(0.01f)) }
+            loc("uMaskFit").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, if (mask.fitToLayer) 1f else 0f) }
+        } else {
+            loc("uMaskOffset").takeIf { it >= 0 }?.let { GLES20.glUniform2f(it, 0f, 0f) }
+            loc("uMaskScale").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, 1f) }
+            loc("uMaskRot").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, 0f) }
+            loc("uMaskInvert").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, 0f) }
+            loc("uMaskAspect").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, 1f) }
+            loc("uLayerAspect").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, 1f) }
+            loc("uMaskFit").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, 1f) }
+        }
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
     }
 }

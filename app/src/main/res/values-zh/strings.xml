@@ -551,4 +551,7 @@ Apache 2.0 许可证</string>
     <string name="formula_cat_music">音乐</string>
     <string name="pics_image_formula">公式图片</string>
     <string name="pics_formula_label">公式：%1$s</string>
+    <string name="effect_hue_auto">自动色相偏移</string>
+    <string name="effect_hue_auto_speed">偏移速度</string>
+    <string name="effect_reaction_always">始终</string>
 </resources>

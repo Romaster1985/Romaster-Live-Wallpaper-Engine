@@ -40,22 +40,33 @@ object MaskStorage {
      */
     fun importMask(context: Context, uri: Uri, effectId: String): String {
         val mime = context.contentResolver.getType(uri) ?: "image/png"
+        val pathHint = uri.lastPathSegment?.lowercase() ?: ""
         val ext = when {
-            mime.contains("png", ignoreCase = true) -> "png"
-            mime.contains("webp", ignoreCase = true) -> "webp"
+            mime.contains("png", ignoreCase = true) || pathHint.endsWith(".png") -> "png"
+            mime.contains("webp", ignoreCase = true) || pathHint.endsWith(".webp") -> "webp"
             mime.contains("jpeg", ignoreCase = true) ||
-                mime.contains("jpg", ignoreCase = true) -> "jpg"
+                mime.contains("jpg", ignoreCase = true) ||
+                pathHint.endsWith(".jpg") || pathHint.endsWith(".jpeg") -> "jpg"
             else -> "png"
         }
-        val fileName = "mask_${effectId}.$ext"
-        // Limpiar versiones previas del mismo efecto
+        // ID seguro para nombre de archivo
+        val safeId = effectId.replace(Regex("[^A-Za-z0-9_-]"), "_")
+        val fileName = "mask_${safeId}.$ext"
         masksDir(context).listFiles()?.forEach { f ->
-            if (f.name.startsWith("mask_${effectId}.")) f.delete()
+            if (f.name.startsWith("mask_${safeId}.")) f.delete()
         }
         val dest = getMaskFile(context, fileName)
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            dest.outputStream().use { output -> input.copyTo(output) }
-        } ?: throw IllegalStateException("No se pudo leer la máscara")
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw IllegalStateException("No se pudo abrir la URI")
+        input.use { inp ->
+            dest.outputStream().use { out ->
+                val n = inp.copyTo(out)
+                if (n <= 0L) throw IllegalStateException("Archivo vacío")
+            }
+        }
+        if (!dest.exists() || dest.length() <= 0L) {
+            throw IllegalStateException("No se pudo guardar la máscara")
+        }
         return fileName
     }
 

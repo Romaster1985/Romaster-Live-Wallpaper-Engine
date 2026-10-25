@@ -581,6 +581,7 @@ Comprobá la conexión e intentá de nuevo.</string>
     <string name="effects_tab_hint">Aplicá saturación, matiz, tinte, inversión, solarizado o máscaras de recorte a cualquier capa.</string>
     <string name="effect_card_title">Efecto %1$d</string>
     <string name="effect_label_target">Aplicar a capa</string>
+    <string name="effect_reaction_always">Siempre</string>
     <string name="effect_label_type">Tipo de efecto</string>
     <string name="effect_type_saturation">Saturación</string>
     <string name="effect_type_invert">Invertir colores</string>
@@ -597,6 +598,8 @@ Comprobá la conexión e intentá de nuevo.</string>
     <string name="effect_tint_mode_mix">Mezcla</string>
     <string name="effect_tint_mode_multiply">Multiplicar</string>
     <string name="effect_hue_shift">Desplazamiento de matiz</string>
+    <string name="effect_hue_auto">Desplazamiento de matiz automático</string>
+    <string name="effect_hue_auto_speed">Velocidad de desplazamiento</string>
     <string name="effect_mask_load">Cargar máscara PNG</string>
     <string name="effect_mask_clear">Quitar máscara</string>
     <string name="effect_mask_none">Sin máscara</string>
@@ -606,5 +609,6 @@ Comprobá la conexión e intentá de nuevo.</string>
     <string name="effect_mask_y">Posición Y máscara</string>
     <string name="effect_mask_rotation">Rotación máscara</string>
     <string name="effect_mask_invert">Invertir máscara</string>
+    <string name="effect_mask_fit_layer">Ajustar a capa</string>
     <string name="effect_delete">Eliminar efecto</string>
 </resources>

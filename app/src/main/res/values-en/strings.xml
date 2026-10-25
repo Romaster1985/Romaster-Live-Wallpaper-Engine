@@ -572,6 +572,7 @@ Check your connection and try again.</string>
     <string name="effects_tab_hint">Apply saturation, hue, tint, invert, solarize or clip masks to any layer.</string>
     <string name="effect_card_title">Effect %1$d</string>
     <string name="effect_label_target">Apply to layer</string>
+    <string name="effect_reaction_always">Always</string>
     <string name="effect_label_type">Effect type</string>
     <string name="effect_type_saturation">Saturation</string>
     <string name="effect_type_invert">Invert colors</string>
@@ -588,6 +589,8 @@ Check your connection and try again.</string>
     <string name="effect_tint_mode_mix">Mix</string>
     <string name="effect_tint_mode_multiply">Multiply</string>
     <string name="effect_hue_shift">Hue shift</string>
+    <string name="effect_hue_auto">Automatic hue shift</string>
+    <string name="effect_hue_auto_speed">Shift speed</string>
     <string name="effect_mask_load">Load mask PNG</string>
     <string name="effect_mask_clear">Remove mask</string>
     <string name="effect_mask_none">No mask</string>
@@ -597,5 +600,6 @@ Check your connection and try again.</string>
     <string name="effect_mask_y">Mask Y position</string>
     <string name="effect_mask_rotation">Mask rotation</string>
     <string name="effect_mask_invert">Invert mask</string>
+    <string name="effect_mask_fit_layer">Fit to layer</string>
     <string name="effect_delete">Delete effect</string>
 </resources>

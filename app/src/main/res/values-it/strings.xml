@@ -551,4 +551,7 @@ Controlla la connessione e riprova.</string>
     <string name="formula_cat_music">Musica</string>
     <string name="pics_image_formula">Immagine da formula</string>
     <string name="pics_formula_label">Formula: %1$s</string>
+    <string name="effect_hue_auto">Spostamento tinta automatico</string>
+    <string name="effect_hue_auto_speed">Velocità di spostamento</string>
+    <string name="effect_reaction_always">Sempre</string>
 </resources>

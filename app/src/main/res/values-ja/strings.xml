@@ -551,4 +551,7 @@ Apache 2.0 ライセンス</string>
     <string name="formula_cat_music">音楽</string>
     <string name="pics_image_formula">数式で画像</string>
     <string name="pics_formula_label">数式: %1$s</string>
+    <string name="effect_hue_auto">色相の自動シフト</string>
+    <string name="effect_hue_auto_speed">シフト速度</string>
+    <string name="effect_reaction_always">常時</string>
 </resources>

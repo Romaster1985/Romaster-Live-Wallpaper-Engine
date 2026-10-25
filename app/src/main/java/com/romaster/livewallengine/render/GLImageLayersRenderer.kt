@@ -105,6 +105,43 @@ class GLImageLayersRenderer {
         uniform vec3  uFxTint;
         uniform float uFxTintStr;
         uniform float uFxTintMode;
+uniform sampler2D uMask;
+        uniform float uMaskEnabled;
+        uniform vec2 uMaskOffset;
+        uniform float uMaskScale;
+        uniform float uMaskRot;
+        uniform float uMaskInvert;
+        uniform float uMaskAspect;
+        uniform float uLayerAspect;
+        uniform float uMaskFit;
+        float fxMaskAlpha() {
+            if (uMaskEnabled < 0.5) return 1.0;
+            vec2 p = vTexCoord - 0.5;
+            p -= uMaskOffset;
+            float la = max(uLayerAspect, 0.01);
+            float ma = max(uMaskAspect, 0.01);
+            vec2 s = vec2(p.x * la, p.y);
+            float c0 = cos(-uMaskRot);
+            float s0 = sin(-uMaskRot);
+            s = vec2(c0 * s.x - s0 * s.y, s0 * s.x + c0 * s.y);
+            float sc = max(uMaskScale, 0.001);
+            s /= sc;
+            vec2 uv;
+            if (uMaskFit > 0.5) {
+                uv = vec2(s.x / la, s.y) + 0.5;
+            } else {
+                uv = vec2(s.x / ma, s.y) + 0.5;
+            }
+            float m = 0.0;
+            if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+                vec4 mt = texture2D(uMask, uv);
+                float lum = max(mt.r, max(mt.g, mt.b));
+                m = mt.a * lum;
+            }
+            if (uMaskInvert > 0.5) m = 1.0 - m;
+            return m;
+        }
+
         vec3 fxRgb2Hsv(vec3 c) {
             vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
             vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
@@ -146,31 +183,7 @@ class GLImageLayersRenderer {
             return clamp(c, 0.0, 1.0);
         }
 
-        uniform sampler2D uMask;
-        uniform float uMaskEnabled;
-        uniform vec2 uMaskCenter;
-        uniform float uMaskScale;
-        uniform float uMaskAspect;
-        uniform float uMaskRot;
-        uniform float uMaskInvert;
-        varying vec2 vOrtho;
-        float fxMaskAlpha() {
-            if (uMaskEnabled < 0.5) return 1.0;
-            vec2 d = vOrtho - uMaskCenter;
-            float c0 = cos(-uMaskRot);
-            float s0 = sin(-uMaskRot);
-            vec2 r = vec2(c0 * d.x - s0 * d.y, s0 * d.x + c0 * d.y);
-            float halfH = max(uMaskScale, 0.001);
-            float halfW = halfH * max(uMaskAspect, 0.001);
-            vec2 uv = vec2(r.x / halfW, r.y / halfH) * 0.5 + 0.5;
-            float m = 0.0;
-            if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
-                vec4 mt = texture2D(uMask, uv);
-                m = max(mt.a, max(mt.r, max(mt.g, mt.b)));
-            }
-            if (uMaskInvert > 0.5) m = 1.0 - m;
-            return m;
-        }
+
         void main() {
             vec4 c = texture2D(uTexture, vTexCoord);
             c.rgb = fxApplyColor(c.rgb);
@@ -182,6 +195,7 @@ class GLImageLayersRenderer {
     fun initialize(context: Context, width: Int, height: Int) {
         this.context = context.applicationContext
         EffectEngine.setContext(context)
+        EffectEngine.clearTextureCache()
         screenW = width.coerceAtLeast(1)
         screenH = height.coerceAtLeast(1)
 
@@ -506,7 +520,11 @@ class GLImageLayersRenderer {
             GLES20.glUniformMatrix4fv(modelHandle, 1, false, model, 0)
         }
         EffectEngine.setScreenRatio(screenRatio)
-        EffectEngine.bindMaskFx(program, "img:" + layer.id, screenRatio)
+        EffectEngine.bindMaskFx(program, "img:" + layer.id, imgRatio)
+        // Restaurar textura de la capa en unidad 0 tras bind de máscara
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+        tex.bind(0)
+        GLES20.glUniform1i(samplerHandle, 0)
 
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0)
 

@@ -97,6 +97,7 @@ import com.romaster.livewallengine.model.ProgressFillMode
 import com.romaster.livewallengine.model.WidgetType
 import com.romaster.livewallengine.model.AnimationLayer
 import com.romaster.livewallengine.model.EffectLayer
+import com.romaster.livewallengine.model.EffectReaction
 import com.romaster.livewallengine.model.EffectType
 import com.romaster.livewallengine.animation.AnimationEngine
 import com.romaster.livewallengine.model.AnimationReaction
@@ -155,8 +156,9 @@ class MainActivity : AppCompatActivity() {
     private var exportPreviewBitmap: Bitmap? = null
     private var pendingImageLayerId: String? = null
     private val REQUEST_IMAGE_LAYER = 4711
-    private val REQUEST_EFFECT_MASK = 4712
+    private val REQUEST_EFFECT_MASK = 4715
     private var pendingEffectMaskId: String? = null
+    private val PREF_PENDING_EFFECT_MASK = "pending_effect_mask_id"
     private val REQUEST_CLOCK_CRYSTAL_TEXTURE = 4712
     private val REQUEST_WIDGET_ICON_TTF = 4713
     private val REQUEST_WIDGET_ICON_JSON = 4714
@@ -3569,6 +3571,99 @@ private fun showFadeDurationDialog(
         }
         root.addView(targetAuto)
 
+        // --- Reacción (habilita el efecto de forma instantánea) ---
+        val effectReactions = EffectReaction.entries
+        fun effectReactionLabel(r: EffectReaction): String = when (r) {
+            EffectReaction.ALWAYS -> getString(R.string.effect_reaction_always)
+            EffectReaction.UNLOCK -> getString(R.string.anim_reaction_unlock)
+            EffectReaction.HOME_SCROLL -> getString(R.string.anim_reaction_home_scroll)
+            EffectReaction.FORMULA -> getString(R.string.anim_reaction_formula)
+        }
+        val reactionLabels = effectReactions.map { effectReactionLabel(it) }
+        var reactionIdx = effectReactions.indexOf(layer.reaction).coerceAtLeast(0)
+        root.addView(TextView(this).apply {
+            text = getString(R.string.anim_label_reaction)
+            setPadding(0, (10 * density).toInt(), 0, (2 * density).toInt())
+        })
+        val reactionExtra = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        fun refreshEffectReactionExtra() {
+            reactionExtra.removeAllViews()
+            val cur = live() ?: return
+            when (cur.reaction) {
+                EffectReaction.ALWAYS, EffectReaction.UNLOCK -> {
+                    reactionExtra.visibility = View.GONE
+                }
+                EffectReaction.HOME_SCROLL -> {
+                    reactionExtra.visibility = View.VISIBLE
+                    val row = LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = android.view.Gravity.CENTER_VERTICAL
+                        setPadding(0, (8 * density).toInt(), 0, 0)
+                    }
+                    val screenTv = TextView(this@MainActivity).apply {
+                        text = getString(R.string.anim_home_screen, cur.homeScreenIndex)
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    }
+                    row.addView(screenTv)
+                    row.addView(com.google.android.material.button.MaterialButton(this@MainActivity).apply {
+                        text = "−"
+                        setOnClickListener {
+                            if (loadingUI) return@setOnClickListener
+                            val n = (live()?.homeScreenIndex ?: 0) - 1
+                            live()?.homeScreenIndex = n
+                            screenTv.text = getString(R.string.anim_home_screen, n)
+                            editor.save()
+                        }
+                    })
+                    row.addView(com.google.android.material.button.MaterialButton(this@MainActivity).apply {
+                        text = "+"
+                        setOnClickListener {
+                            if (loadingUI) return@setOnClickListener
+                            val n = (live()?.homeScreenIndex ?: 0) + 1
+                            live()?.homeScreenIndex = n
+                            screenTv.text = getString(R.string.anim_home_screen, n)
+                            editor.save()
+                        }
+                    })
+                    reactionExtra.addView(row)
+                }
+                EffectReaction.FORMULA -> {
+                    reactionExtra.visibility = View.VISIBLE
+                    reactionExtra.addView(com.google.android.material.button.MaterialButton(this@MainActivity).apply {
+                        text = getString(R.string.anim_edit_formula)
+                        setOnClickListener {
+                            val l = live() ?: return@setOnClickListener
+                            FormulaEditorDialog.show(
+                                this@MainActivity,
+                                getString(R.string.anim_edit_formula),
+                                l.formula
+                            ) { fx ->
+                                live()?.formula = fx
+                                editor.save()
+                            }
+                        }
+                    })
+                }
+            }
+        }
+        val reactionAuto = android.widget.AutoCompleteTextView(this).apply {
+            setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, reactionLabels))
+            setText(reactionLabels.getOrElse(reactionIdx) { reactionLabels.first() }, false)
+            isFocusable = false
+            setOnClickListener { showDropDown() }
+            setOnItemClickListener { _, _, pos, _ ->
+                if (loadingUI) return@setOnItemClickListener
+                live()?.reaction = effectReactions[pos]
+                editor.save()
+                refreshEffectReactionExtra()
+            }
+        }
+        root.addView(reactionAuto)
+        root.addView(reactionExtra)
+        refreshEffectReactionExtra()
+
         // Type
         val types = EffectType.entries
         val typeLabels = types.map { effectTypeLabel(it) }
@@ -3698,10 +3793,28 @@ private fun showFadeDurationDialog(
                     typeExtra.addView(modeAuto)
                 }
                 EffectType.HUE -> {
-                    addFxSlider(
-                        getString(R.string.effect_hue_shift),
-                        -180f, 180f, cur.hueShift, 0f
-                    ) { v -> live()?.hueShift = v }
+                    val autoCb = com.google.android.material.checkbox.MaterialCheckBox(this@MainActivity).apply {
+                        text = getString(R.string.effect_hue_auto)
+                        isChecked = cur.hueAuto
+                        setOnCheckedChangeListener { _, checked ->
+                            if (loadingUI) return@setOnCheckedChangeListener
+                            live()?.hueAuto = checked
+                            editor.save()
+                            refreshTypeExtra()
+                        }
+                    }
+                    typeExtra.addView(autoCb)
+                    if (cur.hueAuto) {
+                        addFxSlider(
+                            getString(R.string.effect_hue_auto_speed),
+                            1f, 100f, cur.hueAutoSpeed.coerceIn(1f, 100f), 25f
+                        ) { v -> live()?.hueAutoSpeed = v }
+                    } else {
+                        addFxSlider(
+                            getString(R.string.effect_hue_shift),
+                            -180f, 180f, cur.hueShift, 0f
+                        ) { v -> live()?.hueShift = v }
+                    }
                 }
                 EffectType.CLIP_MASK -> {
                     val fileTv = TextView(this@MainActivity).apply {
@@ -3715,11 +3828,26 @@ private fun showFadeDurationDialog(
                     val loadBtn = com.google.android.material.button.MaterialButton(this@MainActivity).apply {
                         text = getString(R.string.effect_mask_load)
                         setOnClickListener {
-                            val eid = live()?.id ?: return@setOnClickListener
+                            val eid = live()?.id
+                            if (eid.isNullOrBlank()) {
+                                android.widget.Toast.makeText(
+                                    this@MainActivity,
+                                    getString(R.string.image_load_error, "effect id"),
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                                return@setOnClickListener
+                            }
                             pendingEffectMaskId = eid
-                            val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
-                                type = "image/*"
+                            getSharedPreferences("rlwe_ui", MODE_PRIVATE)
+                                .edit()
+                                .putString(PREF_PENDING_EFFECT_MASK, eid)
+                                .apply()
+                            val intent = android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT).apply {
                                 addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                                type = "image/*"
+                                putExtra(android.content.Intent.EXTRA_MIME_TYPES, arrayOf(
+                                    "image/png", "image/jpeg", "image/jpg", "image/webp", "image/*"
+                                ))
                             }
                             startActivityForResult(
                                 android.content.Intent.createChooser(intent, getString(R.string.effect_mask_load)),
@@ -3769,6 +3897,16 @@ private fun showFadeDurationDialog(
                         }
                     }
                     typeExtra.addView(invCb)
+                    val fitCb = com.google.android.material.checkbox.MaterialCheckBox(this@MainActivity).apply {
+                        text = getString(R.string.effect_mask_fit_layer)
+                        isChecked = cur.maskFitToLayer
+                        setOnCheckedChangeListener { _, checked ->
+                            if (loadingUI) return@setOnCheckedChangeListener
+                            live()?.maskFitToLayer = checked
+                            editor.save()
+                        }
+                    }
+                    typeExtra.addView(fitCb)
                 }
             }
         }
@@ -7032,18 +7170,42 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
             }
 
             REQUEST_EFFECT_MASK -> {
+                val prefs = getSharedPreferences("rlwe_ui", MODE_PRIVATE)
                 val effectId = pendingEffectMaskId
+                    ?: prefs.getString(PREF_PENDING_EFFECT_MASK, null)
                 pendingEffectMaskId = null
-                if (effectId != null) {
+                prefs.edit().remove(PREF_PENDING_EFFECT_MASK).apply()
+                if (effectId.isNullOrBlank()) {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.image_load_error, "no effect id"),
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
                     try {
                         val name = MaskStorage.importMask(this, uri, effectId)
+                        val file = MaskStorage.getMaskFile(this, name)
+                        if (!file.exists() || file.length() <= 0L) {
+                            throw IllegalStateException("mask file empty")
+                        }
                         val effect = ProjectManager.getProject().effectLayers
                             .find { it.id == effectId }
-                        if (effect != null) {
+                        if (effect == null) {
+                            Toast.makeText(
+                                this,
+                                getString(R.string.image_load_error, "effect not found"),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
                             effect.maskFileName = name
+                            effect.type = com.romaster.livewallengine.model.EffectType.CLIP_MASK
                             editor.save()
                             rebuildEffectLayerCards()
-                            Toast.makeText(this, getString(R.string.effect_mask_file, name), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                getString(R.string.effect_mask_file, name),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     } catch (e: Exception) {
                         Toast.makeText(

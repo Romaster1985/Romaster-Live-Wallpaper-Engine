@@ -551,4 +551,7 @@ Verifique a conexão e tente novamente.</string>
     <string name="formula_cat_music">Música</string>
     <string name="pics_image_formula">Imagem por fórmula</string>
     <string name="pics_formula_label">Fórmula: %1$s</string>
+    <string name="effect_hue_auto">Deslocamento de matiz automático</string>
+    <string name="effect_hue_auto_speed">Velocidade de deslocamento</string>
+    <string name="effect_reaction_always">Sempre</string>
 </resources>

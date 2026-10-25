@@ -551,4 +551,7 @@ Vérifiez la connexion et réessayez.</string>
     <string name="formula_cat_music">Musique</string>
     <string name="pics_image_formula">Image par formule</string>
     <string name="pics_formula_label">Formule : %1$s</string>
+    <string name="effect_hue_auto">Décalage de teinte automatique</string>
+    <string name="effect_hue_auto_speed">Vitesse de décalage</string>
+    <string name="effect_reaction_always">Toujours</string>
 </resources>

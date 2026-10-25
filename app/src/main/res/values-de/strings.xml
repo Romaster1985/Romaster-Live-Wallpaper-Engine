@@ -551,4 +551,7 @@ Verbindung prüfen und erneut versuchen.</string>
     <string name="formula_cat_music">Musik</string>
     <string name="pics_image_formula">Bild per Formel</string>
     <string name="pics_formula_label">Formel: %1$s</string>
+    <string name="effect_hue_auto">Automatische Farbtonverschiebung</string>
+    <string name="effect_hue_auto_speed">Verschiebungsgeschwindigkeit</string>
+    <string name="effect_reaction_always">Immer</string>
 </resources>

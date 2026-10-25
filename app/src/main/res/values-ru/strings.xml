@@ -551,4 +551,7 @@ Reddit · Patreon · Gmail</string>
     <string name="formula_cat_music">Музыка</string>
     <string name="pics_image_formula">Изображение по формуле</string>
     <string name="pics_formula_label">Формула: %1$s</string>
+    <string name="effect_hue_auto">Автоматический сдвиг оттенка</string>
+    <string name="effect_hue_auto_speed">Скорость сдвига</string>
+    <string name="effect_reaction_always">Всегда</string>
 </resources>

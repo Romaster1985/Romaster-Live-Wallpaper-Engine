@@ -18,6 +18,8 @@
 
 package com.romaster.livewallengine.render
 
+import com.romaster.livewallengine.effect.EffectEngine
+
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -112,10 +114,15 @@ class GLQuadRenderer {
 
         shader.use()
 
+        val wNdc = (right - left).coerceAtLeast(0.0001f)
+        val hNdc = (top - bottom).coerceAtLeast(0.0001f)
+        // NDC X e Y no son isótropos en pantalla: compensar con aspect de pantalla
+        val layerAspect = (wNdc / hNdc) * EffectEngine.getScreenRatio()
         shader.draw(
             vertexBuffer,
             texture.getTextureId(),
-            alpha
+            alpha,
+            layerAspect
         )
         
         GLES20.glDisable(
