@@ -110,6 +110,7 @@ import com.romaster.livewallengine.image.FormulaImageCache
 import com.romaster.livewallengine.weather.WeatherProvider
 import com.romaster.livewallengine.model.LayerStack
 import com.romaster.livewallengine.image.ImageStorage
+import com.romaster.livewallengine.image.MaskStorage
 import com.romaster.livewallengine.video.VideoStorage
 import com.romaster.livewallengine.video.VideoPlayer
 import com.romaster.livewallengine.video.OverlayVideoPlayer
@@ -154,6 +155,8 @@ class MainActivity : AppCompatActivity() {
     private var exportPreviewBitmap: Bitmap? = null
     private var pendingImageLayerId: String? = null
     private val REQUEST_IMAGE_LAYER = 4711
+    private val REQUEST_EFFECT_MASK = 4712
+    private var pendingEffectMaskId: String? = null
     private val REQUEST_CLOCK_CRYSTAL_TEXTURE = 4712
     private val REQUEST_WIDGET_ICON_TTF = 4713
     private val REQUEST_WIDGET_ICON_JSON = 4714
@@ -3467,6 +3470,9 @@ private fun showFadeDurationDialog(
 
     private fun removeEffectLayer(layerId: String) {
         val project = ProjectManager.getProject()
+        project.effectLayers.find { it.id == layerId }?.let { fx ->
+            MaskStorage.deleteMask(this, fx.maskFileName)
+        }
         project.effectLayers.removeAll { it.id == layerId }
         editor.save()
         rebuildEffectLayerCards()
@@ -3709,12 +3715,16 @@ private fun showFadeDurationDialog(
                     val loadBtn = com.google.android.material.button.MaterialButton(this@MainActivity).apply {
                         text = getString(R.string.effect_mask_load)
                         setOnClickListener {
-                            // Etapa D: picker real. Por ahora placeholder toast.
-                            android.widget.Toast.makeText(
-                                this@MainActivity,
-                                "Máscara: se activará en la siguiente etapa de render",
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
+                            val eid = live()?.id ?: return@setOnClickListener
+                            pendingEffectMaskId = eid
+                            val intent = android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
+                                type = "image/*"
+                                addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                            }
+                            startActivityForResult(
+                                android.content.Intent.createChooser(intent, getString(R.string.effect_mask_load)),
+                                REQUEST_EFFECT_MASK
+                            )
                         }
                     }
                     typeExtra.addView(loadBtn)
@@ -3725,7 +3735,9 @@ private fun showFadeDurationDialog(
                     ).apply {
                         text = getString(R.string.effect_mask_clear)
                         setOnClickListener {
-                            live()?.maskFileName = null
+                            val curLive = live()
+                            MaskStorage.deleteMask(this@MainActivity, curLive?.maskFileName)
+                            curLive?.maskFileName = null
                             fileTv.text = getString(R.string.effect_mask_none)
                             editor.save()
                         }
@@ -7008,6 +7020,30 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
                             rebuildImageLayerCards()
                             notifyImageLayersChanged(reloadTextures = true)
                             Toast.makeText(this, getString(R.string.image_loaded), Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            this,
+                            getString(R.string.image_load_error, e.message ?: e.javaClass.simpleName),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            }
+
+            REQUEST_EFFECT_MASK -> {
+                val effectId = pendingEffectMaskId
+                pendingEffectMaskId = null
+                if (effectId != null) {
+                    try {
+                        val name = MaskStorage.importMask(this, uri, effectId)
+                        val effect = ProjectManager.getProject().effectLayers
+                            .find { it.id == effectId }
+                        if (effect != null) {
+                            effect.maskFileName = name
+                            editor.save()
+                            rebuildEffectLayerCards()
+                            Toast.makeText(this, getString(R.string.effect_mask_file, name), Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
                         Toast.makeText(

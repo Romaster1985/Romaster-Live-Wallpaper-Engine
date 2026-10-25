@@ -18,109 +18,65 @@
 
 package com.romaster.livewallengine.effect
 
+import android.content.Context
+import android.graphics.BitmapFactory
 import android.opengl.GLES20
+import android.opengl.GLUtils
+import com.romaster.livewallengine.image.MaskStorage
 import com.romaster.livewallengine.model.EffectType
 import com.romaster.livewallengine.project.ProjectManager
+import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Agrega los efectos de color activos para una capa objetivo y expone
- * uniforms GLSL + helpers para los renderers.
+ * Agrega efectos de color y máscara de recorte para una capa objetivo.
  *
  * targetKey: "vbg" | "vol" | "ckol" | "img:<id>" | "wdg:<id>"
  */
 object EffectEngine {
 
     data class ColorFxParams(
-        /** 0 = B&N, 1 = normal, 2 = hiper (desde slider 0–200). */
         val saturation: Float = 1f,
-        /** Desplazamiento de matiz en grados (−180…180). */
         val hueShift: Float = 0f,
         val invert: Boolean = false,
         val invertLumaPreserve: Boolean = false,
-        /** −1 = off; 0…1 = umbral de solarizado. */
         val solarize: Float = -1f,
         val tintR: Float = 1f,
         val tintG: Float = 0f,
         val tintB: Float = 0f,
-        /** 0…1 */
         val tintStrength: Float = 0f,
-        /** 0 = mix, 1 = multiply */
         val tintMode: Int = 0
-    ) {
-        val hasAny: Boolean
-            get() = saturation != 1f ||
-                hueShift != 0f ||
-                invert ||
-                solarize >= 0f ||
-                tintStrength > 0.001f
-    }
+    )
+
+    data class MaskParams(
+        val fileName: String,
+        /** Centro en espacio ortográfico (mismo sistema que capas). */
+        val centerX: Float,
+        val centerY: Float,
+        /** Escala lineal (1 = 100% → altura de pantalla completa). */
+        val scale: Float,
+        /** Rotación en radianes. */
+        val rotationRad: Float,
+        val invert: Boolean,
+        val aspect: Float
+    )
 
     val IDENTITY = ColorFxParams()
 
-    /**
-     * Fragmento GLSL: uniforms de efectos de color.
-     * Insertar junto al resto de uniforms del fragment shader.
-     */
-    const val GLSL_UNIFORMS = """
-        uniform float uFxSat;
-        uniform float uFxHue;
-        uniform float uFxInvert;
-        uniform float uFxInvertLuma;
-        uniform float uFxSolar;
-        uniform vec3  uFxTint;
-        uniform float uFxTintStr;
-        uniform float uFxTintMode;
-    """
+    // ---- Cache de texturas de máscara (hilo GL) ----
+    private val maskTexIds = ConcurrentHashMap<String, Int>()
+    private val maskAspect = ConcurrentHashMap<String, Float>()
+    private val maskMtime = ConcurrentHashMap<String, Long>()
+    @Volatile private var appContext: Context? = null
+    /** Último aspect ratio de pantalla (width/height) reportado por los renderers. */
+    @Volatile var lastScreenRatio: Float = 1f
 
-    /**
-     * Funciones GLSL para sat / hue / tint / solarize / invert.
-     * Llamar: `color.rgb = fxApplyColor(color.rgb);`
-     */
-    const val GLSL_FUNCS = """
-        vec3 fxRgb2Hsv(vec3 c) {
-            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-            float d = q.x - min(q.w, q.y);
-            float e = 1.0e-10;
-            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-        }
-        vec3 fxHsv2Rgb(vec3 c) {
-            vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-            vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-            return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-        }
-        vec3 fxApplyColor(vec3 c) {
-            float gray = dot(c, vec3(0.299, 0.587, 0.114));
-            c = mix(vec3(gray), c, uFxSat);
-            if (abs(uFxHue) > 0.01) {
-                vec3 hsv = fxRgb2Hsv(clamp(c, 0.0, 1.0));
-                hsv.x = fract(hsv.x + uFxHue / 360.0);
-                c = fxHsv2Rgb(hsv);
-            }
-            if (uFxTintStr > 0.001) {
-                if (uFxTintMode > 0.5) {
-                    c = mix(c, c * uFxTint, uFxTintStr);
-                } else {
-                    c = mix(c, uFxTint, uFxTintStr);
-                }
-            }
-            if (uFxSolar >= 0.0) {
-                float l = dot(c, vec3(0.299, 0.587, 0.114));
-                if (l > uFxSolar) c = 1.0 - c;
-            }
-            if (uFxInvert > 0.5) {
-                if (uFxInvertLuma > 0.5) {
-                    vec3 hsv = fxRgb2Hsv(clamp(c, 0.0, 1.0));
-                    hsv.x = fract(hsv.x + 0.5);
-                    c = fxHsv2Rgb(hsv);
-                } else {
-                    c = 1.0 - c;
-                }
-            }
-            return clamp(c, 0.0, 1.0);
-        }
-    """
+    fun setContext(ctx: Context) {
+        appContext = ctx.applicationContext
+    }
+
+    fun setScreenRatio(ratio: Float) {
+        if (ratio > 0.01f) lastScreenRatio = ratio
+    }
 
     fun paramsFor(targetKey: String): ColorFxParams {
         val list = try {
@@ -143,19 +99,13 @@ object EffectEngine {
 
         for (e in list) {
             when (e.type) {
-                EffectType.SATURATION -> {
-                    sat = (e.saturation / 100f).coerceIn(0f, 2f)
-                }
-                EffectType.HUE -> {
-                    hue = e.hueShift.coerceIn(-180f, 180f)
-                }
+                EffectType.SATURATION -> sat = (e.saturation / 100f).coerceIn(0f, 2f)
+                EffectType.HUE -> hue = e.hueShift.coerceIn(-180f, 180f)
                 EffectType.INVERT -> {
                     invert = true
                     invertLuma = e.invertLumaPreserve
                 }
-                EffectType.SOLARIZE -> {
-                    solar = (e.solarizeThreshold / 100f).coerceIn(0f, 1f)
-                }
+                EffectType.SOLARIZE -> solar = (e.solarizeThreshold / 100f).coerceIn(0f, 1f)
                 EffectType.TINT -> {
                     val c = e.tintColor
                     tr = ((c shr 16) and 0xFF) / 255f
@@ -164,36 +114,129 @@ object EffectEngine {
                     tStr = (e.tintStrength / 100f).coerceIn(0f, 1f)
                     tMode = e.tintMode.coerceIn(0, 1)
                 }
-                EffectType.CLIP_MASK -> {
-                    // Etapa D
-                }
+                EffectType.CLIP_MASK -> { /* ver maskFor */ }
             }
         }
         return ColorFxParams(sat, hue, invert, invertLuma, solar, tr, tg, tb, tStr, tMode)
     }
 
     /**
-     * Envía uniforms al programa actual (debe estar en use).
-     * Resuelve locations por nombre cada vez (barato frente al resto del frame).
+     * Parámetros de máscara para [targetKey] (último CLIP_MASK con archivo válido).
+     * [screenRatio] = width/height de la superficie de render.
      */
+    fun maskFor(targetKey: String, screenRatio: Float): MaskParams? {
+        val list = try {
+            ProjectManager.getProject().effectLayers.filter {
+                it.targetKey == targetKey && it.type == EffectType.CLIP_MASK &&
+                    !it.maskFileName.isNullOrBlank()
+            }
+        } catch (_: Exception) {
+            return null
+        }
+        val e = list.lastOrNull() ?: return null
+        val name = e.maskFileName ?: return null
+        val aspect = maskAspect[name] ?: 1f
+        val scale = (e.maskScale / 100f).coerceIn(0.05f, 4f)
+        val cx = (e.maskX / 100f) * screenRatio
+        val cy = -(e.maskY / 100f)
+        val rot = Math.toRadians(e.maskRotation.toDouble()).toFloat()
+        return MaskParams(name, cx, cy, scale, rot, e.maskInvert, aspect)
+    }
+
+    /**
+     * Asegura textura GL para la máscara. Llamar solo en hilo GL.
+     * @return textureId o 0 si falló
+     */
+    fun ensureMaskTexture(fileName: String): Int {
+        val ctx = appContext ?: return 0
+        val file = MaskStorage.getMaskFile(ctx, fileName)
+        if (!file.exists()) return 0
+        val mtime = file.lastModified()
+        maskTexIds[fileName]?.let { id ->
+            if (id != 0 && maskMtime[fileName] == mtime) return id
+            if (id != 0) GLES20.glDeleteTextures(1, intArrayOf(id), 0)
+            maskTexIds.remove(fileName)
+        }
+        return try {
+            val opts = BitmapFactory.Options().apply { inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888 }
+            val bmp = BitmapFactory.decodeFile(file.absolutePath, opts) ?: return 0
+            val aspect = if (bmp.height > 0) bmp.width.toFloat() / bmp.height.toFloat() else 1f
+            maskAspect[fileName] = aspect
+            val ids = IntArray(1)
+            GLES20.glGenTextures(1, ids, 0)
+            val id = ids[0]
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, id)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0)
+            bmp.recycle()
+            maskTexIds[fileName] = id
+            maskMtime[fileName] = mtime
+            id
+        } catch (_: Exception) {
+            0
+        }
+    }
+
+    fun invalidateMask(fileName: String?) {
+        if (fileName.isNullOrBlank()) return
+        maskTexIds.remove(fileName)?.let { id ->
+            if (id != 0) GLES20.glDeleteTextures(1, intArrayOf(id), 0)
+        }
+        maskAspect.remove(fileName)
+    }
+
+    fun releaseMaskTextures() {
+        for ((_, id) in maskTexIds) {
+            if (id != 0) {
+                GLES20.glDeleteTextures(1, intArrayOf(id), 0)
+            }
+        }
+        maskTexIds.clear()
+        maskAspect.clear()
+    }
+
     fun bindColorFx(program: Int, p: ColorFxParams = IDENTITY) {
         if (program == 0) return
         fun loc(name: String) = GLES20.glGetUniformLocation(program, name)
-        val sat = loc("uFxSat")
-        if (sat >= 0) GLES20.glUniform1f(sat, p.saturation)
-        val hue = loc("uFxHue")
-        if (hue >= 0) GLES20.glUniform1f(hue, p.hueShift)
-        val inv = loc("uFxInvert")
-        if (inv >= 0) GLES20.glUniform1f(inv, if (p.invert) 1f else 0f)
-        val invL = loc("uFxInvertLuma")
-        if (invL >= 0) GLES20.glUniform1f(invL, if (p.invertLumaPreserve) 1f else 0f)
-        val sol = loc("uFxSolar")
-        if (sol >= 0) GLES20.glUniform1f(sol, p.solarize)
-        val tint = loc("uFxTint")
-        if (tint >= 0) GLES20.glUniform3f(tint, p.tintR, p.tintG, p.tintB)
-        val tStr = loc("uFxTintStr")
-        if (tStr >= 0) GLES20.glUniform1f(tStr, p.tintStrength)
-        val tMode = loc("uFxTintMode")
-        if (tMode >= 0) GLES20.glUniform1f(tMode, p.tintMode.toFloat())
+        loc("uFxSat").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, p.saturation) }
+        loc("uFxHue").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, p.hueShift) }
+        loc("uFxInvert").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, if (p.invert) 1f else 0f) }
+        loc("uFxInvertLuma").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, if (p.invertLumaPreserve) 1f else 0f) }
+        loc("uFxSolar").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, p.solarize) }
+        loc("uFxTint").takeIf { it >= 0 }?.let { GLES20.glUniform3f(it, p.tintR, p.tintG, p.tintB) }
+        loc("uFxTintStr").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, p.tintStrength) }
+        loc("uFxTintMode").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, p.tintMode.toFloat()) }
+    }
+
+    /**
+     * Bindea máscara en TEXTURE1 y uniforms. Si no hay máscara, desactiva uMaskEnabled.
+     */
+    fun bindMaskFx(program: Int, targetKey: String, screenRatio: Float) {
+        if (program == 0) return
+        fun loc(name: String) = GLES20.glGetUniformLocation(program, name)
+        val enabledLoc = loc("uMaskEnabled")
+        val mask = maskFor(targetKey, screenRatio)
+        if (mask == null) {
+            if (enabledLoc >= 0) GLES20.glUniform1f(enabledLoc, 0f)
+            return
+        }
+        val texId = ensureMaskTexture(mask.fileName)
+        if (texId == 0) {
+            if (enabledLoc >= 0) GLES20.glUniform1f(enabledLoc, 0f)
+            return
+        }
+        if (enabledLoc >= 0) GLES20.glUniform1f(enabledLoc, 1f)
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE1)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId)
+        loc("uMask").takeIf { it >= 0 }?.let { GLES20.glUniform1i(it, 1) }
+        loc("uMaskCenter").takeIf { it >= 0 }?.let { GLES20.glUniform2f(it, mask.centerX, mask.centerY) }
+        loc("uMaskScale").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, mask.scale) }
+        loc("uMaskAspect").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, mask.aspect) }
+        loc("uMaskRot").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, mask.rotationRad) }
+        loc("uMaskInvert").takeIf { it >= 0 }?.let { GLES20.glUniform1f(it, if (mask.invert) 1f else 0f) }
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
     }
 }

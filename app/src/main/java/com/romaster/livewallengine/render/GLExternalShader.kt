@@ -57,17 +57,20 @@ class GLExternalShader {
         uniform mat4 uMVPMatrix; // AGREGADO
 
         varying vec2 vTexCoord;
+        varying vec2 vOrtho;
 
         void main() {
 
             // MODIFICADO: Multiplicamos por la matriz MVP para corregir el Aspect Ratio y Rotar
-            gl_Position =
+            vec4 pos =
                 uMVPMatrix *
                 vec4(
                     aPosition,
                     0.0,
                     1.0
                 );
+            vOrtho = pos.xy;
+            gl_Position = pos;
 
             vec4 tex =
                 uTexMatrix *
@@ -122,6 +125,31 @@ class GLExternalShader {
             vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
             vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
             return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+        }
+        uniform sampler2D uMask;
+        uniform float uMaskEnabled;
+        uniform vec2 uMaskCenter;
+        uniform float uMaskScale;
+        uniform float uMaskAspect;
+        uniform float uMaskRot;
+        uniform float uMaskInvert;
+        varying vec2 vOrtho;
+        float fxMaskAlpha() {
+            if (uMaskEnabled < 0.5) return 1.0;
+            vec2 d = vOrtho - uMaskCenter;
+            float c0 = cos(-uMaskRot);
+            float s0 = sin(-uMaskRot);
+            vec2 r = vec2(c0 * d.x - s0 * d.y, s0 * d.x + c0 * d.y);
+            float halfH = max(uMaskScale, 0.001);
+            float halfW = halfH * max(uMaskAspect, 0.001);
+            vec2 uv = vec2(r.x / halfW, r.y / halfH) * 0.5 + 0.5;
+            float m = 0.0;
+            if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+                vec4 mt = texture2D(uMask, uv);
+                m = max(mt.a, max(mt.r, max(mt.g, mt.b)));
+            }
+            if (uMaskInvert > 0.5) m = 1.0 - m;
+            return m;
         }
         vec3 fxApplyColor(vec3 c) {
             float gray = dot(c, vec3(0.299, 0.587, 0.114));
@@ -192,6 +220,7 @@ class GLExternalShader {
             }
     
             color.rgb = fxApplyColor(color.rgb);
+            color.a *= fxMaskAlpha();
             gl_FragColor = color;
         }
         """.trimIndent()
@@ -404,6 +433,7 @@ class GLExternalShader {
         )
 
         EffectEngine.bindColorFx(program, EffectEngine.paramsFor("vol"))
+        EffectEngine.bindMaskFx(program, "vol", EffectEngine.lastScreenRatio)
 
         GLES20.glDrawArrays(
 

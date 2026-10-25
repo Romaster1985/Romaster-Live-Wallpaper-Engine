@@ -135,6 +135,12 @@ object ProjectImporter {
                             entry.name
                         )
 
+                    entry.name.startsWith("masks/") ->
+                        File(
+                            context.filesDir,
+                            entry.name
+                        )
+
                     // Compat ZIPs viejos: pingpong/ → videos/ con nombres fijos
                     entry.name.startsWith("pingpong/") -> {
                         val base = entry.name.removePrefix("pingpong/")

@@ -238,6 +238,18 @@ object ProjectExporter {
             onFileDone()
         }
 
+        // Máscaras de recorte (Efectos)
+        for (fx in project.effectLayers) {
+            val name = fx.maskFileName ?: continue
+            addFile(
+                zip,
+                File(context.filesDir, "masks/$name"),
+                "masks/$name",
+                context
+            )
+            onFileDone()
+        }
+
         // Capas de imagen (Pics-OL)
         for (layer in project.imageLayers) {
             val name = layer.fileName ?: continue

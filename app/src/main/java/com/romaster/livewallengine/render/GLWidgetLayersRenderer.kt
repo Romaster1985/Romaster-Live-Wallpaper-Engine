@@ -61,6 +61,7 @@ class GLWidgetLayersRenderer {
     private var samplerHandle = 0
     private var alphaHandle = 0
     private var mvpHandle = 0
+    private var modelHandle = 0
 
     private lateinit var vertexBuffer: FloatBuffer
     private val textures = mutableMapOf<String, GLTexture>()
@@ -89,8 +90,12 @@ class GLWidgetLayersRenderer {
         attribute vec2 aPosition;
         attribute vec2 aTexCoord;
         uniform mat4 uMVP;
+        uniform mat4 uModel;
         varying vec2 vTexCoord;
+        varying vec2 vOrtho;
         void main() {
+            vec4 o = uModel * vec4(aPosition, 0.0, 1.0);
+            vOrtho = o.xy;
             gl_Position = uMVP * vec4(aPosition, 0.0, 1.0);
             vTexCoord = aTexCoord;
         }
@@ -151,10 +156,35 @@ class GLWidgetLayersRenderer {
             return clamp(c, 0.0, 1.0);
         }
 
+        uniform sampler2D uMask;
+        uniform float uMaskEnabled;
+        uniform vec2 uMaskCenter;
+        uniform float uMaskScale;
+        uniform float uMaskAspect;
+        uniform float uMaskRot;
+        uniform float uMaskInvert;
+        varying vec2 vOrtho;
+        float fxMaskAlpha() {
+            if (uMaskEnabled < 0.5) return 1.0;
+            vec2 d = vOrtho - uMaskCenter;
+            float c0 = cos(-uMaskRot);
+            float s0 = sin(-uMaskRot);
+            vec2 r = vec2(c0 * d.x - s0 * d.y, s0 * d.x + c0 * d.y);
+            float halfH = max(uMaskScale, 0.001);
+            float halfW = halfH * max(uMaskAspect, 0.001);
+            vec2 uv = vec2(r.x / halfW, r.y / halfH) * 0.5 + 0.5;
+            float m = 0.0;
+            if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+                vec4 mt = texture2D(uMask, uv);
+                m = max(mt.a, max(mt.r, max(mt.g, mt.b)));
+            }
+            if (uMaskInvert > 0.5) m = 1.0 - m;
+            return m;
+        }
         void main() {
             vec4 c = texture2D(uTexture, vTexCoord);
             c.rgb = fxApplyColor(c.rgb);
-            gl_FragColor = vec4(c.rgb, c.a * uAlpha);
+            gl_FragColor = vec4(c.rgb, c.a * uAlpha * fxMaskAlpha());
         }
     """.trimIndent()
 
@@ -183,7 +213,9 @@ class GLWidgetLayersRenderer {
         samplerHandle = GLES20.glGetUniformLocation(program, "uTexture")
         alphaHandle = GLES20.glGetUniformLocation(program, "uAlpha")
         mvpHandle = GLES20.glGetUniformLocation(program, "uMVP")
+        modelHandle = GLES20.glGetUniformLocation(program, "uModel")
 
+        EffectEngine.setContext(ctx)
         reloadFromProject(force = true)
     }
 
@@ -292,6 +324,11 @@ class GLWidgetLayersRenderer {
         GLES20.glUniform1i(samplerHandle, 0)
         GLES20.glUniform1f(alphaHandle, alphaAnim)
         EffectEngine.bindColorFx(program, EffectEngine.paramsFor("wdg:" + id))
+        if (modelHandle >= 0) {
+            GLES20.glUniformMatrix4fv(modelHandle, 1, false, model, 0)
+        }
+        EffectEngine.setScreenRatio(screenRatio)
+        EffectEngine.bindMaskFx(program, "wdg:" + id, screenRatio)
 
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvp, 0)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)

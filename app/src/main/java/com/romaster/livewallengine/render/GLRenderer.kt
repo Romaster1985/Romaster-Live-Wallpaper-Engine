@@ -113,10 +113,13 @@ class GLRenderer(
     uniform mat4 uTexMatrix;
     uniform mat4 uTransform;
     varying vec2 vTexCoord;
+    varying vec2 vOrtho;
     void main() {
         vec4 tex = uTexMatrix * vec4(aTexCoord, 0.0, 1.0);
         vTexCoord = tex.xy;
-        gl_Position = uTransform * vec4(aPosition, 0.0, 1.0);
+        vec4 o = uTransform * vec4(aPosition, 0.0, 1.0);
+        vOrtho = o.xy;
+        gl_Position = o;
     }
     """.trimIndent()
 
@@ -176,10 +179,35 @@ class GLRenderer(
         return clamp(c, 0.0, 1.0);
     }
 
+    uniform sampler2D uMask;
+    uniform float uMaskEnabled;
+    uniform vec2 uMaskCenter;
+    uniform float uMaskScale;
+    uniform float uMaskAspect;
+    uniform float uMaskRot;
+    uniform float uMaskInvert;
+    varying vec2 vOrtho;
+    float fxMaskAlpha() {
+        if (uMaskEnabled < 0.5) return 1.0;
+        vec2 d = vOrtho - uMaskCenter;
+        float c0 = cos(-uMaskRot);
+        float s0 = sin(-uMaskRot);
+        vec2 r = vec2(c0 * d.x - s0 * d.y, s0 * d.x + c0 * d.y);
+        float halfH = max(uMaskScale, 0.001);
+        float halfW = halfH * max(uMaskAspect, 0.001);
+        vec2 uv = vec2(r.x / halfW, r.y / halfH) * 0.5 + 0.5;
+        float m = 0.0;
+        if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+            vec4 mt = texture2D(uMask, uv);
+            m = max(mt.a, max(mt.r, max(mt.g, mt.b)));
+        }
+        if (uMaskInvert > 0.5) m = 1.0 - m;
+        return m;
+    }
     void main() {
         vec4 color = texture2D(uTexture, vTexCoord);
         color.rgb = fxApplyColor(color.rgb);
-        color.a *= uAlpha;
+        color.a *= uAlpha * fxMaskAlpha();
         gl_FragColor = color;
     }
     """.trimIndent()
@@ -197,6 +225,7 @@ class GLRenderer(
             throw RuntimeException("No se pudo inicializar EGL")
         }
 
+        EffectEngine.setContext(context)
         initializeTriangle()
         textureId = createExternalTexture()
         surfaceTexture = SurfaceTexture(textureId)
@@ -505,6 +534,9 @@ class GLRenderer(
         GLES20.glUniformMatrix4fv(transformHandle, 1, false, transformMatrix, 0)
         GLES20.glUniform1f(alphaHandle, drawAlpha)
         EffectEngine.bindColorFx(program, EffectEngine.paramsFor("vbg"))
+        val scr = renderWidth.toFloat() / renderHeight.toFloat().coerceAtLeast(1)
+        EffectEngine.setScreenRatio(scr)
+        EffectEngine.bindMaskFx(program, "vbg", scr)
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 6)
 
