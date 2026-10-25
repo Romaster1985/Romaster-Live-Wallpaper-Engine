@@ -157,6 +157,7 @@ object DefaultProject {
             widgetLayers = mutableListOf(),
 
             animationLayers = mutableListOf(),
+            effectLayers = mutableListOf(),
 
             layerStack = mutableListOf()
 

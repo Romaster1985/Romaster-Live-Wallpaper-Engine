@@ -106,6 +106,15 @@
                 layout="@layout/layout_animations"/>
 
             <!-- ========================= -->
+            <!-- Efectos -->
+            <!-- ========================= -->
+
+            <include
+                android:id="@+id/panelEffects"
+                android:visibility="gone"
+                layout="@layout/layout_effects"/>
+
+            <!-- ========================= -->
             <!-- Proyecto -->
             <!-- ========================= -->
 

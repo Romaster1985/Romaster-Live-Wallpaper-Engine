@@ -464,6 +464,7 @@ Check your connection and try again.</string>
 
     <!-- Animaciones tab -->
     <string name="tab_animations">✨ Animations</string>
+    <string name="tab_effects">🔮 Effects</string>
     <string name="anim_card_title">Animation %1$d</string>
     <string name="anim_label_target">Layer to animate</string>
     <string name="anim_label_reaction">Reaction</string>
@@ -565,4 +566,36 @@ Check your connection and try again.</string>
     <string name="formula_cat_music">Music</string>
     <string name="pics_image_formula">Image from formula</string>
     <string name="pics_formula_label">Formula: %1$s</string>
+
+    <!-- Effects -->
+    <string name="effects_tab_title">Effects</string>
+    <string name="effects_tab_hint">Apply saturation, hue, tint, invert, solarize or clip masks to any layer.</string>
+    <string name="effect_card_title">Effect %1$d</string>
+    <string name="effect_label_target">Apply to layer</string>
+    <string name="effect_label_type">Effect type</string>
+    <string name="effect_type_saturation">Saturation</string>
+    <string name="effect_type_invert">Invert colors</string>
+    <string name="effect_type_solarize">Solarize</string>
+    <string name="effect_type_tint">Tint</string>
+    <string name="effect_type_hue">Hue</string>
+    <string name="effect_type_clip_mask">Clip mask</string>
+    <string name="effect_saturation">Saturation</string>
+    <string name="effect_invert_luma">Hue only (keep luminance)</string>
+    <string name="effect_solarize_threshold">Threshold</string>
+    <string name="effect_tint_color">Tint color</string>
+    <string name="effect_tint_strength">Tint strength</string>
+    <string name="effect_tint_mode">Blend mode</string>
+    <string name="effect_tint_mode_mix">Mix</string>
+    <string name="effect_tint_mode_multiply">Multiply</string>
+    <string name="effect_hue_shift">Hue shift</string>
+    <string name="effect_mask_load">Load mask PNG</string>
+    <string name="effect_mask_clear">Remove mask</string>
+    <string name="effect_mask_none">No mask</string>
+    <string name="effect_mask_file">File: %1$s</string>
+    <string name="effect_mask_scale">Mask scale</string>
+    <string name="effect_mask_x">Mask X position</string>
+    <string name="effect_mask_y">Mask Y position</string>
+    <string name="effect_mask_rotation">Mask rotation</string>
+    <string name="effect_mask_invert">Invert mask</string>
+    <string name="effect_delete">Delete effect</string>
 </resources>

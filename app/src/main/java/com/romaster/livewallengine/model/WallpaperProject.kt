@@ -50,6 +50,10 @@ data class WallpaperProject(
     var animationLayers: MutableList<AnimationLayer> =
         mutableListOf(),
 
+    /** Efectos de color / máscara (tab Efectos). */
+    var effectLayers: MutableList<EffectLayer> =
+        mutableListOf(),
+
     /**
      * Orden de composición de atrás hacia adelante.
      * Tokens: "vbg", "vol", "ckol" + ids de ImageLayer.

@@ -473,6 +473,7 @@ Comprobá la conexión e intentá de nuevo.</string>
 
     <!-- Animaciones tab -->
     <string name="tab_animations">✨ Animaciones</string>
+    <string name="tab_effects">🔮 Efectos</string>
     <string name="anim_card_title">Animación %1$d</string>
     <string name="anim_label_target">Capa a animar</string>
     <string name="anim_label_reaction">Reacción</string>
@@ -574,4 +575,36 @@ Comprobá la conexión e intentá de nuevo.</string>
     <string name="formula_cat_music">Música</string>
     <string name="pics_image_formula">Imagen por fórmula</string>
     <string name="pics_formula_label">Fórmula: %1$s</string>
+
+    <!-- Efectos -->
+    <string name="effects_tab_title">Efectos</string>
+    <string name="effects_tab_hint">Aplicá saturación, matiz, tinte, inversión, solarizado o máscaras de recorte a cualquier capa.</string>
+    <string name="effect_card_title">Efecto %1$d</string>
+    <string name="effect_label_target">Aplicar a capa</string>
+    <string name="effect_label_type">Tipo de efecto</string>
+    <string name="effect_type_saturation">Saturación</string>
+    <string name="effect_type_invert">Invertir colores</string>
+    <string name="effect_type_solarize">Solarizar</string>
+    <string name="effect_type_tint">Tinte</string>
+    <string name="effect_type_hue">Tono / Matiz (Hue)</string>
+    <string name="effect_type_clip_mask">Máscara de recorte</string>
+    <string name="effect_saturation">Saturación</string>
+    <string name="effect_invert_luma">Solo tono (mantener luminancia)</string>
+    <string name="effect_solarize_threshold">Umbral</string>
+    <string name="effect_tint_color">Color de tinte</string>
+    <string name="effect_tint_strength">Intensidad del tinte</string>
+    <string name="effect_tint_mode">Modo de mezcla</string>
+    <string name="effect_tint_mode_mix">Mezcla</string>
+    <string name="effect_tint_mode_multiply">Multiplicar</string>
+    <string name="effect_hue_shift">Desplazamiento de matiz</string>
+    <string name="effect_mask_load">Cargar máscara PNG</string>
+    <string name="effect_mask_clear">Quitar máscara</string>
+    <string name="effect_mask_none">Sin máscara</string>
+    <string name="effect_mask_file">Archivo: %1$s</string>
+    <string name="effect_mask_scale">Escala de máscara</string>
+    <string name="effect_mask_x">Posición X máscara</string>
+    <string name="effect_mask_y">Posición Y máscara</string>
+    <string name="effect_mask_rotation">Rotación máscara</string>
+    <string name="effect_mask_invert">Invertir máscara</string>
+    <string name="effect_delete">Eliminar efecto</string>
 </resources>

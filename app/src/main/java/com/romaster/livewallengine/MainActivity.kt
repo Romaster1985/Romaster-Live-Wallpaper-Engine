@@ -96,6 +96,8 @@ import com.romaster.livewallengine.model.ProgressShape
 import com.romaster.livewallengine.model.ProgressFillMode
 import com.romaster.livewallengine.model.WidgetType
 import com.romaster.livewallengine.model.AnimationLayer
+import com.romaster.livewallengine.model.EffectLayer
+import com.romaster.livewallengine.model.EffectType
 import com.romaster.livewallengine.animation.AnimationEngine
 import com.romaster.livewallengine.model.AnimationReaction
 import com.romaster.livewallengine.model.AnimationAction
@@ -143,6 +145,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var panelPics: View
     private lateinit var panelWidgets: View
     private lateinit var panelAnimations: View
+    private lateinit var panelEffects: View
     private lateinit var panelClock: View
     
     private lateinit var panelProject: View
@@ -228,6 +231,8 @@ loadDeviceInformation()
             setupWidgetsTab()
             FileLogger.log(this, "6d - setupAnimationsTab")
             setupAnimationsTab()
+            FileLogger.log(this, "6e - setupEffectsTab")
+            setupEffectsTab()
     
             FileLogger.log(this, "7 - setupProjectTab")
             setupProjectTab()
@@ -278,6 +283,7 @@ loadDeviceInformation()
         panelPics = findViewById(R.id.panelPics)
         panelWidgets = findViewById(R.id.panelWidgets)
         panelAnimations = findViewById(R.id.panelAnimations)
+        panelEffects = findViewById(R.id.panelEffects)
     
         panelProject = findViewById(R.id.panelProject)
         panelSettings = findViewById(R.id.panelSettings)
@@ -318,6 +324,11 @@ loadDeviceInformation()
             tabLayout.newTab()
                 .setText(getString(R.string.tab_animations))
         )
+
+        tabLayout.addTab(
+            tabLayout.newTab()
+                .setText(getString(R.string.tab_effects))
+        )
     
         tabLayout.addTab(
             tabLayout.newTab()
@@ -341,6 +352,7 @@ loadDeviceInformation()
         panelPics.visibility = View.GONE
         panelWidgets.visibility = View.GONE
         panelAnimations.visibility = View.GONE
+        panelEffects.visibility = View.GONE
         panelProject.visibility = View.GONE
         panelSettings.visibility = View.GONE
     
@@ -359,6 +371,7 @@ loadDeviceInformation()
                     panelPics.visibility = View.GONE
                     panelWidgets.visibility = View.GONE
                     panelAnimations.visibility = View.GONE
+                    panelEffects.visibility = View.GONE
                     panelProject.visibility = View.GONE
                     panelSettings.visibility = View.GONE
     
@@ -370,8 +383,9 @@ loadDeviceInformation()
                         4 -> panelPics.visibility = View.VISIBLE
                         5 -> panelWidgets.visibility = View.VISIBLE
                         6 -> panelAnimations.visibility = View.VISIBLE
-                        7 -> panelProject.visibility = View.VISIBLE
-                        8 -> panelSettings.visibility = View.VISIBLE
+                        7 -> panelEffects.visibility = View.VISIBLE
+                        8 -> panelProject.visibility = View.VISIBLE
+                        9 -> panelSettings.visibility = View.VISIBLE
                     }
                 }
     
@@ -2186,6 +2200,7 @@ private fun showFadeDurationDialog(
                     text = widgetDisplayName(liveLayer, displayIndex)
                     editor.save()
                     rebuildAnimationLayerCards()
+                    rebuildEffectLayerCards()
                     rebuildWidgetSoftStartRows()
                     rebuildWidgetDelayStartRows()
                 }
@@ -3432,6 +3447,346 @@ private fun showFadeDurationDialog(
     // ANIMACIONES
     // =====================================================
 
+
+    // ========================= Efectos =========================
+
+    private fun setupEffectsTab() {
+        val addBtn = findViewById<View>(R.id.buttonAddEffectLayer)
+        addBtn.isClickable = true
+        addBtn.isFocusable = true
+        addBtn.setOnClickListener { addEffectLayer() }
+        rebuildEffectLayerCards()
+    }
+
+    private fun addEffectLayer() {
+        val project = ProjectManager.getProject()
+        project.effectLayers.add(EffectLayer())
+        editor.save()
+        rebuildEffectLayerCards()
+    }
+
+    private fun removeEffectLayer(layerId: String) {
+        val project = ProjectManager.getProject()
+        project.effectLayers.removeAll { it.id == layerId }
+        editor.save()
+        rebuildEffectLayerCards()
+    }
+
+    private fun rebuildEffectLayerCards() {
+        val container = findViewById<LinearLayout>(R.id.containerEffectLayers)
+        container.removeAllViews()
+        val project = ProjectManager.getProject()
+        project.effectLayers.forEachIndexed { index, layer ->
+            container.addView(buildEffectLayerCard(layer, index + 1))
+        }
+    }
+
+    private fun effectDisplayName(layer: EffectLayer, index1Based: Int): String {
+        val custom = layer.customName.trim()
+        return if (custom.isNotEmpty()) custom
+        else getString(R.string.effect_card_title, index1Based)
+    }
+
+    private fun effectTypeLabel(t: EffectType): String = when (t) {
+        EffectType.SATURATION -> getString(R.string.effect_type_saturation)
+        EffectType.INVERT -> getString(R.string.effect_type_invert)
+        EffectType.SOLARIZE -> getString(R.string.effect_type_solarize)
+        EffectType.TINT -> getString(R.string.effect_type_tint)
+        EffectType.HUE -> getString(R.string.effect_type_hue)
+        EffectType.CLIP_MASK -> getString(R.string.effect_type_clip_mask)
+    }
+
+    private fun buildEffectLayerCard(layer: EffectLayer, number: Int): View {
+        val density = resources.displayMetrics.density
+        val card = com.google.android.material.card.MaterialCardView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).also { it.bottomMargin = (10 * density).toInt() }
+            radius = 12 * density
+            cardElevation = 2 * density
+        }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((14 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
+        }
+        card.addView(root)
+
+        fun live(): EffectLayer? =
+            ProjectManager.getProject().effectLayers.find { it.id == layer.id }
+
+        // Title (renombrable)
+        val titleTv = TextView(this).apply {
+            text = effectDisplayName(layer, number)
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, (6 * density).toInt())
+            setOnClickListener {
+                val liveLayer = live() ?: return@setOnClickListener
+                showRenameLayerDialog(
+                    liveLayer.customName,
+                    getString(R.string.effect_card_title, number)
+                ) { name ->
+                    liveLayer.customName = name
+                    text = effectDisplayName(liveLayer, number)
+                    editor.save()
+                }
+            }
+        }
+        root.addView(titleTv)
+
+        // Target
+        val targets = animationTargetOptions()
+        val targetLabels = targets.map { it.second }
+        var targetIdx = targets.indexOfFirst { it.first == layer.targetKey }.coerceAtLeast(0)
+        root.addView(TextView(this).apply {
+            text = getString(R.string.effect_label_target)
+            setPadding(0, (6 * density).toInt(), 0, (2 * density).toInt())
+        })
+        val targetAuto = android.widget.AutoCompleteTextView(this).apply {
+            setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, targetLabels))
+            setText(targetLabels.getOrElse(targetIdx) { targetLabels.firstOrNull() ?: "" }, false)
+            isFocusable = false
+            setOnClickListener { showDropDown() }
+            setOnItemClickListener { _, _, pos, _ ->
+                if (loadingUI) return@setOnItemClickListener
+                live()?.targetKey = targets[pos].first
+                editor.save()
+            }
+        }
+        root.addView(targetAuto)
+
+        // Type
+        val types = EffectType.entries
+        val typeLabels = types.map { effectTypeLabel(it) }
+        var typeIdx = types.indexOf(layer.type).coerceAtLeast(0)
+        root.addView(TextView(this).apply {
+            text = getString(R.string.effect_label_type)
+            setPadding(0, (10 * density).toInt(), 0, (2 * density).toInt())
+        })
+        val typeExtra = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+
+        fun refreshTypeExtra() {
+            typeExtra.removeAllViews()
+            val cur = live() ?: return
+            fun addFxSlider(
+                title: String,
+                from: Float,
+                to: Float,
+                value: Float,
+                default: Float,
+                step: Float = 1f,
+                format: (Float) -> String = { v -> v.toInt().toString() },
+                onChange: (Float) -> Unit
+            ) {
+                val row = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    setPadding(0, (8 * density).toInt(), 0, 0)
+                }
+                row.addView(TextView(this@MainActivity).apply {
+                    text = title
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                })
+                val valueTv = TextView(this@MainActivity).apply { text = format(value) }
+                row.addView(valueTv)
+                typeExtra.addView(row)
+                val slider = com.google.android.material.slider.Slider(this@MainActivity).apply {
+                    valueFrom = from
+                    valueTo = to
+                    stepSize = step
+                    this.value = value.coerceIn(from, to)
+                    addOnChangeListener { _, v, fromUser ->
+                        valueTv.text = format(v)
+                        if (fromUser && !loadingUI) {
+                            onChange(v)
+                            editor.save()
+                        }
+                    }
+                }
+                typeExtra.addView(slider)
+                attachSliderResetButton(slider, valueTv, default) { v ->
+                    valueTv.text = format(v)
+                    onChange(v)
+                    editor.save()
+                }
+            }
+
+            when (cur.type) {
+                EffectType.SATURATION -> {
+                    addFxSlider(
+                        getString(R.string.effect_saturation),
+                        0f, 200f, cur.saturation, 100f
+                    ) { v -> live()?.saturation = v }
+                }
+                EffectType.INVERT -> {
+                    val cb = com.google.android.material.checkbox.MaterialCheckBox(this@MainActivity).apply {
+                        text = getString(R.string.effect_invert_luma)
+                        isChecked = cur.invertLumaPreserve
+                        setOnCheckedChangeListener { _, checked ->
+                            if (loadingUI) return@setOnCheckedChangeListener
+                            live()?.invertLumaPreserve = checked
+                            editor.save()
+                        }
+                    }
+                    typeExtra.addView(cb)
+                }
+                EffectType.SOLARIZE -> {
+                    addFxSlider(
+                        getString(R.string.effect_solarize_threshold),
+                        0f, 100f, cur.solarizeThreshold, 50f
+                    ) { v -> live()?.solarizeThreshold = v }
+                }
+                EffectType.TINT -> {
+                    val colorBtn = com.google.android.material.button.MaterialButton(
+                        this@MainActivity,
+                        null,
+                        com.google.android.material.R.attr.materialButtonOutlinedStyle
+                    ).apply {
+                        text = getString(R.string.effect_tint_color)
+                        setBackgroundColor(cur.tintColor)
+                        setOnClickListener {
+                            val c = live() ?: return@setOnClickListener
+                            ColorPickerDialog.show(
+                                this@MainActivity,
+                                String.format("#%08X", c.tintColor)
+                            ) { hex ->
+                                val parsed = android.graphics.Color.parseColor(hex)
+                                live()?.tintColor = parsed
+                                setBackgroundColor(parsed)
+                                editor.save()
+                            }
+                        }
+                    }
+                    typeExtra.addView(colorBtn)
+                    addFxSlider(
+                        getString(R.string.effect_tint_strength),
+                        0f, 100f, cur.tintStrength, 50f
+                    ) { v -> live()?.tintStrength = v }
+                    val modes = listOf(
+                        getString(R.string.effect_tint_mode_mix),
+                        getString(R.string.effect_tint_mode_multiply)
+                    )
+                    typeExtra.addView(TextView(this@MainActivity).apply {
+                        text = getString(R.string.effect_tint_mode)
+                        setPadding(0, (8 * density).toInt(), 0, (2 * density).toInt())
+                    })
+                    val modeAuto = android.widget.AutoCompleteTextView(this@MainActivity).apply {
+                        setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, modes))
+                        setText(modes[cur.tintMode.coerceIn(0, 1)], false)
+                        isFocusable = false
+                        setOnClickListener { showDropDown() }
+                        setOnItemClickListener { _, _, pos, _ ->
+                            if (loadingUI) return@setOnItemClickListener
+                            live()?.tintMode = pos
+                            editor.save()
+                        }
+                    }
+                    typeExtra.addView(modeAuto)
+                }
+                EffectType.HUE -> {
+                    addFxSlider(
+                        getString(R.string.effect_hue_shift),
+                        -180f, 180f, cur.hueShift, 0f
+                    ) { v -> live()?.hueShift = v }
+                }
+                EffectType.CLIP_MASK -> {
+                    val fileTv = TextView(this@MainActivity).apply {
+                        text = if (cur.maskFileName.isNullOrBlank())
+                            getString(R.string.effect_mask_none)
+                        else
+                            getString(R.string.effect_mask_file, cur.maskFileName)
+                        setPadding(0, (6 * density).toInt(), 0, (4 * density).toInt())
+                    }
+                    typeExtra.addView(fileTv)
+                    val loadBtn = com.google.android.material.button.MaterialButton(this@MainActivity).apply {
+                        text = getString(R.string.effect_mask_load)
+                        setOnClickListener {
+                            // Etapa D: picker real. Por ahora placeholder toast.
+                            android.widget.Toast.makeText(
+                                this@MainActivity,
+                                "Máscara: se activará en la siguiente etapa de render",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                    typeExtra.addView(loadBtn)
+                    val clearBtn = com.google.android.material.button.MaterialButton(
+                        this@MainActivity,
+                        null,
+                        com.google.android.material.R.attr.materialButtonOutlinedStyle
+                    ).apply {
+                        text = getString(R.string.effect_mask_clear)
+                        setOnClickListener {
+                            live()?.maskFileName = null
+                            fileTv.text = getString(R.string.effect_mask_none)
+                            editor.save()
+                        }
+                    }
+                    typeExtra.addView(clearBtn)
+                    addFxSlider(
+                        getString(R.string.effect_mask_scale),
+                        10f, 300f, cur.maskScale, 100f
+                    ) { v -> live()?.maskScale = v }
+                    addFxSlider(
+                        getString(R.string.effect_mask_x),
+                        -200f, 200f, cur.maskX, 0f
+                    ) { v -> live()?.maskX = v }
+                    addFxSlider(
+                        getString(R.string.effect_mask_y),
+                        -200f, 200f, cur.maskY, 0f
+                    ) { v -> live()?.maskY = v }
+                    addFxSlider(
+                        getString(R.string.effect_mask_rotation),
+                        0f, 359f, cur.maskRotation, 0f
+                    ) { v -> live()?.maskRotation = v }
+                    val invCb = com.google.android.material.checkbox.MaterialCheckBox(this@MainActivity).apply {
+                        text = getString(R.string.effect_mask_invert)
+                        isChecked = cur.maskInvert
+                        setOnCheckedChangeListener { _, checked ->
+                            if (loadingUI) return@setOnCheckedChangeListener
+                            live()?.maskInvert = checked
+                            editor.save()
+                        }
+                    }
+                    typeExtra.addView(invCb)
+                }
+            }
+        }
+
+        val typeAuto = android.widget.AutoCompleteTextView(this).apply {
+            setAdapter(ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, typeLabels))
+            setText(typeLabels[typeIdx], false)
+            isFocusable = false
+            setOnClickListener { showDropDown() }
+            setOnItemClickListener { _, _, pos, _ ->
+                if (loadingUI) return@setOnItemClickListener
+                live()?.type = types[pos]
+                editor.save()
+                refreshTypeExtra()
+            }
+        }
+        root.addView(typeAuto)
+        root.addView(typeExtra)
+        refreshTypeExtra()
+
+        // Delete
+        val del = com.google.android.material.button.MaterialButton(this).apply {
+            text = getString(R.string.effect_delete)
+            setBackgroundColor(0xFFB00020.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
+            setOnClickListener {
+                removeEffectLayer(layer.id)
+            }
+        }
+        root.addView(del, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).also { it.topMargin = (10 * density).toInt() })
+
+        return card
+    }
+
     private fun setupAnimationsTab() {
         val addBtn = findViewById<View>(R.id.buttonAddAnimationLayer)
         addBtn.isClickable = true
@@ -3949,6 +4304,7 @@ private fun showFadeDurationDialog(
                                 live()?.moveDistancePx = n.toFloat().coerceAtLeast(0f)
                                 editor.save()
                                 rebuildAnimationLayerCards()
+                                rebuildEffectLayerCards()
                             }
                         }
                     })
@@ -3997,6 +4353,7 @@ private fun showFadeDurationDialog(
                                 live()?.fadeDurationMs = n.toLong().coerceAtLeast(0L)
                                 editor.save()
                                 rebuildAnimationLayerCards()
+                                rebuildEffectLayerCards()
                             }
                         }
                     })
@@ -4022,6 +4379,7 @@ private fun showFadeDurationDialog(
                                 live()?.clockRotation = checked
                                 editor.save()
                                 rebuildAnimationLayerCards()
+                                rebuildEffectLayerCards()
                             }
                         })
                         if (a.clockRotation) {
@@ -4284,6 +4642,7 @@ private fun showFadeDurationDialog(
             layer.formula = fx
             editor.save()
             rebuildAnimationLayerCards()
+            rebuildEffectLayerCards()
         }
     }
 
@@ -4643,6 +5002,7 @@ private fun showFadeDurationDialog(
                     text = imageDisplayName(liveLayer, displayIndex)
                     editor.save()
                     rebuildAnimationLayerCards()
+                    rebuildEffectLayerCards()
                     rebuildImageSoftStartRows()
                     rebuildImageDelayStartRows()
                 }
@@ -7950,6 +8310,7 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         rebuildImageLayerCards()
         rebuildWidgetLayerCards()
         rebuildAnimationLayerCards()
+        rebuildEffectLayerCards()
         
         loadVideoLayerSettings()
         
