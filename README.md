@@ -4,11 +4,11 @@
   <img src="pictures/imagen_10.png" alt="Romaster LiveWall Engine" width="360"/>
 </p>
 
-**Motor y editor de live wallpapers para Android** con video de fondo, video overlay, capas de imagen, **widgets con fórmulas (estilo KLWP)**, **sistema de animaciones** (reacciones + acciones), reloj avanzado (cristal, reflejo, fuentes variables), reproducción reactiva al bloqueo, galerías online y proyectos importables/exportables.
+**Motor y editor de live wallpapers para Android** con video de fondo, video overlay, capas de imagen, **widgets con fórmulas (estilo KLWP)**, **widgets de progreso**, **efectos por capa** (saturación, matiz, tinte, máscara de recorte…), **sistema de animaciones** (reacciones + acciones), reloj avanzado (cristal, reflejo, fuentes variables, multicolor), reproducción reactiva al bloqueo, detección de **música en reproducción**, galerías online y proyectos importables/exportables.
 
 > Crea fondos animados con varias capas, chroma key, audio independiente, ping-pong, crossfade de loops, soft start, widgets de hora/batería/clima y comportamientos distintos cuando el teléfono está bloqueado o desbloqueado.
 
-**Versión actual:** `1.0.0-beta2` (versionCode 6)
+**Versión actual:** `1.0.0-beta3` (versionCode 7)
 
 <p align="center">
   <img src="pictures/imagen_1.png" alt="Editor con preview en vivo" width="280"/>
@@ -26,7 +26,7 @@
 |------|-------------|
 | **Video de fondo (Video-BG)** | Video principal a pantalla completa. Stretch / Fit / Fill / Free, escala, posición, audio. Importar **video**, **GIF** (→ MP4) o **pantalla negra**; reset a valores de fábrica. |
 | **Video overlay (Video-OL)** | Segunda capa de video: posición, escala, rotación, opacidad, **chroma key**, audio, opción de ocultar en pantalla de bloqueo. Mismas opciones de carga/GIF/negro/reset. |
-| **Reloj / fecha (Clock-OL)** | Reloj y fecha con tipografías (fijas y **variables**), colores, bordes, formatos (incluido **HH/MM vertical**), cristal, textura, reflejo, relieve, desenfoque de fondo y soft start. |
+| **Reloj / fecha (Clock-OL)** | Reloj y fecha con tipografías (fijas y **variables**), **multicolor**, bordes, formatos (incluido **HH/MM vertical**), mayúsculas/capitalizar/sin diacríticos en fecha, cristal, textura, reflejo, relieve, desenfoque de fondo y soft start. |
 | **Imágenes (Pics-OL)** | Capas de imagen/GIF independientes: transparencia, posición, zoom, rotación, orden Z respecto a Video-BG, Video-OL y Clock-OL, soft start y visibilidad en lock screen. |
 
 <p align="center">
@@ -90,12 +90,15 @@ Ideal para personajes o escenas que “duermen” en la pantalla de bloqueo y �
 
 Capa de texto/fórmulas inspirada en KLWP/KWGT:
 
-- Fórmulas entre `$ ... $` con funciones `df`, `bi`, `wi`, `if`, operadores matemáticos y lógicos
+- Fórmulas entre `$ ... $` con funciones `df`, `bi`, `wi`, `mi`, `if`, `tc`, operadores matemáticos y lógicos
+- Editor de fórmulas **centralizado por categorías** (estilo KLWP)
 - Fuentes de texto + **fuentes de íconos** (TTF+JSON estilo IcoMoon), galería online y reasignación de nombres climáticos
 - Tamaño, color, borde, rotación, opacidad, **alineación 3×3** (LEFT/CENTER/RIGHT × TOP/MIDDLE/BOTTOM)
 - Orden Z respecto a Video-BG, Video-OL, Clock-OL, imágenes y otros widgets
 - Soft start, delay, deshabilitar en lock screen y en launcher
 - Variaciones de fuente variable (mismos ejes que Clock-OL)
+- **Tipo Progreso**: barra lineal/circular, segmentada, gradiente, límites y nivel por fórmula (p. ej. `$bi(level)$`)
+- **Música en reproducción** (`mi`): título, artista, álbum, estado, posición, carátula; imagen de capa puede usar fórmula de carátula y actualizarse al cambiar de tema
 - Limpiar fuentes de texto e íconos no usadas (conserva las del reloj y widgets en uso)
 
 Ver tabla completa de fórmulas más abajo.
@@ -121,6 +124,28 @@ El desplazamiento, zoom y fade del **reloj** se interpolan a **~60 FPS** (el bit
 **Nombres personalizados** en cards de imagen, widget y animación (tocar el título): se reflejan en diálogos de orden Z y en el selector de capa a animar. Diálogo de posición de capa con altura fija, scroll y botones subir/bajar siempre visibles.
 
 Posiciones unificadas en **X/Y de −300 a +300** (centro = 0) para videos, reloj, imágenes y widgets, con migración automática de proyectos antiguos.
+
+### Efectos (Efectos)
+
+Post-procesado por capa (OpenGL), aplicable a **Video-BG**, **Video-OL**, **Clock-OL**, imágenes y widgets:
+
+| Efecto | Controles |
+|--------|-----------|
+| **Saturación** | 0 (B&N) … 200 (hiper) |
+| **Invertir** | RGB o tono preservando luminancia |
+| **Solarizar** | Umbral de luminancia |
+| **Tinte** | Color + intensidad + modo mezcla/multiplicar |
+| **Matiz (Hue)** | Desplazamiento −180…+180, o **automático** en bucle con velocidad configurable |
+| **Máscara de recorte** | PNG blanco/transparente; escala, posición, rotación, invertir; **Ajustar a capa** o conservar aspect ratio |
+
+**Reacciones de efecto** (instantáneas, sin fade):
+
+- **Siempre** — activo permanentemente (default)
+- **Desbloquear** — solo con el dispositivo desbloqueado
+- **Desplazamiento Bg** — solo en la pantalla N del launcher
+- **Fórmula** — solo si la expresión evalúa a `1` / `true`
+
+Las texturas de máscara persisten al cambiar de app / recrear el contexto GL. El aspect de la máscara en videos respeta el modo Stretch/Fit/Fill/Original del video.
 
 ### Visibilidad de videos (Video-BG / Video-OL)
 
@@ -211,7 +236,9 @@ app/src/main/java/com/romaster/livewallengine/
 ├── wallpaper/      # GLWallpaperService (+ Video / Canvas)
 ├── storage/        # ZIP import/export, directorios
 ├── gallery/        # ProjectGallery, FontGallery, IconFontGallery
-├── formula/        # FormulaEngine (df, bi, wi, if, math)
+├── formula/        # FormulaEngine (df, bi, wi, mi, if, tc, math)
+├── effect/         # EffectEngine, máscaras, FX de color
+├── animation/      # AnimationEngine, reacciones y acciones
 ├── weather/        # WeatherProvider (Open-Meteo)
 ├── ui/             # WallpaperPreviewView, diálogos
 ├── font/           # FontStorage, IconFontStorage, FontManager (variables)
@@ -225,10 +252,11 @@ app/src/main/java/com/romaster/livewallengine/
 | **Video-BG** | Video / GIF / pantalla negra, ajuste, escala, posición, audio, visibilidad lock/launcher, reset de tab |
 | **Video-OL** | Overlay, chroma, transformaciones, visibilidad lock/launcher, audio, reset de tab |
 | **Playback** | Cues, ping-pong, transición suave (Normal/Altern), soft/delay start, sonido al desbloquear, simulación de bloqueo |
-| **Clock-OL** | Formatos, fuentes, variables, cristal, reflejo, blur, posición, bordes |
+| **Clock-OL** | Formatos, fuentes, variables, multicolor, cristal, reflejo, blur, posición, bordes |
 | **Pics-OL** | Capas de imagen, orden Z, soft start, lock/launcher (+ fade-out opcional) |
-| **Widgets-OL** | Fórmulas KLWP-like, fuentes texto/íconos, alineación 3×3, clima, batería |
+| **Widgets-OL** | Fórmulas KLWP-like, progreso, música (`mi`), fuentes texto/íconos, alineación 3×3, clima, batería |
 | **Animaciones** | Reacciones + acciones por capa (videos, reloj, imágenes, widgets), fórmulas con `locked` |
+| **Efectos** | Saturación, invertir, solarizar, tinte, matiz (auto), máscara de recorte; reacciones Siempre / Desbloquear / Launcher / Fórmula |
 | **Proyecto** | Guardar, importar, exportar, nuevo, galería de wallpapers |
 | **Settings** | Idioma, limpiar fuentes, información del dispositivo, Acerca de |
 
@@ -244,7 +272,8 @@ proyecto.zip
 ├── audio/             # Pistas externas (opcional)
 ├── fonts/             # Tipografías de texto (reloj / widgets)
 ├── icons/             # Fuentes de íconos (TTF+JSON) de widgets
-└── images/            # Capas Pics-OL (opcional)
+├── images/            # Capas Pics-OL (opcional)
+└── masks/             # Máscaras de recorte (Efectos)
 ```
 
 ---
@@ -353,6 +382,16 @@ Claves de clima (`$wi(icon)$`) alineadas con KLWP:
 
 
 ## Historial de versiones
+
+### 1.0.0-beta3
+
+- **Tab Efectos**: saturación, invertir, solarizar, tinte, matiz (manual y **automático**), máscara de recorte (PNG)
+- Efectos aplicables a Video-BG, Video-OL, Clock-OL, imágenes y widgets; aspect correcto en videos; persistencia de máscaras al recrear GL
+- **Reacciones de efecto**: Siempre, Desbloquear, Desplazamiento Bg, Fórmula
+- **Widgets de progreso** (lineal/circular, segmentos, gradiente, bordes)
+- **Música** (`mi`): metadatos + carátula actualizable en capas de imagen
+- Editor de fórmulas centralizado por categorías; más funciones estilo KLWP
+- Reloj multicolor; fecha en mayúsculas / capitalizar / sin diacríticos
 
 ### 1.0.0-beta2
 
