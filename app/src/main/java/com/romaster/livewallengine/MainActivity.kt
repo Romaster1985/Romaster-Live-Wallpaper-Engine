@@ -6218,6 +6218,7 @@ private fun showFadeDurationDialog(
     /**
      * Botón compacto ↺ al lado del valor del slider (Material icon button).
      * Restaura el valor por defecto del primer arranque.
+     * También agrega botones − / + a los lados del slider para afinar el valor.
      */
     private fun attachSliderResetButton(
         slider: Slider,
@@ -6227,50 +6228,182 @@ private fun showFadeDurationDialog(
     ) {
         val parent = label.parent as? android.view.ViewGroup ?: return
         val tag = "slider_reset_${slider.id}"
-        if (parent.findViewWithTag<android.view.View>(tag) != null) return
-
-        val density = resources.displayMetrics.density
-        val btn = MaterialButton(
-            this,
-            null,
-            com.google.android.material.R.attr.materialIconButtonStyle
-        ).apply {
-            this.tag = tag
-            text = "↺"
-            contentDescription = "Restablecer valor"
-            textSize = 14f
-            minWidth = 0
-            minimumWidth = (36 * density).toInt()
-            minHeight = 0
-            minimumHeight = (36 * density).toInt()
-            insetTop = 0
-            insetBottom = 0
-            setPadding(
-                (4 * density).toInt(),
-                0,
-                (4 * density).toInt(),
-                0
-            )
-            setOnClickListener {
-                val v = defaultValue.coerceIn(slider.valueFrom, slider.valueTo)
-                val stepped = if (slider.stepSize > 0f) {
-                    val steps = ((v - slider.valueFrom) / slider.stepSize).toInt()
-                    slider.valueFrom + steps * slider.stepSize
-                } else {
-                    v
-                }.coerceIn(slider.valueFrom, slider.valueTo)
-                slider.value = stepped
-                if (onReset != null) {
-                    onReset(stepped)
-                } else {
-                    label.text = stepped.toInt().toString()
-                    if (!loadingUI) {
-                        updatePreviewProject()
+        if (parent.findViewWithTag<android.view.View>(tag) == null) {
+            val density = resources.displayMetrics.density
+            val btn = MaterialButton(
+                this,
+                null,
+                com.google.android.material.R.attr.materialIconButtonStyle
+            ).apply {
+                this.tag = tag
+                text = "↺"
+                contentDescription = "Restablecer valor"
+                textSize = 14f
+                minWidth = 0
+                minimumWidth = (36 * density).toInt()
+                minHeight = 0
+                minimumHeight = (36 * density).toInt()
+                insetTop = 0
+                insetBottom = 0
+                setPadding(
+                    (4 * density).toInt(),
+                    0,
+                    (4 * density).toInt(),
+                    0
+                )
+                setOnClickListener {
+                    val v = defaultValue.coerceIn(slider.valueFrom, slider.valueTo)
+                    val stepped = snapSliderValue(slider, v)
+                    slider.value = stepped
+                    if (onReset != null) {
+                        onReset(stepped)
+                    } else {
+                        label.text = stepped.toInt().toString()
+                        if (!loadingUI) {
+                            updatePreviewProject()
+                        }
                     }
                 }
             }
+            parent.addView(btn)
         }
-        parent.addView(btn)
+
+        // − / + a los lados del slider (mismos side-effects que un cambio de valor)
+        attachSliderStepButtons(slider) { v ->
+            if (onReset != null) {
+                onReset(v)
+            } else if (!loadingUI) {
+                updatePreviewProject()
+            }
+        }
+    }
+
+    /**
+     * Envuelve un [Slider] en una fila: [ − ]  slider  [ + ]
+     * Un toque avanza un step; mantener pulsado repite.
+     */
+    private fun attachSliderStepButtons(
+        slider: Slider,
+        onStep: ((Float) -> Unit)? = null
+    ) {
+        val parent = slider.parent as? android.view.ViewGroup ?: return
+        // Ya envuelto
+        if ((parent.tag as? String)?.startsWith("slider_step_wrap_") == true) return
+
+        val density = resources.displayMetrics.density
+        val wrapTag = "slider_step_wrap_${slider.id}_${System.identityHashCode(slider)}"
+        val index = parent.indexOfChild(slider)
+        if (index < 0) return
+        val oldLp = slider.layoutParams
+        parent.removeView(slider)
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            tag = wrapTag
+            layoutParams = oldLp ?: LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        fun makeStepButton(symbol: String, contentDesc: String): MaterialButton {
+            return MaterialButton(
+                this@MainActivity,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = symbol
+                contentDescription = contentDesc
+                textSize = 18f
+                minWidth = 0
+                minimumWidth = (36 * density).toInt()
+                minHeight = 0
+                minimumHeight = (36 * density).toInt()
+                insetTop = 0
+                insetBottom = 0
+                setPadding(0, 0, 0, 0)
+                cornerRadius = (18 * density).toInt()
+                val size = (36 * density).toInt()
+                layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                    marginStart = (2 * density).toInt()
+                    marginEnd = (2 * density).toInt()
+                }
+            }
+        }
+
+        fun applyDelta(dir: Int) {
+            if (loadingUI) return
+            val step = resolveSliderStep(slider)
+            val next = snapSliderValue(slider, slider.value + dir * step)
+            if (next == slider.value) return
+            slider.value = next
+            onStep?.invoke(next)
+        }
+
+        val btnMinus = makeStepButton("−", "Disminuir")
+        val btnPlus = makeStepButton("+", "Aumentar")
+
+        fun attachRepeat(btn: MaterialButton, dir: Int) {
+            val handler = android.os.Handler(mainLooper)
+            var repeating = false
+            val repeatRunnable = object : Runnable {
+                override fun run() {
+                    if (!repeating) return
+                    applyDelta(dir)
+                    handler.postDelayed(this, 60L)
+                }
+            }
+            btn.setOnClickListener { applyDelta(dir) }
+            btn.setOnLongClickListener {
+                repeating = true
+                applyDelta(dir)
+                handler.postDelayed(repeatRunnable, 350L)
+                true
+            }
+            btn.setOnTouchListener { _, event ->
+                when (event.actionMasked) {
+                    android.view.MotionEvent.ACTION_UP,
+                    android.view.MotionEvent.ACTION_CANCEL -> {
+                        repeating = false
+                        handler.removeCallbacks(repeatRunnable)
+                    }
+                }
+                false
+            }
+        }
+        attachRepeat(btnMinus, -1)
+        attachRepeat(btnPlus, +1)
+
+        slider.layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        row.addView(btnMinus)
+        row.addView(slider)
+        row.addView(btnPlus)
+        parent.addView(row, index)
+    }
+
+    private fun resolveSliderStep(slider: Slider): Float {
+        if (slider.stepSize > 0f) return slider.stepSize
+        val range = slider.valueTo - slider.valueFrom
+        return when {
+            range <= 2f -> 0.01f
+            range <= 10f -> 0.1f
+            range <= 100f -> 1f
+            else -> 1f
+        }
+    }
+
+    private fun snapSliderValue(slider: Slider, raw: Float): Float {
+        val clamped = raw.coerceIn(slider.valueFrom, slider.valueTo)
+        if (slider.stepSize <= 0f) return clamped
+        val steps = kotlin.math.round((clamped - slider.valueFrom) / slider.stepSize)
+        return (slider.valueFrom + steps * slider.stepSize)
+            .coerceIn(slider.valueFrom, slider.valueTo)
     }
     
     private fun connectVolumeSlider(
