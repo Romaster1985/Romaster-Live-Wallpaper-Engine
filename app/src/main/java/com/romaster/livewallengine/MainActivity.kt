@@ -56,6 +56,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.slider.Slider
@@ -200,76 +201,62 @@ class MainActivity : AppCompatActivity() {
         try {
             LocaleHelper.applyStoredLocale(this)
             super.onCreate(savedInstanceState)
-            
-            FileLogger.startNewSession(this)
-            FileLogger.writeDeviceInfo(this)
-            FileLogger.log(this, "MainActivity.onCreate()")
-            
-            FileLogger.log(this, "1 - setContentView")
+
+            // UI shell lo antes posible (evita ANR con proyectos pesados)
             setContentView(R.layout.activity_main)
-loadDeviceInformation()
-            
             setupPreviewSize()
-    
             editor = MainEditorController(this)
-    
-            editor.load()
-            
-            FileLogger.log(this, "2 - setupTabs")
+
+            // Logger a disco en background
+            lifecycleScope.launch(Dispatchers.IO) {
+                runCatching {
+                    FileLogger.startNewSession(this@MainActivity)
+                    FileLogger.writeDeviceInfo(this@MainActivity)
+                    FileLogger.log(this@MainActivity, "MainActivity.onCreate()")
+                }
+            }
+
+            // Listeners / controles (ligeros). El proyecto aún puede estar vacío.
             setupTabs()
-    
-            FileLogger.log(this, "3 - setupVideoTab")
             setupVideoTab()
-    
-            FileLogger.log(this, "4 - setupOverlayTab")
             setupOverlayTab()
-            
-            FileLogger.log(this, "5 - setupPlaybackTab")
             setupPlaybackTab()
-    
-            FileLogger.log(this, "6 - setupClockTab")
             setupClockTab()
-
-            FileLogger.log(this, "6b - setupPicsTab")
             setupPicsTab()
-            FileLogger.log(this, "6c - setupWidgetsTab")
             setupWidgetsTab()
-            FileLogger.log(this, "6d - setupAnimationsTab")
             setupAnimationsTab()
-            FileLogger.log(this, "6e - setupEffectsTab")
             setupEffectsTab()
-    
-            FileLogger.log(this, "7 - setupProjectTab")
             setupProjectTab()
-
-            FileLogger.log(this, "7b - setupSettingsTab")
             setupSettingsTab()
-    
             setupColorButtons()
-    
-            FileLogger.log(this, "8 - setupMaterialSliders")
             setupMaterialSliders()
-    
             setupMaterialDropdowns()
-    
             setupMaterialTextFields()
-    
             setupFontDropdowns()
-    
             setupChromaKey()
-    
-            FileLogger.log(this, "9 - reloadProjectUI")
-            WeatherProvider.ensureFresh(this)
-            reloadProjectUI()
-    
+
+            // Carga pesada diferida: JSON del proyecto + cards + probe EGL
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) {
+                    runCatching { editor.load() }
+                }
+                // Cedemos el hilo principal para que Android dibuje el 1er frame
+                yield()
+                WeatherProvider.ensureFresh(this@MainActivity)
+                reloadProjectUIAsync()
+                yield()
+                // Info de dispositivo (incluye crear contexto EGL temporal)
+                runCatching { loadDeviceInformation() }
+            }
+
         } catch (e: Exception) {
-            
+
             FileLogger.logException(
                 this,
                 "MainActivity.onCreate",
                 e
             )
-    
+
             throw e
         }
     }
@@ -8640,36 +8627,59 @@ findViewById<MaterialButton>(R.id.buttonLoadClockCrystalTexture).setOnClickListe
         }
     }
 
-    private fun reloadProjectUI(){
-        
+    private fun reloadProjectUI() {
         loadingUI = true
-                
-        reloadFontLibrary()
-        rebuildImageLayerCards()
-        rebuildWidgetLayerCards()
-        rebuildAnimationLayerCards()
-        rebuildEffectLayerCards()
-        
-        loadVideoLayerSettings()
-        
-        loadOverlaySettings()
-        
-        loadChromaSettings()
-        
-        loadPlaybackSettings()
-        
-        loadClockSettings()
-        
-        loadingUI = false
-        
-        //updatePreviewProject()
-        
+        try {
+            reloadFontLibrary()
+            rebuildImageLayerCards()
+            rebuildWidgetLayerCards()
+            rebuildAnimationLayerCards()
+            rebuildEffectLayerCards()
+            loadVideoLayerSettings()
+            loadOverlaySettings()
+            loadChromaSettings()
+            loadPlaybackSettings()
+            loadClockSettings()
+        } finally {
+            loadingUI = false
+        }
         refreshPreview()
         try {
             findViewById<WallpaperPreviewView>(R.id.previewView).reloadWidgetLayers()
         } catch (_: Exception) {
         }
-        
+    }
+
+    /**
+     * Misma lógica que [reloadProjectUI] pero cediendo el main thread entre
+     * bloques pesados (proyectos con muchas capas / widgets / efectos).
+     */
+    private suspend fun reloadProjectUIAsync() {
+        loadingUI = true
+        try {
+            reloadFontLibrary()
+            yield()
+            rebuildImageLayerCards()
+            yield()
+            rebuildWidgetLayerCards()
+            yield()
+            rebuildAnimationLayerCards()
+            yield()
+            rebuildEffectLayerCards()
+            yield()
+            loadVideoLayerSettings()
+            loadOverlaySettings()
+            loadChromaSettings()
+            loadPlaybackSettings()
+            loadClockSettings()
+        } finally {
+            loadingUI = false
+        }
+        refreshPreview()
+        try {
+            findViewById<WallpaperPreviewView>(R.id.previewView).reloadWidgetLayers()
+        } catch (_: Exception) {
+        }
     }
     
     private fun readClockSettingsFromUI(): ClockSettings {
