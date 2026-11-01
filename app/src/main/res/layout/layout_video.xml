@@ -216,10 +216,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    app:singleSelection="true">
+                    app:singleSelection="true"
+                    app:selectionRequired="true">
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonFit"
+                        style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -231,6 +233,7 @@
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonFill"
+                        style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -242,6 +245,7 @@
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonStretch"
+                        style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -253,6 +257,7 @@
                 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/buttonFree"
+                        style="?attr/materialButtonOutlinedStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
